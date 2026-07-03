@@ -115,3 +115,47 @@ export const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "signed", label: "Ditandatangani" },
   { value: "archived", label: "Diarsipkan" },
 ];
+
+// ── New-review constants (verbatim from Janus src/types/review.ts) ────────────
+
+export const DOCUMENT_TYPES: { value: string; label: string }[] = [
+  { value: "PKS", label: "Kontrak Lengkap (PKS)" },
+  { value: "LOI", label: "Letter of Intent (LOI)" },
+  { value: "NDA", label: "Perjanjian Kerahasiaan (NDA)" },
+  { value: "Client Template", label: "Template Klien" },
+  { value: "Other", label: "Lainnya" },
+];
+
+export const REVIEW_FOCUS_OPTIONS: string[] = [
+  "Menyeluruh",
+  "Ketentuan Keuangan",
+  "Tanggung Jawab & Risiko",
+  "Cakupan Layanan",
+  "Ketentuan Pembayaran",
+  "Pengakhiran Kontrak",
+  "Kelayakan Operasional",
+  "Kepatuhan Hukum",
+];
+
+export const PROCESSING_STEPS: string[] = [
+  "Mengekstrak teks dokumen...",
+  "Menganalisis struktur kontrak...",
+  "Memeriksa terhadap Playbook Dash...",
+  "Mengevaluasi tanggung jawab & risiko...",
+  "Meninjau ketentuan keuangan...",
+  "Mencocokkan dengan konteks proyek...",
+  "Mencocokkan pustaka klausul...",
+  "Menyusun rekomendasi...",
+];
+
+/** Weighted-average risk enum → bucketed enum, 'N/A' if none scored (from Janus computeAvgRisk). */
+export function computeAvgRisk(reviews: { risk_level: string | null }[]): string {
+  const scored = reviews.filter((r) => r.risk_level);
+  if (scored.length === 0) return "N/A";
+  const map: Record<string, number> = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
+  const avg = scored.reduce((s, r) => s + (map[r.risk_level!] ?? 0), 0) / scored.length;
+  if (avg <= 1.5) return "LOW";
+  if (avg <= 2.5) return "MEDIUM";
+  if (avg <= 3.5) return "HIGH";
+  return "CRITICAL";
+}

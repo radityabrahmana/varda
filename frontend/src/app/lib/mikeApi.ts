@@ -1234,3 +1234,54 @@ export async function listContracts(): Promise<ContractReviewRow[]> {
 export async function deleteContract(id: string): Promise<void> {
     await apiRequest<void>(`/api/reviews/${id}`, { method: "DELETE" });
 }
+
+export interface ExtractedContract {
+    contract_text: string;
+    contract_html: string | null;
+    filename: string;
+}
+
+export async function uploadContractFile(file: File): Promise<ExtractedContract> {
+    const authHeaders = await getAuthHeader();
+    const form = new FormData();
+    form.append("file", file);
+    const response = await fetch(`${API_BASE}/api/reviews/upload`, {
+        method: "POST",
+        headers: { ...authHeaders },
+        body: form,
+    });
+    if (!response.ok) throw await toApiError(response, "/api/reviews/upload");
+    return response.json() as Promise<ExtractedContract>;
+}
+
+export interface CreateReviewInput {
+    title?: string;
+    client_name: string;
+    document_type: string;
+    project_context?: string;
+    review_focus: string[];
+    contract_text: string;
+    contract_html: string | null;
+    contract_filename: string | null;
+}
+
+export async function createReview(
+    input: CreateReviewInput,
+): Promise<{ id: string; status: string }> {
+    return apiRequest("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+    });
+}
+
+export interface ReviewStatus {
+    id: string;
+    status: string;
+    risk_level: string | null;
+    recommendation: string | null;
+}
+
+export async function getReviewStatus(id: string): Promise<ReviewStatus> {
+    return apiRequest<ReviewStatus>(`/api/reviews/${id}/status`);
+}
