@@ -50,10 +50,15 @@ export async function callJanusTool(
     }
 
     // Streamable-HTTP servers may reply with an SSE frame instead of plain JSON.
+    // A single SSE event's data can span multiple consecutive `data:` lines that
+    // must be concatenated with newlines (SSE spec) — don't take just the first.
     let jsonText = raw.trim();
     if (jsonText.startsWith("event:") || jsonText.startsWith("data:")) {
-      const dataLine = jsonText.split("\n").find((l) => l.startsWith("data:"));
-      jsonText = dataLine ? dataLine.slice("data:".length).trim() : jsonText;
+      const dataLines = jsonText
+        .split(/\r?\n/)
+        .filter((l) => l.startsWith("data:"))
+        .map((l) => l.slice("data:".length).replace(/^ /, ""));
+      jsonText = dataLines.length ? dataLines.join("\n").trim() : jsonText;
     }
 
     const msg = JSON.parse(jsonText) as {

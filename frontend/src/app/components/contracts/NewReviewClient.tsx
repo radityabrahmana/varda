@@ -47,6 +47,8 @@ export function NewReviewClient() {
 
     const stepTimer = useRef<ReturnType<typeof setInterval> | null>(null);
     const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+    const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const mountedRef = useRef(true);
 
     useEffect(() => {
         if (authLoading || !isAuthenticated) return;
@@ -59,11 +61,13 @@ export function NewReviewClient() {
         };
     }, [authLoading, isAuthenticated, user?.id]);
 
-    // Clear timers on unmount.
+    // Clear timers + stop polling/nav on unmount.
     useEffect(() => {
         return () => {
+            mountedRef.current = false;
             if (stepTimer.current) clearInterval(stepTimer.current);
             if (progressTimer.current) clearInterval(progressTimer.current);
+            if (navTimer.current) clearTimeout(navTimer.current);
         };
     }, []);
 
@@ -144,6 +148,7 @@ export function NewReviewClient() {
         // ~2.5 min budget (75 * 2s)
         for (let i = 0; i < 75; i++) {
             await new Promise((r) => setTimeout(r, 2000));
+            if (!mountedRef.current) return; // stop polling after unmount
             const st = await getReviewStatus(id);
             if (st.status === "ai_reviewed" || st.status === "clevel_reviewed") return;
             if (st.status === "failed") throw new Error("Analisis AI gagal. Silakan coba lagi.");
@@ -172,11 +177,15 @@ export function NewReviewClient() {
             });
             await pollUntilDone(id);
             stopTimers();
+            if (!mountedRef.current) return;
             setProgress(100);
             setCurrentStep(PROCESSING_STEPS.length - 1);
-            setTimeout(() => router.push("/contracts"), 500);
+            navTimer.current = setTimeout(() => {
+                if (mountedRef.current) router.push("/contracts");
+            }, 500);
         } catch (e) {
             stopTimers();
+            if (!mountedRef.current) return;
             setSubmitError(e instanceof Error ? e.message : "Tinjauan gagal");
             setSubmitting(false);
         }
@@ -255,6 +264,8 @@ export function NewReviewClient() {
                         onChange={(e) => {
                             const f = e.target.files?.[0];
                             if (f) void handleFile(f);
+                            // Reset so re-selecting the same file (after remove/fail) re-fires onChange.
+                            e.target.value = "";
                         }}
                     />
                     {file ? (

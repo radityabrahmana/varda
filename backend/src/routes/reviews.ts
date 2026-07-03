@@ -139,19 +139,35 @@ async function runReview(
       clause_library_context: ctx.clauseLibraryContext,
       past_feedback_context: ctx.pastFeedbackContext,
     });
-    const ai = JSON.parse(text) as { risk_level?: string; overall_recommendation?: string };
+    const ai = JSON.parse(text) as Record<string, unknown>;
+    // Guard against a parseable-but-invalid payload (e.g. an {error} passthrough or
+    // truncated object) being stored as a completed review. Require a real ReviewOutput.
+    if (
+      typeof ai !== "object" ||
+      ai === null ||
+      "error" in ai ||
+      (!ai.risk_level && !ai.overall_recommendation)
+    ) {
+      throw new Error(`review-contract returned invalid output: ${text.slice(0, 300)}`);
+    }
     await db
       .from("reviews")
       .update({
         ai_output: ai,
-        risk_level: ai.risk_level ?? null,
-        recommendation: ai.overall_recommendation ?? null,
+        risk_level: (ai.risk_level as string | undefined) ?? null,
+        recommendation: (ai.overall_recommendation as string | undefined) ?? null,
         status: "ai_reviewed",
       })
       .eq("id", reviewId);
   } catch (e) {
     console.error(`[reviews] runReview failed for ${reviewId}:`, e);
-    await db.from("reviews").update({ status: "failed" }).eq("id", reviewId);
+    // The failure-update must not itself throw (would escape as an unhandled
+    // rejection on this detached promise and could crash the process).
+    try {
+      await db.from("reviews").update({ status: "failed" }).eq("id", reviewId);
+    } catch (e2) {
+      console.error(`[reviews] failed to mark ${reviewId} failed:`, e2);
+    }
   }
 }
 
@@ -195,13 +211,14 @@ reviewsRouter.post("/", requireAuth, async (req, res) => {
 
   const reviewId = (review as { id: string }).id;
   // Detached: do NOT await — the review runs ~30-60s in the background.
+  // .catch is a backstop; runReview already handles its own errors internally.
   void runReview(reviewId, {
     contract_text: contractText,
     client_name: clientName,
     document_type: documentType,
     project_context: projectContext,
     review_focus: reviewFocus,
-  });
+  }).catch((err) => console.error(`[reviews] runReview crashed for ${reviewId}:`, err));
 
   res.status(201).json({ id: reviewId, status: "processing" });
 });
