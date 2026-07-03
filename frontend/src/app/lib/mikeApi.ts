@@ -17,6 +17,7 @@ import type {
     TabularReview,
     TabularReviewDetailOut,
 } from "@/app/components/shared/types";
+import type { ReviewRow as ContractReviewRow } from "@/app/components/contracts/reviewHelpers";
 
 // Server-side shape before mapping
 interface ServerMessage {
@@ -1212,4 +1213,24 @@ export async function deleteWorkflowShare(
     await apiRequest(`/workflows/${workflowId}/shares/${shareId}`, {
         method: "DELETE",
     });
+}
+
+// ── Contracts (Janus review) dashboard ────────────────────────────────────────
+
+export interface MeInfo {
+    userId: string;
+    email: string | null;
+    isAdmin: boolean;
+}
+
+export async function getMe(): Promise<MeInfo> {
+    return apiRequest<MeInfo>("/api/me");
+}
+
+export async function listContracts(): Promise<ContractReviewRow[]> {
+    return apiRequest<ContractReviewRow[]>("/api/reviews");
+}
+
+export async function deleteContract(id: string): Promise<void> {
+    await apiRequest<void>(`/api/reviews/${id}`, { method: "DELETE" });
 }

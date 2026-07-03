@@ -7,6 +7,7 @@ import {
     FolderOpen,
     Table2,
     Library,
+    FileCheck,
     User,
     ChevronsUpDown,
     ChevronDown,
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
     { href: "/assistant", label: "Assistant", icon: MessageSquare },
+    { href: "/contracts", label: "Contracts", icon: FileCheck },
     { href: "/projects", label: "Projects", icon: FolderOpen },
     { href: "/tabular-reviews", label: "Tabular Review", icon: Table2 },
     { href: "/workflows", label: "Workflows", icon: Library },
