@@ -1,6 +1,6 @@
 // Minimal OpenAI-compatible chat-completions client for OpenRouter, used by
 // the contract-review prompts (non-streaming, optional forced tool call).
-// Mike's streaming assistant goes through lib/llm; this stays deliberately
+// Varda's streaming assistant goes through lib/llm; this stays deliberately
 // tiny so the review pipeline has no dependency on the AI SDK adapters.
 
 export interface ChatMessage {

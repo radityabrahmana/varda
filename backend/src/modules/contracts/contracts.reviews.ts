@@ -1,5 +1,5 @@
 // Business logic + data access for contract reviews (the Janus review model
-// ported into Mike). Every function takes the service-role `db` first and
+// ported into Varda). Every function takes the service-role `db` first and
 // returns a ServiceResult; nothing here touches req/res.
 //
 // Scope: reviews are TEAM-WIDE (Janus's is_team_member model), so list/status
@@ -212,7 +212,7 @@ export async function executeReview(
   input: ReviewRunInput,
 ): Promise<ServiceResult<ReviewRunResult>> {
   try {
-    // Mike owns the playbook and calls the model directly (OpenRouter): the
+    // Varda owns the playbook and calls the model directly (OpenRouter): the
     // active rules go into the system prompt on every review, so an edit on
     // /playbook applies to the next review with no redeploy (Janus parity).
     const [ctx, playbookRules] = await Promise.all([

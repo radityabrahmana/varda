@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
             // Keep the response indistinguishable from a successful request.
         } finally {
             // Use the same response for existing and unknown addresses so this
-            // screen cannot be used to enumerate Mike accounts.
+            // screen cannot be used to enumerate Varda accounts.
             setSubmitted(true);
             setLoading(false);
         }

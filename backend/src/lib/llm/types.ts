@@ -103,7 +103,7 @@ export type StreamChatResult = {
 // ---------------------------------------------------------------------------
 // Configured models
 // ---------------------------------------------------------------------------
-// The static catalog in models.ts covers the hosted providers Mike ships with.
+// The static catalog in models.ts covers the hosted providers Varda ships with.
 // Deployments that also run self-hosted or third-party OpenAI-compatible
 // endpoints declare them through MIKE_MODEL_CONFIG_JSON; see registry.ts.
 
@@ -114,7 +114,7 @@ export type ConfiguredModel = {
     provider: "openai-compatible";
     location: ModelLocation;
     label?: string;
-    /** Model name to send upstream when it differs from the Mike-facing id. */
+    /** Model name to send upstream when it differs from the Varda-facing id. */
     apiModel?: string;
     baseUrl: string;
     apiKeyEnv?: string;

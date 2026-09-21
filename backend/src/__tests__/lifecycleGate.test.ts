@@ -76,7 +76,7 @@ describe("document-lifecycle boot gate", () => {
             SUPABASE_PUBLISHABLE_KEY: "not-a-real-key",
         });
         expect(output).toMatch(/document-lifecycle migration is not applied/);
-        expect(output).not.toMatch(/Mike backend running on port/);
+        expect(output).not.toMatch(/Varda backend running on port/);
         expect(output).not.toMatch(/\[dbq\] runner started/);
         expect(code).toBe(1);
     }, 60_000);

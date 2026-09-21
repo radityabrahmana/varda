@@ -1,5 +1,5 @@
 // Playbook rules (Janus `/playbook`): the dynamic rule set the AI review is
-// scored against. Mike owns the table; every review sends the active rows to
+// scored against. Varda owns the table; every review sends the active rows to
 // the review-contract gateway (payload mode), so an edit here changes the next
 // review with no redeploy. Reads are open to any signed-in user; writes are
 // admin-only — enforced by the caller through `callerIsAdmin`.

@@ -2221,7 +2221,7 @@ describe("chat grants, deletion and roster", () => {
 
         expect(res.status).toBe(400);
         expect(res.body.detail).toBe(
-            "future@example.com does not belong to a Mike user.",
+            "future@example.com does not belong to a Varda user.",
         );
     });
 

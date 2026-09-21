@@ -134,7 +134,7 @@ export interface NegotiationMemo {
   red_lines: Array<{ description: string; reason: string }>;
 }
 
-/** Full `reviews` row as stored in Mike (Janus schema). */
+/** Full `reviews` row as stored in Varda (Janus schema). */
 export interface ReviewDetailRow {
   id: string;
   user_id: string | null;

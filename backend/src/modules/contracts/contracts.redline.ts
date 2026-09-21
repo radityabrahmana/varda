@@ -3,7 +3,7 @@
 // The untouched upload stays at reviews.contract_docx_path. Projection writes a
 // working copy to contracts/<reviewId>/redline.docx (reviews.contract_redline_path)
 // with one w:del/w:ins pair per revision, recorded in review_revision_edits.
-// Accept / reject / edit rewrite that working copy in place via Mike's OOXML
+// Accept / reject / edit rewrite that working copy in place via Varda's OOXML
 // library and ALSO write the Janus review_feedback row, so the moat and the
 // negotiation memo see the same decision the document shows.
 //

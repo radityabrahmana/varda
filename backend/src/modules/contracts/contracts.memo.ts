@@ -1,4 +1,4 @@
-// Negotiation memo (Phase 5 slice 5). Mike owns the data: this module assembles
+// Negotiation memo (Phase 5 slice 5). Varda owns the data: this module assembles
 // the review, its C-level feedback and up to 3 past memos for the same client,
 // sends them to the janus-tools `run_negotiation_memo` proxy (AI stays on
 // Lovable), and stores the memo on the review. Per-point BD status lives in

@@ -1,6 +1,6 @@
 // The two Gemini prompts behind a contract review, ported verbatim from the
 // Janus edge functions `review-contract` and `generate-negotiation-memo`
-// (supabase/functions/*). Mike now calls the model directly through OpenRouter
+// (supabase/functions/*). Varda now calls the model directly through OpenRouter
 // instead of proxying through janus-tools → Lovable, so the playbook rules,
 // clause-library context and feedback context are all assembled here.
 //

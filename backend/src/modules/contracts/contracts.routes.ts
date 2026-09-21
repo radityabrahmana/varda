@@ -1,4 +1,4 @@
-// HTTP layer for the contracts module (Janus contract review inside Mike):
+// HTTP layer for the contracts module (Janus contract review inside Varda):
 //   GET    /contracts               team-wide review list for the dashboard
 //   GET    /contracts/me            caller identity + admin flag (client-side gating)
 //   GET    /contracts/:id           full review + feedback + comments (workspace)

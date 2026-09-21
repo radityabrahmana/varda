@@ -1,8 +1,8 @@
 // Clause-library + past-feedback context injected into the AI contract review.
 //
 // The pure builders are ported verbatim from Janus (janus-tools/agentActions.ts)
-// so the prompt context Mike sends is byte-identical to what Janus sent. The
-// queries run against MIKE's own tables: the moat (approved clauses, C-level
+// so the prompt context Varda sends is byte-identical to what Janus sent. The
+// queries run against VARDA's own tables: the moat (approved clauses, C-level
 // corrections, missed-clause flags) lives here, not on the Lovable side.
 
 import type { Db } from "../../lib/supabase";
@@ -92,7 +92,7 @@ export function buildPastFeedbackContext(input: {
   return out;
 }
 
-/** Assemble the review context from Mike's tables (mirrors Janus buildContextFor). */
+/** Assemble the review context from Varda's tables (mirrors Janus buildContextFor). */
 export async function buildReviewContextFor(
   db: Db,
   clientName: string,

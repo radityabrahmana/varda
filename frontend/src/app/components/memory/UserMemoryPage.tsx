@@ -160,7 +160,7 @@ export function UserMemoryPage() {
               <div className="space-y-1">
                 <SettingsLabel>App-wide memory</SettingsLabel>
                 <SettingsDescription>
-                  Let Mike curate useful details after saved conversations and
+                  Let Varda curate useful details after saved conversations and
                   use them in future answers.
                 </SettingsDescription>
               </div>

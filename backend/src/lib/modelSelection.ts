@@ -192,7 +192,7 @@ export async function resolveEffectiveChatModel(args: {
  *
  * A saved title preference is an explicit override. Otherwise first-party
  * chat models map to that provider's cheapest title-tier model. Routers and
- * local models reuse the exact chat model because Mike cannot safely infer a
+ * local models reuse the exact chat model because Varda cannot safely infer a
  * cheaper equivalent within an external/dynamic catalog.
  */
 export function titleModelForChat(

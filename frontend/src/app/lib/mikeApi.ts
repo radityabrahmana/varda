@@ -1,5 +1,5 @@
 /**
- * Mike API client — all browser requests use the same-origin `/api` gateway.
+ * Varda API client — all browser requests use the same-origin `/api` gateway.
  * Authentication is carried only by the backend-managed HttpOnly cookie.
  */
 

@@ -1,9 +1,9 @@
 // Original-contract DOCX persistence for the review workspace.
 //
-// The bytes live in Mike's object storage under contracts/…, referenced from
-// reviews.contract_docx_path (Janus column, previously unused in Mike). They
-// are deliberately NOT registered as Mike `documents` rows: Janus reviews are
-// team-wide while Mike documents are owner-scoped, and the workspace streams
+// The bytes live in Varda's object storage under contracts/…, referenced from
+// reviews.contract_docx_path (Janus column, previously unused in Varda). They
+// are deliberately NOT registered as Varda `documents` rows: Janus reviews are
+// team-wide while Varda documents are owner-scoped, and the workspace streams
 // the file through /contracts/:id/file instead. Storage is optional: when it
 // is not configured the review still works in the HTML-fallback mode.
 

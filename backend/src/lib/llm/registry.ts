@@ -6,7 +6,7 @@ import type {
 } from "./types";
 
 // Deployment-declared models. The static catalog in models.ts covers the
-// hosted providers Mike ships with; this registry is how an operator adds a
+// hosted providers Varda ships with; this registry is how an operator adds a
 // self-hosted or third-party endpoint (and, in a later change, committees)
 // without a code change. Everything is read from one env var so the
 // configuration travels with the deployment rather than the database.

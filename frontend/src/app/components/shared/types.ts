@@ -1,5 +1,5 @@
 import type { AssistantEvent as WireAssistantEvent } from "@mike/contracts";
-// Shared TypeScript types for Mike AI legal assistant
+// Shared TypeScript types for Varda AI legal assistant
 
 import type {
   SourceDocument,

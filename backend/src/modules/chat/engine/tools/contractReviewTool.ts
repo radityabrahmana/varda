@@ -1,6 +1,6 @@
 // review_contract: the Assistant's door into the contracts module.
 //
-// A Mike workflow is prose plus assets; it cannot name a server function. This
+// A Varda workflow is prose plus assets; it cannot name a server function. This
 // tool is what lets a "Tinjauan Kontrak" workflow run the real pipeline — the
 // active playbook, a `reviews` row, the redline projection — instead of having
 // the chat model freestyle findings from read_document. It reaches the
