@@ -49,8 +49,13 @@ export interface RevisionEditRow {
 const CONTEXT_CHARS = 60;
 
 /** Build the library's EditInput for a revision, with context sliced from the contract text. */
+// The model sometimes frames a partial quote with ellipses ("...kecuali ...")
+// even though the prompt asks for verbatim text. They are never part of the
+// contract, so strip them before anchoring; the remaining text is still exact.
+const EDGE_ELLIPSES = /^(?:\.{3}|…)\s*|\s*(?:\.{3}|…)$/g;
+
 export function revisionToEdit(rev: Revision, contractText: string): EditInput {
-  const find = (rev.original_text || rev.highlight_text || "").trim();
+  const find = (rev.original_text || rev.highlight_text || "").trim().replace(EDGE_ELLIPSES, "").trim();
   const idx = find ? contractText.indexOf(find) : -1;
   const context_before = idx > 0 ? contractText.slice(Math.max(0, idx - CONTEXT_CHARS), idx) : "";
   const context_after = idx >= 0 ? contractText.slice(idx + find.length, idx + find.length + CONTEXT_CHARS) : "";
