@@ -78,6 +78,16 @@ export function workspacePathFor(reviewId: string): string {
   return `/contracts/${reviewId}`;
 }
 
+/**
+ * Absolute link for the model's prose. Given only a relative path, the model
+ * invents a host (observed: dash-electric.com); FRONTEND_URL is the origin
+ * the backend already trusts for CORS.
+ */
+export function workspaceUrlFor(reviewId: string): string {
+  const base = (process.env.FRONTEND_URL ?? "").trim().replace(/\/+$/, "");
+  return `${base}${workspacePathFor(reviewId)}`;
+}
+
 type Args = {
   doc_id?: unknown;
   client_name?: unknown;
@@ -187,7 +197,13 @@ export async function runContractReviewTool(params: {
     const event = failedEvent(detail, reviewId);
     write(`data: ${JSON.stringify(event)}\n\n`);
     return {
-      content: JSON.stringify({ error: "review_failed", detail, review_id: reviewId, workspace_path: workspacePathFor(reviewId) }),
+      content: JSON.stringify({
+        error: "review_failed",
+        detail,
+        review_id: reviewId,
+        workspace_url: workspaceUrlFor(reviewId),
+        workspace_path: workspacePathFor(reviewId),
+      }),
       event,
     };
   }
@@ -206,8 +222,14 @@ export async function runContractReviewTool(params: {
 
   const summary = summarizeReviewOutput(run.data.ai_output);
   const content = [
-    `Contract review stored for ${promptFilename} (doc_id ${docId}). Report the findings below in Bahasa Indonesia; cite each finding with its highlight_text as a verbatim quote from ${docId}. Point the user to workspace_path for triage, feedback, redlines and the negotiation memo.`,
-    JSON.stringify({ review_id: reviewId, workspace_path: workspacePathFor(reviewId), doc_id: docId, ...summary }),
+    `Contract review stored for ${promptFilename} (doc_id ${docId}). Report the findings below in Bahasa Indonesia; cite each finding with its highlight_text as a verbatim quote from ${docId}. Point the user to the review workspace for triage, feedback, redlines and the negotiation memo, linking EXACTLY the workspace_url below (do not invent or change the host).`,
+    JSON.stringify({
+      review_id: reviewId,
+      workspace_url: workspaceUrlFor(reviewId),
+      workspace_path: workspacePathFor(reviewId),
+      doc_id: docId,
+      ...summary,
+    }),
   ].join("\n\n");
   return { content, event };
 }

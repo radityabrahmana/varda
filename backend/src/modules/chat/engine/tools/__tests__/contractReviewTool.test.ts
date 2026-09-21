@@ -37,6 +37,7 @@ function frames(write: ReturnType<typeof vi.fn>): Record<string, unknown>[] {
 describe("review_contract tool", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.FRONTEND_URL = "https://mike.example.com/";
     mocks.loadCurrentVersionBytes.mockResolvedValue({ bytes: BYTES, storage_path: "documents/abc/v1.docx" });
     mocks.createReviewFromDocx.mockResolvedValue({
       ok: true,
@@ -95,7 +96,14 @@ describe("review_contract tool", () => {
     expect(result.event).toEqual(events[1]);
     expect(result.content).toContain("Bahasa Indonesia");
     const json = JSON.parse(result.content.split("\n\n")[1]);
-    expect(json).toMatchObject({ review_id: "rev-1", workspace_path: "/contracts/rev-1", doc_id: "doc-0", risk_level: "CRITICAL" });
+    expect(json).toMatchObject({
+      review_id: "rev-1",
+      workspace_url: "https://mike.example.com/contracts/rev-1",
+      workspace_path: "/contracts/rev-1",
+      doc_id: "doc-0",
+      risk_level: "CRITICAL",
+    });
+    expect(result.content).toContain("EXACTLY the workspace_url");
   });
 
   it("defaults the document type to PKS and falls back to the stored file when no version exists", async () => {
