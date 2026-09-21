@@ -52,6 +52,15 @@ describe("revisionToEdit", () => {
     expect(edit.context_after).toBe(" untuk pengiriman roda dua.");
   });
 
+  it("strips the model's framing ellipses so a partial quote still anchors", () => {
+    const text = "Perjanjian ini berlaku kecuali salah satu Pihak memberikan pemberitahuan tertulis sebelumnya.";
+    const edit = revisionToEdit({ ...REV, original_text: "...kecuali salah satu Pihak memberikan pemberitahuan tertulis..." }, text);
+    expect(edit.find).toBe("kecuali salah satu Pihak memberikan pemberitahuan tertulis");
+    expect(edit.context_before).toBe("Perjanjian ini berlaku ");
+    expect(edit.context_after).toBe(" sebelumnya.");
+    expect(revisionToEdit({ ...REV, original_text: "… batas nominal …" }, text).find).toBe("batas nominal");
+  });
+
   it("falls back to highlight_text and empty context when the text is not found", () => {
     const edit = revisionToEdit({ ...REV, original_text: "", highlight_text: "klausul X" }, "tidak ada");
     expect(edit).toMatchObject({ find: "klausul X", context_before: "", context_after: "" });

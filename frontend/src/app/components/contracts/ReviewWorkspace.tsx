@@ -311,11 +311,15 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                     </div>
 
                     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+                        {/* DocxView scrolls inside its own container only when it is a
+                            height-constrained flex item (its root is `flex-1 overflow-hidden`).
+                            As a plain block the viewer grows to the full document height,
+                            the pane clips it, and multi-page contracts cannot be scrolled. */}
                         <div
                             ref={docPaneRef}
                             onMouseUp={handleDocMouseUp}
                             data-testid="document-pane"
-                            className={review.contract_docx_path ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-y-auto bg-gray-100 p-6"}
+                            className={review.contract_docx_path ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "min-h-0 flex-1 overflow-y-auto bg-gray-100 p-6"}
                         >
                             <ContractDocument review={review} activeQuote={activeQuote} quoteFocusKey={quoteFocusKey} refetchKey={docRefetchKey} />
                         </div>

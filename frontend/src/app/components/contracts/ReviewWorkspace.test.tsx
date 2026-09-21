@@ -279,6 +279,9 @@ describe("ReviewWorkspace", () => {
         const view = await screen.findByTestId("docx-view");
         expect(view.getAttribute("data-url")).toBe("/api/contracts/r1/file");
         expect(screen.queryByTestId("contract-html")).toBeNull();
+        // The viewer only scrolls internally as a height-constrained flex item;
+        // a plain block pane clips multi-page contracts with no way to scroll.
+        expect(screen.getByTestId("document-pane")).toHaveClass("flex", "flex-col", "min-h-0", "overflow-hidden");
 
         await user.click(screen.getAllByRole("button", { name: /Lihat di dokumen/ })[0]);
         expect(screen.getByTestId("docx-view").getAttribute("data-quote")).toBe("Bagoes Andy Saputro");
