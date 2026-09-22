@@ -63,6 +63,9 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
     const [projecting, setProjecting] = useState(false);
     const [projectMessage, setProjectMessage] = useState<string | null>(null);
     const [shareMessage, setShareMessage] = useState<string | null>(null);
+    // Shown when the clipboard is blocked (embedded browsers, strict policies) so the
+    // link can still be copied by hand.
+    const [shareFallbackUrl, setShareFallbackUrl] = useState<string | null>(null);
     const [activeQuote, setActiveQuote] = useState<string | null>(null);
     const [quoteFocusKey, setQuoteFocusKey] = useState(0);
     const locate = useCallback((text: string) => {
@@ -176,11 +179,13 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
         const url = `${window.location.origin}/contracts/${review.id}`;
         try {
             await navigator.clipboard.writeText(url);
+            setShareFallbackUrl(null);
             setShareMessage("Tautan disalin");
+            window.setTimeout(() => setShareMessage(null), 3000);
         } catch {
-            setShareMessage("Tidak dapat menyalin tautan. Salin alamat dari bilah alamat.");
+            setShareMessage(null);
+            setShareFallbackUrl(url);
         }
-        window.setTimeout(() => setShareMessage(null), 3000);
     };
 
     const projectRedline = async () => {
@@ -311,6 +316,20 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                             <Link2 className="mr-1 h-3 w-3" /> Bagikan
                         </PillButtonUI>
                         {shareMessage ? <span className="text-xs text-gray-600" role="status">{shareMessage}</span> : null}
+                        {shareFallbackUrl ? (
+                            <label className="flex items-center gap-1.5 text-xs text-gray-600" role="status">
+                                Salin manual:
+                                <input
+                                    readOnly
+                                    autoFocus
+                                    value={shareFallbackUrl}
+                                    aria-label="Tautan tinjauan"
+                                    onFocus={(e) => e.currentTarget.select()}
+                                    onBlur={() => setShareFallbackUrl(null)}
+                                    className="w-72 max-w-full rounded border border-gray-200 bg-white px-2 py-0.5 font-mono text-[11px] text-gray-800"
+                                />
+                            </label>
+                        ) : null}
                         {review.contract_docx_path ? (
                             <a
                                 href={getContractDownloadUrl(review.id)}
