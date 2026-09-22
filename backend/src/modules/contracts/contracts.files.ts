@@ -11,7 +11,6 @@ import { randomUUID } from "node:crypto";
 import type { Db } from "../../lib/supabase";
 import {
   copyFile,
-  deleteFile,
   headFile,
   storageEnabled,
   uploadFile,
@@ -51,11 +50,9 @@ export async function attachDocxToReview(
   } catch (e) {
     return internalFailure(e);
   }
-  try {
-    await deleteFile(args.stashedKey);
-  } catch {
-    // The stash is best-effort garbage; the copy is what matters.
-  }
+  // The stash is deliberately kept: the new-review form reuses the same
+  // docx_key when the user retries after a failed AI run, and deleting it here
+  // made that second review land without a DOCX (NoSuchKey on copy).
   const { error } = await db.from("reviews").update({ contract_docx_path: target }).eq("id", args.reviewId);
   if (error) return internalFailure(error);
   return ok({ contract_docx_path: target });
@@ -81,6 +78,31 @@ export async function attachDocxBytesToReview(
   const { error } = await db.from("reviews").update({ contract_docx_path: target }).eq("id", args.reviewId);
   if (error) return internalFailure(error);
   return ok({ contract_docx_path: target });
+}
+
+const DOCX_FILENAME = /\.docx$/i;
+
+/**
+ * Repair path: attach an uploaded DOCX to a review that has none (for example
+ * when the original attach failed at creation time). Refuses to replace an
+ * existing original because tracked changes may already hang off it.
+ */
+export async function attachDocxUploadToReview(
+  db: Db,
+  args: { reviewId: string; buffer: Buffer; filename: string },
+): Promise<ServiceResult<{ contract_docx_path: string }>> {
+  if (!DOCX_FILENAME.test(args.filename.trim())) return failure("validation", "Hanya file DOCX yang diperbolehkan.");
+  if (args.buffer.byteLength === 0) return failure("validation", "File kosong.");
+  const { data, error } = await db
+    .from("reviews")
+    .select("id, contract_docx_path")
+    .eq("id", args.reviewId)
+    .maybeSingle();
+  if (error) return internalFailure(error);
+  const row = data as { id: string; contract_docx_path: string | null } | null;
+  if (!row) return failure("not_found", "Tinjauan tidak ditemukan.");
+  if (row.contract_docx_path) return failure("conflict", "Tinjauan ini sudah memiliki DOCX asli.");
+  return attachDocxBytesToReview(db, { reviewId: args.reviewId, buffer: args.buffer });
 }
 
 export type ReviewFileSource = { key: string; filename: string; size: number | null };

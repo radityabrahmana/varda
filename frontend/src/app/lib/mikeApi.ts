@@ -3223,6 +3223,26 @@ export interface ContractRedlineProjection {
 }
 
 /** Turn the AI revisions into tracked changes in the stored DOCX (idempotent). */
+export interface ContractDocxAttachment {
+    contract_docx_path: string;
+    projection: ContractRedlineProjection | null;
+}
+
+/** Re-attach the original DOCX to a review that was created without one. */
+export async function attachContractDocx(
+    reviewId: string,
+    file: File,
+): Promise<ContractDocxAttachment> {
+    return apiRequest<ContractDocxAttachment>(
+        `/contracts/${encodeURIComponent(reviewId)}/docx?filename=${encodeURIComponent(file.name)}`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/octet-stream" },
+            body: file,
+        },
+    );
+}
+
 export async function projectContractRedline(
     reviewId: string,
 ): Promise<ContractRedlineProjection> {
