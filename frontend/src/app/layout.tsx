@@ -15,7 +15,7 @@ const ebGaramond = EB_Garamond({
 });
 
 export const metadata: Metadata = {
-    metadataBase: new URL("https://app.mikeoss.com"),
+    metadataBase: new URL("https://varda.dashelectric.co"),
     title: "Varda - AI Legal Platform",
     description:
         "AI-powered legal document analysis and contract review platform.",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     },
     openGraph: {
         type: "website",
-        url: "https://app.mikeoss.com",
+        url: "https://varda.dashelectric.co",
         siteName: "Varda",
         title: "Varda - AI Legal Platform",
         description:
