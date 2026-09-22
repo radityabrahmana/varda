@@ -124,7 +124,10 @@ export async function projectRevisions(db: Db, args: { reviewId: string }): Prom
 
   const existingR = await listRevisionEdits(db, review.id);
   if (!existingR.ok) return existingR;
-  const done = new Set(existingR.data.map((e) => e.revision_id));
+  // A row that never reached the document (anchor error, no change id) is
+  // retried, so a fixed matcher or an edited revision gets another pass;
+  // projected or resolved rows are final.
+  const done = new Set(existingR.data.filter((e) => !(e.error && !e.change_id)).map((e) => e.revision_id));
   const pending = revisions.filter((r) => r.id && !done.has(r.id));
   if (pending.length === 0) return ok({ projected: 0, failed: 0, skipped: revisions.length, edits: existingR.data });
 
@@ -176,7 +179,10 @@ export async function projectRevisions(db: Db, args: { reviewId: string }): Prom
     if (uErr) return internalFailure(uErr);
   }
 
-  const { data: inserted, error: iErr } = await db.from("review_revision_edits").insert(rows).select("*");
+  const { data: inserted, error: iErr } = await db
+    .from("review_revision_edits")
+    .upsert(rows, { onConflict: "review_id,revision_id" })
+    .select("*");
   if (iErr) return internalFailure(iErr);
 
   return ok({
