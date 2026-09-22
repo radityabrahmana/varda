@@ -18,6 +18,7 @@ import { SsoAuthButton } from "@/app/components/auth/SsoAuthButton";
 import { GoogleAuthButton } from "@/app/components/auth/GoogleAuthButton";
 import { FieldLabel } from "@/app/components/ui/form-field";
 import { knownErrorCodeMessage } from "@/app/lib/userFacingError";
+import { requestedAuthNext } from "@/app/lib/authRedirects";
 
 const LOGIN_ERROR_MESSAGES = {
     invalid_credentials: "The email or password is incorrect.",
@@ -40,7 +41,7 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (!authLoading && isAuthenticated) {
-            router.replace("/onboarding/profile");
+            router.replace(requestedAuthNext("/onboarding/profile"));
         }
     }, [authLoading, isAuthenticated, router]);
 
@@ -52,7 +53,7 @@ export default function LoginPage() {
         try {
             await login(email, password);
             await refreshSession();
-            router.push("/onboarding/profile");
+            router.push(requestedAuthNext("/onboarding/profile"));
         } catch (error: unknown) {
             setError(
                 knownErrorCodeMessage(
@@ -145,6 +146,7 @@ export default function LoginPage() {
                             onError={setError}
                             disabled={loading}
                             onLoadingChange={setLoading}
+                            next={requestedAuthNext("/onboarding/profile")}
                         />
                         <SsoAuthButton disabled={loading} />
                     </form>

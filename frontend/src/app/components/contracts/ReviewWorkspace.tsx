@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { Download, FileDiff } from "lucide-react";
+import { Download, FileDiff, Link2 } from "lucide-react";
 import { MikeApiError, generateContractMemo, getContract, getContractDownloadUrl, patchContract, projectContractRedline, type ContractPatch } from "@/app/lib/mikeApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PageHeader } from "@/app/components/shared/PageHeader";
@@ -62,6 +62,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
     const [memoError, setMemoError] = useState<string | null>(null);
     const [projecting, setProjecting] = useState(false);
     const [projectMessage, setProjectMessage] = useState<string | null>(null);
+    const [shareMessage, setShareMessage] = useState<string | null>(null);
     const [activeQuote, setActiveQuote] = useState<string | null>(null);
     const [quoteFocusKey, setQuoteFocusKey] = useState(0);
     const locate = useCallback((text: string) => {
@@ -168,6 +169,19 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
         // The working DOCX changed on the server; make the viewer refetch it.
         setDocRefetchKey((k) => k + 1);
     }, []);
+
+    // Reps paste this into Slack; the recipient logs in and lands on this contract.
+    const shareLink = async () => {
+        if (!review) return;
+        const url = `${window.location.origin}/contracts/${review.id}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setShareMessage("Tautan disalin");
+        } catch {
+            setShareMessage("Tidak dapat menyalin tautan. Salin alamat dari bilah alamat.");
+        }
+        window.setTimeout(() => setShareMessage(null), 3000);
+    };
 
     const projectRedline = async () => {
         if (!review) return;
@@ -293,6 +307,10 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                             </span>
                         ) : null}
                         <StatusPill review={review} onUpdate={onReviewPatched} />
+                        <PillButtonUI tone="white" size="xs" onClick={() => void shareLink()} title="Salin tautan tinjauan ini untuk dibagikan di Slack">
+                            <Link2 className="mr-1 h-3 w-3" /> Bagikan
+                        </PillButtonUI>
+                        {shareMessage ? <span className="text-xs text-gray-600" role="status">{shareMessage}</span> : null}
                         {review.contract_docx_path ? (
                             <a
                                 href={getContractDownloadUrl(review.id)}

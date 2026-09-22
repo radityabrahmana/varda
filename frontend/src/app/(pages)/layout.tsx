@@ -11,6 +11,7 @@ import { AppSidebar } from "@/app/components/shared/AppSidebar";
 import { FullScreenLoader } from "@/app/components/shared/FullScreenLoader";
 import { HeaderButtonUI, HeaderButtonsUI } from "@/shared/ui/HeaderButtonsUI";
 import { cn } from "@/app/lib/utils";
+import { loginUrlForCurrentLocation } from "@/app/lib/authRedirects";
 
 export default function MikeLayout({
     children,
@@ -101,7 +102,7 @@ export default function MikeLayout({
 
     useEffect(() => {
         if (!authLoading && !isAuthenticated) {
-            router.push("/login");
+            router.push(loginUrlForCurrentLocation());
         }
     }, [authLoading, isAuthenticated, router]);
 
