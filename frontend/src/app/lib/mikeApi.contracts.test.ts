@@ -20,6 +20,7 @@ import {
     saveContractClause,
     setNegotiationPointStatus,
     uploadContractFile,
+    attachContractDocx,
 } from "./mikeApi";
 
 const fetchMock = vi.fn();
@@ -69,6 +70,18 @@ describe("contracts API wrappers", () => {
 
         expect(detail.review.id).toBe("r 1");
         expect(lastFetchCall().url).toBe("/api/contracts/r%201");
+    });
+
+    it("attachContractDocx posts the raw file to the review's docx endpoint", async () => {
+        fetchMock.mockResolvedValue(
+            new Response(JSON.stringify({ contract_docx_path: "contracts/r1/original.docx", projection: null }), { status: 200, headers: { "Content-Type": "application/json" } }),
+        );
+        const file = new File(["PK"], "Draft PKS.docx");
+        const out = await attachContractDocx("r1", file);
+        expect(out.contract_docx_path).toBe("contracts/r1/original.docx");
+        const call = fetchMock.mock.calls.at(-1)!;
+        expect(String(call[0])).toContain("/contracts/r1/docx?filename=Draft%20PKS.docx");
+        expect(call[1]).toMatchObject({ method: "POST", body: file });
     });
 
     it("getContractFileUrl points at the gateway stream", () => {

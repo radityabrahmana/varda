@@ -36,6 +36,7 @@ import {
   CONTRACT_UPLOAD_MAX_BYTES,
   DOCX_MIME,
   attachDocxToReview,
+  attachDocxUploadToReview,
   createComment,
   createFeedback,
   createFeedbackBulk,
@@ -167,6 +168,21 @@ contractsRouter.get("/:id/file", asyncRoute(async (req, res) => {
     else console.error("[contracts] file stream failed", error);
   }
 }));
+
+// Repair path for a review whose DOCX was never persisted: accept the original
+// again, then project the AI revisions onto it so the redline appears.
+contractsRouter.post(
+  "/:id/docx",
+  express.raw({ type: () => true, limit: CONTRACT_UPLOAD_MAX_BYTES }),
+  asyncRoute(async (req, res) => {
+    const buffer = Buffer.isBuffer(req.body) ? Buffer.from(req.body) : Buffer.alloc(0);
+    const db = createServerSupabase();
+    const attached = await attachDocxUploadToReview(db, { reviewId: req.params.id, buffer, filename: uploadFilename(req) });
+    if (!attached.ok) return void sendServiceFailure(res, attached);
+    const projection = await projectRevisions(db, { reviewId: req.params.id });
+    res.json({ ...attached.data, projection: projection.ok ? projection.data : null });
+  }),
+);
 
 contractsRouter.post("/:id/redline/project", asyncRoute(async (req, res) => {
   const result = await projectRevisions(createServerSupabase(), { reviewId: req.params.id });

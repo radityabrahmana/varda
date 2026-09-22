@@ -20,7 +20,7 @@ vi.mock("../../../lib/storage", async (importOriginal) => ({
   headFile: mocks.headFile,
 }));
 
-import { attachDocxToReview, getReviewFileSource, isStashedDocxKey, parseCreateReviewBody, stashUploadedDocx } from "../contracts.service";
+import { attachDocxToReview, attachDocxUploadToReview, getReviewFileSource, isStashedDocxKey, parseCreateReviewBody, stashUploadedDocx } from "../contracts.service";
 
 describe("stashUploadedDocx", () => {
   it("uploads under contracts/uploads/<uuid>.docx when storage is on", async () => {
@@ -47,12 +47,12 @@ describe("parseCreateReviewBody + contract_docx_path", () => {
 });
 
 describe("attachDocxToReview", () => {
-  it("copies to contracts/<reviewId>/original.docx, drops the stash, and records the path", async () => {
+  it("copies to contracts/<reviewId>/original.docx, keeps the stash for retries, and records the path", async () => {
     const fake = scriptedDb([{ table: "reviews", op: "update", data: null }]);
     const r = await attachDocxToReview(fake.db as unknown as Db, { reviewId: "r1", stashedKey: "contracts/uploads/x.docx" });
     expect(r).toMatchObject({ ok: true, data: { contract_docx_path: "contracts/r1/original.docx" } });
     expect(mocks.copyFile).toHaveBeenCalledWith("contracts/uploads/x.docx", "contracts/r1/original.docx");
-    expect(mocks.deleteFile).toHaveBeenCalledWith("contracts/uploads/x.docx");
+    expect(mocks.deleteFile).not.toHaveBeenCalled();
     expect(fake.calls[0].payload).toEqual({ contract_docx_path: "contracts/r1/original.docx" });
     expect(fake.calls[0].filters).toEqual([["eq", "id", "r1"]]);
   });
@@ -70,5 +70,25 @@ describe("getReviewFileSource", () => {
     const fake = scriptedDb([{ table: "reviews", data: { contract_docx_path: "contracts/r1/original.docx", contract_filename: null, title: "PKS — A" } }]);
     const r = await getReviewFileSource(fake.db as unknown as Db, "r1");
     expect(r).toMatchObject({ ok: true, data: { key: "contracts/r1/original.docx", filename: "PKS — A.docx", size: 1234 } });
+  });
+});
+
+describe("attachDocxUploadToReview", () => {
+  it("uploads the bytes to the permanent key for a review without a DOCX", async () => {
+    mocks.uploadFile.mockClear();
+    const fake = scriptedDb([
+      { table: "reviews", data: { id: "r1", contract_docx_path: null } },
+      { table: "reviews", op: "update", data: null },
+    ]);
+    const r = await attachDocxUploadToReview(fake.db as unknown as Db, { reviewId: "r1", buffer: Buffer.from("PK"), filename: "Draft PKS.docx" });
+    expect(r).toMatchObject({ ok: true, data: { contract_docx_path: "contracts/r1/original.docx" } });
+    expect(mocks.uploadFile).toHaveBeenCalledWith("contracts/r1/original.docx", expect.any(ArrayBuffer), expect.stringContaining("wordprocessingml"));
+    expect(fake.calls[1].payload).toEqual({ contract_docx_path: "contracts/r1/original.docx" });
+  });
+
+  it("refuses non-DOCX files, unknown reviews, and reviews that already have an original", async () => {
+    expect(await attachDocxUploadToReview(scriptedDb([]).db as unknown as Db, { reviewId: "r1", buffer: Buffer.from("x"), filename: "a.pdf" })).toMatchObject({ ok: false, kind: "validation" });
+    expect(await attachDocxUploadToReview(scriptedDb([{ table: "reviews", data: null }]).db as unknown as Db, { reviewId: "r1", buffer: Buffer.from("x"), filename: "a.docx" })).toMatchObject({ ok: false, kind: "not_found" });
+    expect(await attachDocxUploadToReview(scriptedDb([{ table: "reviews", data: { id: "r1", contract_docx_path: "contracts/r1/original.docx" } }]).db as unknown as Db, { reviewId: "r1", buffer: Buffer.from("x"), filename: "a.docx" })).toMatchObject({ ok: false, kind: "conflict" });
   });
 });

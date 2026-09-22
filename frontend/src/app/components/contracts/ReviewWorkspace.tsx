@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { Download, FileDiff, Link2 } from "lucide-react";
-import { MikeApiError, generateContractMemo, getContract, getContractDownloadUrl, patchContract, projectContractRedline, type ContractPatch } from "@/app/lib/mikeApi";
+import { Download, FileDiff, Link2, Upload } from "lucide-react";
+import { MikeApiError, attachContractDocx, generateContractMemo, getContract, getContractDownloadUrl, patchContract, projectContractRedline, type ContractPatch } from "@/app/lib/mikeApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PageHeader } from "@/app/components/shared/PageHeader";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
@@ -63,6 +63,9 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
     const [projecting, setProjecting] = useState(false);
     const [projectMessage, setProjectMessage] = useState<string | null>(null);
     const [shareMessage, setShareMessage] = useState<string | null>(null);
+    const [attachingDocx, setAttachingDocx] = useState(false);
+    const [attachMessage, setAttachMessage] = useState<string | null>(null);
+    const docxInputRef = useRef<HTMLInputElement>(null);
     // Shown when the clipboard is blocked (embedded browsers, strict policies) so the
     // link can still be copied by hand.
     const [shareFallbackUrl, setShareFallbackUrl] = useState<string | null>(null);
@@ -185,6 +188,27 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
         } catch {
             setShareMessage(null);
             setShareFallbackUrl(url);
+        }
+    };
+
+    // Repair: the original DOCX was not persisted at creation (storage hiccup or a
+    // retried upload), so the workspace is in HTML-only mode without redlines.
+    const attachDocx = async (file: File) => {
+        if (!review) return;
+        setAttachingDocx(true);
+        setAttachMessage(null);
+        try {
+            const result = await attachContractDocx(review.id, file);
+            const detail = await getContract(review.id);
+            setState({ kind: "ready", detail });
+            setDocRefetchKey((k) => k + 1);
+            const projected = result.projection?.projected ?? 0;
+            setAttachMessage(projected ? `DOCX tersimpan; ${projected} revisi dipetakan ke dokumen.` : "DOCX tersimpan.");
+        } catch (e) {
+            setAttachMessage(userFacingApiError(e, "Gagal menyimpan DOCX."));
+        } finally {
+            setAttachingDocx(false);
+            if (docxInputRef.current) docxInputRef.current.value = "";
         }
     };
 
@@ -339,6 +363,31 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                                 <Download className="h-3.5 w-3.5" /> Ekspor
                             </a>
                         ) : null}
+                        {!review.contract_docx_path ? (
+                            <>
+                                <input
+                                    ref={docxInputRef}
+                                    type="file"
+                                    accept=".docx"
+                                    className="hidden"
+                                    aria-label="Pilih file DOCX asli"
+                                    onChange={(e) => {
+                                        const f = e.target.files?.[0];
+                                        if (f) void attachDocx(f);
+                                    }}
+                                />
+                                <PillButtonUI
+                                    tone="white"
+                                    size="xs"
+                                    onClick={() => docxInputRef.current?.click()}
+                                    loading={attachingDocx}
+                                    title="DOCX asli belum tersimpan, sehingga redline tidak dapat ditampilkan. Unggah ulang file kontraknya."
+                                >
+                                    <Upload className="mr-1 h-3 w-3" /> Unggah DOCX asli
+                                </PillButtonUI>
+                            </>
+                        ) : null}
+                        {attachMessage ? <span className="text-xs text-gray-600" role="status">{attachMessage}</span> : null}
                         {review.contract_docx_path && (output.revisions.length > editsByRevision.size) ? (
                             <PillButtonUI tone="white" size="xs" onClick={projectRedline} loading={projecting}>
                                 <FileDiff className="mr-1 h-3 w-3" /> Petakan revisi ke dokumen

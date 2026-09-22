@@ -87,6 +87,7 @@ export {
   DOCX_MIME,
   attachDocxBytesToReview,
   attachDocxToReview,
+  attachDocxUploadToReview,
   getReviewFileSource,
   isStashedDocxKey,
   originalDocxKey,

@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
     setNegotiationPointStatus: vi.fn(),
     postContractFeedbackBulk: vi.fn(),
     postContractComment: vi.fn(),
+    attachContractDocx: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -38,6 +39,7 @@ vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
     setNegotiationPointStatus: mocks.setNegotiationPointStatus,
     postContractFeedbackBulk: mocks.postContractFeedbackBulk,
     postContractComment: mocks.postContractComment,
+    attachContractDocx: mocks.attachContractDocx,
 }));
 
 const DETAIL: ContractReviewDetail = {
@@ -194,6 +196,25 @@ describe("ReviewWorkspace", () => {
         const field = await screen.findByRole("textbox", { name: "Tautan tinjauan" });
         expect(field).toHaveValue(`${window.location.origin}/contracts/r1`);
         expect(screen.queryByText("Tautan disalin")).not.toBeInTheDocument();
+    });
+
+    it("offers to re-upload the original DOCX when none was persisted and reloads after attaching", async () => {
+        mocks.getContract.mockResolvedValueOnce(DETAIL).mockResolvedValueOnce({
+            ...DETAIL,
+            review: { ...DETAIL.review, contract_docx_path: "contracts/r1/original.docx" },
+        });
+        mocks.attachContractDocx.mockResolvedValue({ contract_docx_path: "contracts/r1/original.docx", projection: { projected: 2, failed: 0, skipped: 0 } });
+        const user = userEvent.setup();
+        render(<ReviewWorkspace reviewId="r1" />);
+
+        expect(await screen.findByRole("button", { name: /Unggah DOCX asli/ })).toBeInTheDocument();
+        const file = new File(["PK"], "Draft PKS.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+        await user.upload(screen.getByLabelText("Pilih file DOCX asli"), file);
+
+        await waitFor(() => expect(mocks.attachContractDocx).toHaveBeenCalledWith("r1", file));
+        expect(await screen.findByText("DOCX tersimpan; 2 revisi dipetakan ke dokumen.")).toBeInTheDocument();
+        expect(mocks.getContract).toHaveBeenCalledTimes(2);
+        expect(screen.queryByRole("button", { name: /Unggah DOCX asli/ })).not.toBeInTheDocument();
     });
 
     it("shows the not-found message on a 404", async () => {
