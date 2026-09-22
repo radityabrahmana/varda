@@ -80,7 +80,11 @@ describe("auth routes", () => {
     process.env.FRONTEND_URL = origin;
     process.env.NODE_ENV = "production";
     delete process.env.WORD_ADDIN_URL;
-    for (const key of ["SSO_ENABLED", "SSO_ALLOWED_DOMAINS"])
+    for (const key of [
+      "SSO_ENABLED",
+      "SSO_ALLOWED_DOMAINS",
+      "SIGNUP_ALLOWED_DOMAINS",
+    ])
       delete process.env[key];
     createRequestSupabase.mockReset().mockReturnValue(authClient);
     clearRequestAuthCookies.mockReset();
@@ -92,6 +96,96 @@ describe("auth routes", () => {
     for (const method of Object.values(authClient.auth.mfa)) {
       method.mockReset();
     }
+  });
+
+  it("refuses password sign-up outside SIGNUP_ALLOWED_DOMAINS before calling GoTrue", async () => {
+    process.env.SIGNUP_ALLOWED_DOMAINS = "dashelectric.co";
+
+    const response = await request(app)
+      .post("/auth/signup")
+      .set("Origin", origin)
+      .send({ email: "someone@gmail.com", password: "correct horse battery" });
+
+    expect(response.status).toBe(403);
+    expect(response.body).toEqual({
+      code: "signup_domain_not_allowed",
+      detail: "Sign-up is limited to approved company email addresses.",
+    });
+    expect(authClient.auth.signUp).not.toHaveBeenCalled();
+  });
+
+  it("allows password sign-up for an allowed domain regardless of case", async () => {
+    process.env.SIGNUP_ALLOWED_DOMAINS = "dashelectric.co, example.test";
+    authClient.auth.signUp.mockResolvedValue({
+      data: { user: { id: "user-2", email: "robert@DashElectric.co" }, session: null },
+      error: null,
+    });
+
+    const response = await request(app)
+      .post("/auth/signup")
+      .set("Origin", origin)
+      .send({ email: "robert@DashElectric.co", password: "correct horse battery" });
+
+    expect(response.status).toBe(201);
+    expect(response.body.requiresEmailConfirmation).toBe(true);
+    expect(authClient.auth.signUp).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves sign-up open when SIGNUP_ALLOWED_DOMAINS is unset", async () => {
+    authClient.auth.signUp.mockResolvedValue({
+      data: { user, session: null },
+      error: null,
+    });
+
+    const response = await request(app)
+      .post("/auth/signup")
+      .set("Origin", origin)
+      .send({ email: "someone@gmail.com", password: "correct horse battery" });
+
+    expect(response.status).toBe(201);
+  });
+
+  it("revokes a fresh OAuth account from outside SIGNUP_ALLOWED_DOMAINS", async () => {
+    process.env.SIGNUP_ALLOWED_DOMAINS = "dashelectric.co";
+    authClient.auth.exchangeCodeForSession.mockResolvedValue({
+      data: {
+        user: { id: "user-3", email: "new@gmail.com", created_at: new Date().toISOString() },
+        session,
+      },
+      error: null,
+    });
+    authClient.auth.signOut.mockResolvedValue({ error: null });
+
+    const response = await request(app)
+      .post("/auth/exchange")
+      .set("Origin", origin)
+      .send({ code: "oauth-code" });
+
+    expect(response.status).toBe(403);
+    expect(response.body.code).toBe("signup_domain_not_allowed");
+    expect(authClient.auth.signOut).toHaveBeenCalledWith({ scope: "global" });
+    expect(clearRequestAuthCookies).toHaveBeenCalled();
+    expect(JSON.stringify(response.body)).not.toContain("server-only-token");
+  });
+
+  it("keeps letting an established account outside the allowed domains log in via OAuth", async () => {
+    process.env.SIGNUP_ALLOWED_DOMAINS = "dashelectric.co";
+    authClient.auth.exchangeCodeForSession.mockResolvedValue({
+      data: {
+        user: { id: "user-4", email: "admin@gmail.com", created_at: "2026-07-03T00:00:00.000Z" },
+        session,
+      },
+      error: null,
+    });
+
+    const response = await request(app)
+      .post("/auth/exchange")
+      .set("Origin", origin)
+      .send({ code: "oauth-code" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.email).toBe("admin@gmail.com");
+    expect(authClient.auth.signOut).not.toHaveBeenCalled();
   });
 
   it("rejects an auth mutation from an untrusted origin", async () => {

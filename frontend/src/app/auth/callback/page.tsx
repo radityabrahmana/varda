@@ -9,6 +9,12 @@ import { pillButtonUIClassName } from "@/shared/ui/PillButtonUI.styles";
 import { authGlassCardClassName } from "@/app/components/auth/authStyles";
 import { authErrorDescription, safeAuthNext } from "@/app/lib/authRedirects";
 import { exchangeAuthCode, getAuthSession } from "@/app/lib/authApi";
+import { knownErrorCodeMessage } from "@/app/lib/userFacingError";
+
+const EXCHANGE_ERROR_MESSAGES = {
+    signup_domain_not_allowed:
+        "Sign-up is limited to approved company email addresses.",
+} as const;
 import { useAuth } from "@/app/contexts/AuthContext";
 
 function AuthCallbackContent() {
@@ -43,8 +49,14 @@ function AuthCallbackContent() {
                 try {
                     await exchangeAuthCode(code);
                     await refreshSession();
-                } catch {
-                    setError("This confirmation link is invalid or has expired.");
+                } catch (error: unknown) {
+                    setError(
+                        knownErrorCodeMessage(
+                            error,
+                            EXCHANGE_ERROR_MESSAGES,
+                            "This confirmation link is invalid or has expired.",
+                        ),
+                    );
                     return;
                 }
             } else {

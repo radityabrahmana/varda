@@ -22,6 +22,8 @@ const SIGNUP_ERROR_MESSAGES = {
     over_email_send_rate_limit:
         "Too many signup emails were requested. Please wait and try again.",
     weak_password: "Choose a stronger password and try again.",
+    signup_domain_not_allowed:
+        "Sign-up is limited to approved company email addresses.",
 } as const;
 import {
     MIN_PASSWORD_LENGTH,
