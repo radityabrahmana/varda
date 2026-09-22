@@ -1,4 +1,4 @@
-// Facade for the contracts module (Janus contract review ported into Mike).
+// Facade for the contracts module (Janus contract review ported into Varda).
 // Other code reaches this module only through these named exports.
 
 export {

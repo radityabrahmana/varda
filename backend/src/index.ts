@@ -85,7 +85,7 @@ async function main(): Promise<void> {
 
   server = app.listen(PORT, () => {
     console.log(
-      `Mike backend running on port ${PORT} (workers: ${WORKERS_MODE})`,
+      `Varda backend running on port ${PORT} (workers: ${WORKERS_MODE})`,
     );
     if (WORKERS_MODE === "thread") {
       spawnWorkerThread();

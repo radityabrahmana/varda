@@ -27,7 +27,7 @@ import { startAllWorkers, stopAllWorkers } from "./workerRuntime";
 async function main(): Promise<void> {
   await enforceDocumentLifecycleMigration();
   startAllWorkers();
-  console.log("Mike worker process running");
+  console.log("Varda worker process running");
 }
 
 void main();

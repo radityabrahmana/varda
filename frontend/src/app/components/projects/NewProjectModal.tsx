@@ -661,7 +661,7 @@ export function NewProjectModal({ open, onClose, onCreated }: Props) {
                                 }}
                                 aria-label="Enable project memory"
                             >
-                                Let Mike remember shared project context
+                                Let Varda remember shared project context
                             </ToggleSwitchUI>
                         </div>
                     </div>

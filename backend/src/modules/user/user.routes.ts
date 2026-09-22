@@ -117,7 +117,7 @@ function mcpOAuthPopupHtml(payload: {
   <body>
     <main>
       <h1>${payload.success ? "Authorization complete" : "Authorization failed"}</h1>
-      <p>${payload.success ? "You can return to Mike." : "Return to Mike and try connecting again."}</p>
+      <p>${payload.success ? "You can return to Varda." : "Return to Varda and try connecting again."}</p>
     </main>
     <script nonce="${nonce}">
       const message = ${message};
@@ -562,9 +562,9 @@ userRouter.post(
         );
         if (!result.ok) {
             // NOT a 401: since authentication moved to HttpOnly cookies the
-            // browser treats every 401 from this API as "your Mike session is
+            // browser treats every 401 from this API as "your Varda session is
             // gone" and logs the user out (frontend authenticatedFetch). This
-            // is the UPSTREAM server wanting authorization, and the Mike
+            // is the UPSTREAM server wanting authorization, and the Varda
             // session is fine — 409 says "the connector is not in a state
             // where tools can be listed"; the client keys on `code`.
             if (result.kind === "oauth_required")

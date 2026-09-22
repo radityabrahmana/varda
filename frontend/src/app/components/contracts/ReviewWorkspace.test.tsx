@@ -260,7 +260,7 @@ describe("ReviewWorkspace", () => {
         expect(await within(card).findByText("Umpan balik tercatat")).toBeInTheDocument();
     });
 
-    it("renders the DOCX through Mike's viewer when an original is persisted and locates findings in it", async () => {
+    it("renders the DOCX through Varda's viewer when an original is persisted and locates findings in it", async () => {
         const detailWithDocx = {
             ...DETAIL,
             review: {

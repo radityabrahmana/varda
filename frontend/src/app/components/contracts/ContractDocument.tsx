@@ -8,9 +8,9 @@ import { ContractHtmlView } from "./ContractHtmlView";
 import type { ReviewDetailRow } from "./reviewTypes";
 
 // Left pane of the workspace. Reviews with a persisted original render the real
-// DOCX through Mike's viewer (tracked changes render natively); older reviews
+// DOCX through Varda's viewer (tracked changes render natively); older reviews
 // fall back to the sanitized mammoth HTML. Both support "Lihat di dokumen":
-// the active finding's highlight_text is located with Mike's quote matcher.
+// the active finding's highlight_text is located with Varda's quote matcher.
 
 export interface ContractDocumentProps {
     review: ReviewDetailRow;

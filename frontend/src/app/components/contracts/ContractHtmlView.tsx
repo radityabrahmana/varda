@@ -4,8 +4,8 @@ import { useMemo } from "react";
 import DOMPurify from "dompurify";
 
 // Read-only rendering of the mammoth-extracted contract HTML. This is the
-// fallback for reviews that have no DOCX persisted in Mike (all reviews created
-// before Phase 5 slice 3); reviews with a DOCX use Mike's DocxView instead.
+// fallback for reviews that have no DOCX persisted in Varda (all reviews created
+// before Phase 5 slice 3); reviews with a DOCX use Varda's DocxView instead.
 // Inline styles are stripped by the sanitizer, so the bilingual two-column
 // table layout Janus relied on is reproduced with the selectors below.
 const CONTRACT_HTML_SANITIZER_CONFIG = {

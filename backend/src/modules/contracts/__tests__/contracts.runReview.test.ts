@@ -42,7 +42,7 @@ describe("runReview", () => {
     mocks.projectRevisions.mockResolvedValue({ ok: true, data: { projected: 0, failed: 0, skipped: 0, edits: [] } });
   });
 
-  it("builds the prompt from Mike's active playbook and stores the result", async () => {
+  it("builds the prompt from Varda's active playbook and stores the result", async () => {
     mocks.listPromptRules.mockResolvedValue(RULES);
     mocks.runContractReviewAi.mockResolvedValue(OUTPUT);
     const { db, calls } = scriptedDb([{ table: "reviews", op: "update", data: null }]);

@@ -328,7 +328,7 @@ export function AskInputPopup({
             if (item.skipped) return `${index + 1}. Skipped document request.`;
             return `${index + 1}. Documents attached: ${item.filenames.join(", ")}`;
         });
-        return `Responses to Mike's questions:\n${lines.join("\n\n")}`;
+        return `Responses to Varda's questions:\n${lines.join("\n\n")}`;
     };
 
     // Called straight from the handler that resolves the last outstanding
