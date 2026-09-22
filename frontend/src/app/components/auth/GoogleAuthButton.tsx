@@ -9,12 +9,15 @@ interface GoogleAuthButtonProps {
     onError: (message: string) => void;
     disabled?: boolean;
     onLoadingChange?: (loading: boolean) => void;
+    /** Safe internal path to land on after Google returns. */
+    next?: string;
 }
 
 export function GoogleAuthButton({
     onError,
     disabled = false,
     onLoadingChange,
+    next = "/onboarding/profile",
 }: GoogleAuthButtonProps) {
     const [loading, setLoading] = useState(false);
 
@@ -24,7 +27,7 @@ export function GoogleAuthButton({
         onError("");
 
         try {
-            const { url } = await startGoogleOAuth("/onboarding/profile");
+            const { url } = await startGoogleOAuth(next);
             window.location.assign(url);
         } catch (error: unknown) {
             onError(

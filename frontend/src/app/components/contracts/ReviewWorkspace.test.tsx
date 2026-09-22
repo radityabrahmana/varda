@@ -170,6 +170,19 @@ describe("ReviewWorkspace", () => {
         expect(mocks.getContract).toHaveBeenCalledWith("r1");
     });
 
+    it("copies the contract link for Slack and confirms it", async () => {
+        mocks.getContract.mockResolvedValue(DETAIL);
+        // user-event installs its own clipboard stub during setup; spy on that one.
+        const user = userEvent.setup();
+        const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+        render(<ReviewWorkspace reviewId="r1" />);
+
+        await user.click(await screen.findByRole("button", { name: /Bagikan/ }));
+
+        expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/contracts/r1`);
+        expect(await screen.findByRole("status")).toHaveTextContent("Tautan disalin");
+    });
+
     it("shows the not-found message on a 404", async () => {
         mocks.getContract.mockRejectedValue(new MikeApiError({ message: "nf", status: 404 }));
 

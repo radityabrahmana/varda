@@ -7,6 +7,35 @@ const AUTH_REDIRECT_PATHS = new Set([
     "/onboarding/practice",
 ]);
 
+// Deep-linkable app sections: a shared link such as /contracts/<id> must
+// survive the login round-trip so the recipient lands on that contract.
+const AUTH_REDIRECT_PREFIXES = ["/contracts", "/playbook"];
+
+function isAllowedAuthPath(pathname: string): boolean {
+    if (AUTH_REDIRECT_PATHS.has(pathname)) return true;
+    return AUTH_REDIRECT_PREFIXES.some(
+        (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+}
+
+/**
+ * Where an unauthenticated visitor should be sent to log in, remembering the
+ * page they asked for when it is a safe internal destination.
+ */
+export function loginUrlForCurrentLocation(): string {
+    if (typeof window === "undefined") return "/login";
+    const here = `${window.location.pathname}${window.location.search}`;
+    const next = safeAuthNext(here, "");
+    return next ? `/login?next=${encodeURIComponent(next)}` : "/login";
+}
+
+/** The `next` carried on the current auth page URL, or the fallback. */
+export function requestedAuthNext(fallback: string): string {
+    if (typeof window === "undefined") return fallback;
+    const next = new URLSearchParams(window.location.search).get("next");
+    return safeAuthNext(next, fallback);
+}
+
 export function safeAuthNext(
     candidate: string | null | undefined,
     fallback = "/assistant",
@@ -26,7 +55,7 @@ export function safeAuthNext(
     const resolved = new URL(candidate, base);
     if (
         resolved.origin !== base.origin ||
-        !AUTH_REDIRECT_PATHS.has(resolved.pathname)
+        !isAllowedAuthPath(resolved.pathname)
     ) {
         return fallback;
     }

@@ -3,6 +3,8 @@ import {
     authCallbackUrl,
     authErrorDescription,
     browserAuthCallbackUrl,
+    loginUrlForCurrentLocation,
+    requestedAuthNext,
     safeAuthNext,
 } from "./authRedirects";
 
@@ -28,6 +30,16 @@ describe("safeAuthNext", () => {
         "/settings\n/assistant",
     ])("rejects unsafe destination %s", (candidate) => {
         expect(safeAuthNext(candidate)).toBe("/assistant");
+    });
+
+    it("allows deep links into contracts and the playbook", () => {
+        expect(safeAuthNext("/contracts")).toBe("/contracts");
+        expect(safeAuthNext("/contracts/75dc9499-012b-4011-b5db-12ed2eeecaf0")).toBe(
+            "/contracts/75dc9499-012b-4011-b5db-12ed2eeecaf0",
+        );
+        expect(safeAuthNext("/contracts/new?client=x")).toBe("/contracts/new?client=x");
+        expect(safeAuthNext("/playbook")).toBe("/playbook");
+        expect(safeAuthNext("/contractsX")).toBe("/assistant");
     });
 
     it("uses a caller-provided fallback when no destination is supplied", () => {
@@ -75,5 +87,25 @@ describe("authErrorDescription", () => {
             authErrorDescription("", "#error_description=Invalid+request"),
         ).toBe("This confirmation link is invalid or has expired.");
         expect(authErrorDescription("", "")).toBeNull();
+    });
+});
+
+describe("login round-trip helpers", () => {
+    it("remembers a safe current page in the login URL and drops unsafe ones", () => {
+        window.history.replaceState({}, "", "/contracts/abc?tab=draft");
+        expect(loginUrlForCurrentLocation()).toBe(
+            "/login?next=%2Fcontracts%2Fabc%3Ftab%3Ddraft",
+        );
+        window.history.replaceState({}, "", "/somewhere-else");
+        expect(loginUrlForCurrentLocation()).toBe("/login");
+    });
+
+    it("reads the requested next from the auth page URL with a fallback", () => {
+        window.history.replaceState({}, "", "/login?next=%2Fcontracts%2Fabc");
+        expect(requestedAuthNext("/onboarding/profile")).toBe("/contracts/abc");
+        window.history.replaceState({}, "", "/login?next=https%3A%2F%2Fevil.example");
+        expect(requestedAuthNext("/onboarding/profile")).toBe("/onboarding/profile");
+        window.history.replaceState({}, "", "/login");
+        expect(requestedAuthNext("/onboarding/profile")).toBe("/onboarding/profile");
     });
 });

@@ -64,6 +64,26 @@ describe("LoginPage", () => {
         expect(push).toHaveBeenCalledWith("/onboarding/profile");
     });
 
+    it("returns to the shared contract after logging in and hands Google the same destination", async () => {
+        window.history.replaceState({}, "", "/login?next=%2Fcontracts%2Fr1");
+        login.mockResolvedValue({ user: { id: "user-1" } });
+        startGoogleOAuth.mockResolvedValue({ url: "https://accounts.google.test/authorize" });
+        const assign = vi.fn();
+        vi.stubGlobal("location", { ...window.location, assign, search: "?next=%2Fcontracts%2Fr1" });
+        const user = userEvent.setup();
+        render(<LoginPage />);
+
+        await user.type(screen.getByRole("textbox", { name: "Email" }), "robert@dashelectric.co");
+        await user.type(screen.getByLabelText("Password"), "correct horse");
+        await user.click(screen.getByRole("button", { name: "Log in" }));
+        expect(push).toHaveBeenCalledWith("/contracts/r1");
+
+        await user.click(screen.getByRole("button", { name: "Continue with Google" }));
+        expect(startGoogleOAuth).toHaveBeenCalledWith("/contracts/r1");
+        vi.unstubAllGlobals();
+        window.history.replaceState({}, "", "/login");
+    });
+
     it("places Google and SSO after the primary login action", () => {
         render(<LoginPage />);
 
