@@ -183,6 +183,19 @@ describe("ReviewWorkspace", () => {
         expect(await screen.findByRole("status")).toHaveTextContent("Tautan disalin");
     });
 
+    it("falls back to a selectable link when the clipboard is blocked", async () => {
+        mocks.getContract.mockResolvedValue(DETAIL);
+        const user = userEvent.setup();
+        vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Write permission denied"));
+        render(<ReviewWorkspace reviewId="r1" />);
+
+        await user.click(await screen.findByRole("button", { name: /Bagikan/ }));
+
+        const field = await screen.findByRole("textbox", { name: "Tautan tinjauan" });
+        expect(field).toHaveValue(`${window.location.origin}/contracts/r1`);
+        expect(screen.queryByText("Tautan disalin")).not.toBeInTheDocument();
+    });
+
     it("shows the not-found message on a 404", async () => {
         mocks.getContract.mockRejectedValue(new MikeApiError({ message: "nf", status: 404 }));
 
