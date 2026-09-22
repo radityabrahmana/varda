@@ -14,6 +14,11 @@ import {
   publicAuthUser,
 } from "../../lib/authSession";
 import { ssoConfiguration, ssoDomainSchema } from "../../lib/ssoConfig";
+import {
+  SIGNUP_DOMAIN_NOT_ALLOWED,
+  isFreshAccount,
+  signupDomainAllowed,
+} from "../../lib/signupPolicy";
 import { sendInternalError } from "../../lib/httpError";
 import { requestOriginIsWordAddin } from "../../lib/origins";
 import { requireAuth } from "../../middleware/auth";
@@ -145,6 +150,10 @@ authRouter.post("/login", asyncRoute(async (req, res) => {
 authRouter.post("/signup", asyncRoute(async (req, res) => {
   const parsed = credentialsSchema.safeParse(req.body);
   if (!parsed.success) return invalidBody(res);
+  if (!signupDomainAllowed(parsed.data.email)) {
+    res.status(403).json(SIGNUP_DOMAIN_NOT_ALLOWED);
+    return;
+  }
 
   try {
     const client = createRequestSupabase(req, res);
@@ -250,6 +259,17 @@ authRouter.post("/exchange", asyncRoute(async (req, res) => {
       parsed.data.code,
     );
     if (error || !data.user || !data.session) return authError(res, error);
+    if (isFreshAccount(data.user) && !signupDomainAllowed(data.user.email)) {
+      // A provider sign-up from outside the allowed domains: drop the session
+      // GoTrue just minted instead of letting the account into the app.
+      try {
+        await signOut(client, "global");
+      } finally {
+        clearRequestAuthCookies(req, res);
+      }
+      res.status(403).json(SIGNUP_DOMAIN_NOT_ALLOWED);
+      return;
+    }
     if (parsed.data.handoffRequestId) {
       if (!requestOriginIsWordAddin(req.get("origin"))) {
         res.status(403).json({

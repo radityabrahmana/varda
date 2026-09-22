@@ -74,6 +74,35 @@ describe("SignupPage", () => {
         expect(push).toHaveBeenCalledWith("/signup/check-email");
     });
 
+    it("explains a domain-restricted sign-up refusal", async () => {
+        signup.mockRejectedValue(
+            Object.assign(new Error("Sign-up is limited to approved company email addresses."), {
+                status: 403,
+                code: "signup_domain_not_allowed",
+            }),
+        );
+        const user = userEvent.setup();
+        render(<SignupPage />);
+
+        await user.type(
+            screen.getByRole("textbox", { name: "Email" }),
+            "alex@gmail.com",
+        );
+        await user.type(screen.getByLabelText("Password"), "secret1234");
+        await user.type(
+            screen.getByLabelText("Confirm Password"),
+            "secret1234",
+        );
+        await user.click(screen.getByRole("button", { name: "Sign up" }));
+
+        expect(
+            await screen.findByText(
+                "Sign-up is limited to approved company email addresses.",
+            ),
+        ).toBeInTheDocument();
+        expect(push).not.toHaveBeenCalled();
+    });
+
     it("places Google after the primary signup action without offering SSO", () => {
         render(<SignupPage />);
 
