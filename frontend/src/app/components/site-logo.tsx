@@ -16,10 +16,8 @@ export function SiteLogo({
     animate = false,
     asLink = false,
 }: SiteLogoProps) {
-    const landingHref =
-        process.env.NODE_ENV === "production"
-            ? "https://mikeoss.com"
-            : "http://localhost:3000";
+    // Varda has no separate marketing site; the wordmark goes back to the app.
+    const landingHref = "/";
     const sizeClasses = {
         sm: "text-xl",
         md: "text-2xl",
