@@ -20,6 +20,8 @@ export interface ChatRequest {
   max_tokens?: number;
   tools?: ChatTool[];
   tool_choice?: { type: "function"; function: { name: string } };
+  /** OpenRouter reasoning controls (thinking budget for Gemini/Claude/o-series). */
+  reasoning?: { effort?: "low" | "medium" | "high"; exclude?: boolean };
 }
 
 export interface ChatResponse {
@@ -81,4 +83,34 @@ export function firstMessage(json: unknown): { content?: string | null; tool_cal
   const choices = (json as { choices?: Array<{ message?: unknown }> } | null)?.choices;
   const message = choices?.[0]?.message;
   return message && typeof message === "object" ? (message as ReturnType<typeof firstMessage>) : null;
+}
+
+export interface ChoiceDiagnostics {
+  finish_reason: string | null;
+  native_finish_reason: string | null;
+  error: unknown;
+  usage: unknown;
+  content_preview: string | null;
+  message_keys: string[];
+}
+
+/**
+ * Everything worth logging when a forced tool call did not come back: the
+ * finish reason tells truncation ("length") apart from a refusal or a provider
+ * error surfaced inside the choice, and the usage shows how much of the
+ * output budget went to reasoning.
+ */
+export function choiceDiagnostics(json: unknown): ChoiceDiagnostics {
+  const body = json as { choices?: Array<Record<string, unknown>>; usage?: unknown } | null;
+  const choice = body?.choices?.[0] ?? {};
+  const message = firstMessage(json);
+  const content = typeof message?.content === "string" ? message.content : null;
+  return {
+    finish_reason: typeof choice.finish_reason === "string" ? choice.finish_reason : null,
+    native_finish_reason: typeof choice.native_finish_reason === "string" ? choice.native_finish_reason : null,
+    error: choice.error ?? null,
+    usage: body?.usage ?? null,
+    content_preview: content ? content.slice(0, 300) : null,
+    message_keys: Object.keys(message ?? {}),
+  };
 }

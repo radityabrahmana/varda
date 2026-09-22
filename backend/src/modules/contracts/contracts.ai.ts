@@ -7,12 +7,19 @@
 // Model ids are OpenRouter slugs; the same models Janus used on the Lovable
 // gateway, so review output stays comparable. Override with CONTRACTS_AI_MODEL.
 
-import { AiGatewayError, firstMessage, openRouterChat, type ChatFn, type ChatTool } from "../../lib/openRouterChat";
+import { AiGatewayError, choiceDiagnostics, firstMessage, openRouterChat, type ChatFn, type ChatTool } from "../../lib/openRouterChat";
 import type { NegotiationMemo, ReviewOutput } from "./contracts.types";
 import type { PromptRule } from "../playbook/playbook.service";
 
 export const PRIMARY_MODEL = process.env.CONTRACTS_AI_MODEL?.trim() || "google/gemini-2.5-pro";
 export const FALLBACK_MODEL = process.env.CONTRACTS_AI_FALLBACK_MODEL?.trim() || "google/gemini-2.5-flash";
+/**
+ * Explicit output budget. A long bilingual PKS (~120k chars) produces a large
+ * tool payload and Gemini spends part of the budget on reasoning first; without
+ * this the provider default cut the response before the tool call was emitted
+ * (finish_reason "length" → "no tool_call in response").
+ */
+export const REVIEW_MAX_OUTPUT_TOKENS = Number(process.env.CONTRACTS_AI_MAX_TOKENS) || 32000;
 
 // ── Contract review ────────────────────────────────────────────────────────
 
@@ -320,18 +327,36 @@ export function normalizeReviewOutput(raw: unknown): ReviewOutput {
   return out as unknown as ReviewOutput;
 }
 
-function parseToolArguments(json: unknown): unknown | null {
+/** Some providers ignore a forced tool call and put the JSON in `content` instead. */
+function parseJsonFromContent(content: unknown): unknown | null {
+  if (typeof content !== "string") return null;
+  const stripped = content.replace(/```(?:json)?/gi, "").trim();
+  const start = stripped.indexOf("{");
+  const end = stripped.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  try {
+    const parsed = JSON.parse(stripped.slice(start, end + 1));
+    return parsed && typeof parsed === "object" && "executive_summary" in (parsed as object) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseToolArguments(json: unknown, stage: string): unknown | null {
   const message = firstMessage(json);
   const args = message?.tool_calls?.[0]?.function?.arguments;
   if (args === undefined || args === null) {
-    console.warn("[contracts.ai] no tool_call in response; message keys:", Object.keys(message ?? {}));
-    return null;
+    const diag = choiceDiagnostics(json);
+    console.warn(`[contracts.ai] no tool_call in response (${stage}):`, JSON.stringify(diag));
+    const recovered = parseJsonFromContent(message?.content);
+    if (recovered) console.warn(`[contracts.ai] recovered review JSON from message content (${stage})`);
+    return recovered;
   }
   if (typeof args !== "string") return args;
   try {
     return JSON.parse(args);
   } catch (e) {
-    console.error("[contracts.ai] tool args JSON.parse failed:", e, "snippet:", args.slice(0, 500));
+    console.error(`[contracts.ai] tool args JSON.parse failed (${stage}):`, e, "snippet:", args.slice(0, 500));
     return null;
   }
 }
@@ -363,6 +388,7 @@ export async function runContractReviewAi(
     tools: [REVIEW_TOOL],
     tool_choice: { type: "function" as const, function: { name: "submit_contract_review" } },
     temperature: 0.1,
+    max_tokens: REVIEW_MAX_OUTPUT_TOKENS,
   });
 
   let response = await chat(request(PRIMARY_MODEL));
@@ -373,11 +399,19 @@ export async function runContractReviewAi(
     if (!response.ok) throw gatewayFailure(response.status, response.errorText, "fallback");
   }
 
-  let parsed = parseToolArguments(response.json);
+  let parsed = parseToolArguments(response.json, "primary");
+  // A missing tool call has proven transient on the same model and input (the
+  // same contract passed on resubmission), so retry the primary once before
+  // dropping to the flash model.
+  if (!parsed) {
+    console.log("[contracts.ai] retrying primary model (forced tool call)");
+    const retry = await chat(request(PRIMARY_MODEL));
+    if (retry.ok) parsed = parseToolArguments(retry.json, "primary-retry");
+  }
   if (!parsed) {
     console.log("[contracts.ai] retrying with fallback model (forced tool call)");
     const retry = await chat(request(FALLBACK_MODEL));
-    if (retry.ok) parsed = parseToolArguments(retry.json);
+    if (retry.ok) parsed = parseToolArguments(retry.json, "fallback");
   }
   if (!parsed) throw new AiGatewayError(422, "AI tidak mengembalikan struktur yang valid. Silakan coba lagi.");
   return normalizeReviewOutput(parsed);

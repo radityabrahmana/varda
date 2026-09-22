@@ -4,6 +4,7 @@ import {
   FALLBACK_MODEL,
   PLAYBOOK_COMPLIANCE_SLUGS,
   PRIMARY_MODEL,
+  REVIEW_MAX_OUTPUT_TOKENS,
   REVIEW_TOOL,
   buildCooDecisions,
   buildMemoUserMessage,
@@ -97,6 +98,8 @@ describe("runContractReviewAi", () => {
     expect(req.tool_choice).toEqual({ type: "function", function: { name: "submit_contract_review" } });
     expect(req.messages[0].content).toContain("RULE 1 (CRITICAL)");
     expect(req.temperature).toBe(0.1);
+    expect(req.max_tokens).toBe(REVIEW_MAX_OUTPUT_TOKENS);
+    expect(REVIEW_MAX_OUTPUT_TOKENS).toBeGreaterThanOrEqual(16000);
   });
 
   it("falls back to the flash model on a gateway error and surfaces 429/402 immediately", async () => {
@@ -110,11 +113,40 @@ describe("runContractReviewAi", () => {
     expect(limited).toHaveBeenCalledTimes(1);
   });
 
-  it("retries once with flash when no parseable tool call comes back, then fails with 422", async () => {
-    const chat = vi.fn<ChatFn>().mockResolvedValueOnce(textResponse("prose instead of tool call")).mockResolvedValueOnce(toolResponse("{not json"));
+  it("retries the primary once, then flash, when no parseable tool call comes back, then fails with 422", async () => {
+    const chat = vi.fn<ChatFn>()
+      .mockResolvedValueOnce(textResponse("prose instead of tool call"))
+      .mockResolvedValueOnce(textResponse("still prose"))
+      .mockResolvedValueOnce(toolResponse("{not json"));
     await expect(runContractReviewAi({ rules: RULES, input: { contract_text: "x", client_name: "A", document_type: "PKS" } }, chat)).rejects.toMatchObject({ status: 422 });
-    expect(chat).toHaveBeenCalledTimes(2);
-    expect((chat.mock.calls[1][0] as ChatRequest).model).toBe(FALLBACK_MODEL);
+    expect(chat).toHaveBeenCalledTimes(3);
+    expect((chat.mock.calls[1][0] as ChatRequest).model).toBe(PRIMARY_MODEL);
+    expect((chat.mock.calls[2][0] as ChatRequest).model).toBe(FALLBACK_MODEL);
+  });
+
+  it("recovers the review when the model ignores the forced tool call and answers with JSON in content", async () => {
+    const chat = vi.fn<ChatFn>().mockResolvedValue(textResponse("Berikut hasilnya:\n```json\n" + JSON.stringify(OUTPUT) + "\n```"));
+    const out = await runContractReviewAi({ rules: RULES, input: { contract_text: "x", client_name: "A", document_type: "PKS" } }, chat);
+    expect(out.executive_summary).toBe("Ringkasan");
+    expect(chat).toHaveBeenCalledTimes(1);
+  });
+
+  it("logs finish_reason, usage and a content preview when the tool call is missing", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const truncated: ChatResponse = {
+      ok: true,
+      status: 200,
+      json: { choices: [{ finish_reason: "length", native_finish_reason: "MAX_TOKENS", message: { role: "assistant", content: "Analisis…", reasoning: "…" } }], usage: { completion_tokens: 8192 } },
+      errorText: null,
+    };
+    const chat = vi.fn<ChatFn>().mockResolvedValueOnce(truncated).mockResolvedValueOnce(toolResponse(OUTPUT));
+    await runContractReviewAi({ rules: RULES, input: { contract_text: "x", client_name: "A", document_type: "PKS" } }, chat);
+    const logged = warn.mock.calls.map((c) => c.join(" ")).join("\n");
+    expect(logged).toContain('"finish_reason":"length"');
+    expect(logged).toContain('"native_finish_reason":"MAX_TOKENS"');
+    expect(logged).toContain('"completion_tokens":8192');
+    expect(logged).toContain("(primary)");
+    warn.mockRestore();
   });
 });
 
