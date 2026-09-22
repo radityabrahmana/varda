@@ -82,7 +82,7 @@ describe("projectRevisions", () => {
       { table: "reviews", data: REVIEW },
       { table: "review_revision_edits", data: [] },
       { table: "reviews", op: "update", data: null },
-      { table: "review_revision_edits", op: "insert", data: [{ id: "e1", revision_id: "REV-001" }, { id: "e2", revision_id: "REV-002" }] },
+      { table: "review_revision_edits", op: "upsert", data: [{ id: "e1", revision_id: "REV-001" }, { id: "e2", revision_id: "REV-002" }] },
     ]);
 
     const r = await projectRevisions(fake.db as unknown as Db, { reviewId: "r1" });
@@ -104,6 +104,35 @@ describe("projectRevisions", () => {
     const r = await projectRevisions(fake.db as unknown as Db, { reviewId: "r1" });
     expect(r).toMatchObject({ ok: true, data: { projected: 0, failed: 0, skipped: 2 } });
     expect(mocks.applyTrackedEdits).not.toHaveBeenCalled();
+  });
+
+  it("retries a revision whose earlier projection failed to anchor and upserts its row", async () => {
+    mocks.applyTrackedEdits.mockResolvedValue({
+      bytes: Buffer.from("redlined"),
+      changes: [{ id: "c9", delId: "21", insId: "22", deletedText: "teks yang tidak ada", insertedText: "Rp 10.000.000", contextBefore: "", contextAfter: "" }],
+      errors: [],
+    });
+    const fake = scriptedDb([
+      { table: "reviews", data: { ...REVIEW, contract_redline_path: "contracts/r1/redline.docx" } },
+      {
+        table: "review_revision_edits",
+        data: [
+          { id: "e1", revision_id: "REV-001", change_id: "c1", error: null },
+          { id: "e2", revision_id: "REV-002", change_id: null, error: "Text not found." },
+        ],
+      },
+      { table: "reviews", op: "update", data: null },
+      { table: "review_revision_edits", op: "upsert", data: [{ id: "e2", revision_id: "REV-002", change_id: "c9" }] },
+    ]);
+
+    const r = await projectRevisions(fake.db as unknown as Db, { reviewId: "r1" });
+
+    expect(r).toMatchObject({ ok: true, data: { projected: 1, failed: 0, skipped: 1 } });
+    expect(mocks.applyTrackedEdits).toHaveBeenCalledWith(expect.any(Buffer), [expect.objectContaining({ find: "teks yang tidak ada" })], expect.anything());
+    expect(mocks.downloadFile).toHaveBeenCalledWith("contracts/r1/redline.docx");
+    const rows = fake.calls[3].payload as Array<Record<string, unknown>>;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ revision_id: "REV-002", change_id: "c9", error: null });
   });
 
   it("refuses when the review has no persisted DOCX", async () => {

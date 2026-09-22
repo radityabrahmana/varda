@@ -54,7 +54,7 @@ export function scriptedDb(steps: Step[]) {
         reject: (error: unknown) => unknown,
       ) => settle().then(resolve, reject),
     };
-    for (const op of ["update", "insert", "delete"]) {
+    for (const op of ["update", "insert", "upsert", "delete"]) {
       builder[op] = (payload?: unknown) => {
         call.op = op;
         call.payload = payload;
