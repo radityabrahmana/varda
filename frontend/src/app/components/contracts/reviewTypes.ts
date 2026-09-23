@@ -221,6 +221,28 @@ export interface NegotiationPointRow {
     updated_at: string;
 }
 
+/** A person's suggested edit, written into the working DOCX as a tracked change (backend contracts.suggestions.ts). */
+export interface SuggestionRow {
+    id: string;
+    review_id: string;
+    author_user_id: string | null;
+    author_email: string | null;
+    author_name: string;
+    /** Text the change strikes through ("" for a pure insertion). */
+    original_text: string;
+    /** Text the change inserts ("" for a pure deletion). */
+    suggested_text: string;
+    note: string | null;
+    change_id: string | null;
+    del_w_id: string | null;
+    ins_w_id: string | null;
+    status: "pending" | "accepted" | "rejected";
+    resolved_by: string | null;
+    resolved_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
 /** The caller's role on a review (backend contracts.access.ts). */
 export type ReviewAccessRole = "owner" | "editor" | "viewer";
 
@@ -230,6 +252,8 @@ export interface ContractReviewDetail {
     comments: ManualCommentRow[];
     revisionEdits: RevisionEditRow[];
     negotiationPoints: NegotiationPointRow[];
+    /** People's suggested edits (suggestion mode); absent from older backends. */
+    suggestions?: SuggestionRow[];
     /** How the caller reaches this review: uploader, direct grant, or Varda admin. */
     access?: { role: ReviewAccessRole; via: "creator" | "grant" | "admin" };
 }

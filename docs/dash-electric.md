@@ -43,6 +43,10 @@ Open PRs against **this fork** — `gh pr create -R radityabrahmana/varda --base
   `review_access_grants`, owner/editor/viewer), and Varda admins (`user_roles.role = 'admin'`).
   Enforced per route in `contracts.access.ts`; contract tables have no `anon`/`authenticated`
   table privileges (backend service role only).
+- **Suggestion mode** (`contracts.suggestions.ts`, `review_suggestions`): select text in the DOCX
+  → "Sarankan perubahan" writes a tracked change under the person's name into the working
+  redline (`contracts/<id>/redline.docx`); Terima/Tolak on the Saran tab resolves it. One
+  paragraph per suggestion. All writes to the working DOCX go through `withReviewDocLock`.
 - `backend/src/modules/playbook/` — playbook rules, scoped per document type (`applies_to`).
 - `backend/src/modules/chat/engine/tools/contractReviewTool.ts` — the Assistant's `review_contract` tool.
 - `frontend/src/app/components/contracts/`, `components/playbook/`, pages `/contracts`, `/contracts/new`,

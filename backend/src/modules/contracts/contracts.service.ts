@@ -12,6 +12,15 @@ export { CONTRACT_UPLOAD_MAX_BYTES, extractContract } from "./contracts.extract"
 export type { ExtractedContract } from "./contracts.extract";
 
 export {
+  createSuggestion,
+  listSuggestions,
+  listTrackedChangeIds,
+  parseSuggestionBody,
+  resolveSuggestion,
+} from "./contracts.suggestions";
+export type { SuggestionInput, SuggestionRow } from "./contracts.suggestions";
+
+export {
   REVIEW_GRANTS_TABLE,
   callerIsAdmin,
   grantReviewAccess,

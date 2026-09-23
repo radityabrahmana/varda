@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => ({
     getContractAccess: vi.fn(),
     grantContractAccess: vi.fn(),
     revokeContractAccess: vi.fn(),
+    postContractSuggestion: vi.fn(),
+    resolveContractSuggestion: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -29,8 +31,22 @@ vi.mock("@/app/contexts/AuthContext", () => ({
     useAuth: () => ({ user: { id: "u1" }, isAuthenticated: true, authLoading: false }),
 }));
 vi.mock("@/app/components/shared/views/DocxView", () => ({
-    DocxView: (props: { documentId: string; displayUrl?: string | null; quotes?: { quote: string }[] }) => (
-        <div data-testid="docx-view" data-url={props.displayUrl} data-quote={props.quotes?.[0]?.quote ?? ""} />
+    DocxView: (props: {
+        documentId: string;
+        displayUrl?: string | null;
+        quotes?: { quote: string }[];
+        trackedChangeIdsUrl?: string;
+        highlightEdit?: { ins_w_id?: string | null } | null;
+    }) => (
+        <div
+            data-testid="docx-view"
+            data-url={props.displayUrl}
+            data-quote={props.quotes?.[0]?.quote ?? ""}
+            data-ids-url={props.trackedChangeIdsUrl ?? ""}
+            data-highlight={props.highlightEdit?.ins_w_id ?? ""}
+        >
+            <p>Pembayaran dilakukan dalam 30 hari setelah invoice diterima.</p>
+        </div>
     ),
 }));
 vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
@@ -48,6 +64,8 @@ vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
     getContractAccess: mocks.getContractAccess,
     grantContractAccess: mocks.grantContractAccess,
     revokeContractAccess: mocks.revokeContractAccess,
+    postContractSuggestion: mocks.postContractSuggestion,
+    resolveContractSuggestion: mocks.resolveContractSuggestion,
 }));
 
 const DETAIL: ContractReviewDetail = {
@@ -549,5 +567,73 @@ describe("ReviewWorkspace", () => {
         await user.click(screen.getAllByRole("button", { name: /Lihat di dokumen/ })[0]);
         expect(within(views).getByRole("tab", { name: "Dokumen" })).toHaveAttribute("aria-selected", "true");
         expect(docPane).not.toHaveClass("hidden");
+    });
+
+    it("suggests an edit from a DOCX selection, lists it on Saran, and locates it in the document", async () => {
+        const user = userEvent.setup();
+        const existing = {
+            id: "s0", review_id: "r1", author_user_id: "u2", author_email: "robert@dashelectric.co", author_name: "Robert",
+            original_text: "2%", suggested_text: "1%", note: null, change_id: "c0", del_w_id: "3", ins_w_id: "4",
+            status: "pending" as const, resolved_by: null, resolved_at: null, created_at: "2026-09-23T09:00:00Z", updated_at: "2026-09-23T09:00:00Z",
+        };
+        mocks.getContract.mockResolvedValue({
+            ...DETAIL,
+            review: { ...DETAIL.review, contract_docx_path: "contracts/r1/original.docx" },
+            suggestions: [existing],
+        });
+        mocks.postContractSuggestion.mockResolvedValue({ ...existing, id: "s1", original_text: "30", suggested_text: "14", ins_w_id: "8" });
+        render(<ReviewWorkspace reviewId="r1" />);
+
+        const view = await screen.findByTestId("docx-view");
+        expect(view.getAttribute("data-ids-url")).toBe("/api/contracts/r1/tracked-change-ids");
+        expect(screen.getByRole("tab", { name: "Saran (1)" })).toBeInTheDocument();
+
+        // Select "30 hari" inside the rendered paragraph.
+        const textNode = within(view).getByText(/Pembayaran dilakukan/).firstChild!;
+        const range = document.createRange();
+        range.setStart(textNode, 27);
+        range.setEnd(textNode, 34);
+        // jsdom ranges have no layout.
+        range.getBoundingClientRect = () => ({ bottom: 120, left: 40, top: 100, right: 200 }) as DOMRect;
+        vi.spyOn(window, "getSelection").mockReturnValue({
+            isCollapsed: false,
+            rangeCount: 1,
+            anchorNode: textNode,
+            focusNode: textNode,
+            toString: () => "30 hari",
+            getRangeAt: () => range,
+        } as unknown as Selection);
+        const pane = screen.getByTestId("document-pane");
+        await user.pointer({ keys: "[MouseLeft>]", target: pane });
+        await user.pointer({ keys: "[/MouseLeft]", target: pane });
+
+        const dialog = await screen.findByRole("dialog", { name: "Sarankan perubahan" });
+        const field = within(dialog).getByRole("textbox", { name: "Teks pengganti" });
+        await user.clear(field);
+        await user.type(field, "14 hari");
+        await user.click(within(dialog).getByRole("button", { name: "Sarankan" }));
+
+        await waitFor(() =>
+            expect(mocks.postContractSuggestion).toHaveBeenCalledWith("r1", {
+                selected_text: "30 hari",
+                replacement: "14 hari",
+                context_before: "Pembayaran dilakukan dalam ",
+                context_after: " setelah invoice diterima.",
+                note: null,
+            }),
+        );
+        expect(await screen.findByRole("tab", { name: "Saran (2)" })).toHaveAttribute("aria-selected", "true");
+        expect(screen.getByText(/Saran tersimpan sebagai perubahan terlacak/)).toBeInTheDocument();
+
+        await user.click(within(screen.getByTestId("suggestion-s1")).getByRole("button", { name: /Lihat di dokumen/ }));
+        expect(screen.getByTestId("docx-view").getAttribute("data-highlight")).toBe("8");
+    });
+
+    it("keeps the comment-only popover for reviews without the original DOCX", async () => {
+        mocks.getContract.mockResolvedValue(DETAIL);
+        render(<ReviewWorkspace reviewId="r1" />);
+        await screen.findByRole("heading", { name: "PKS — Markas Daging" });
+        await userEvent.setup().click(screen.getByRole("tab", { name: "Saran" }));
+        expect(screen.getByText(/membutuhkan DOCX asli/)).toBeInTheDocument();
     });
 });

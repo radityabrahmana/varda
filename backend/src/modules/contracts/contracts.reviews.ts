@@ -28,6 +28,7 @@ import type {
 } from "./contracts.types";
 import { projectRevisions, type RevisionEditRow } from "./contracts.redline";
 import type { NegotiationPointRow } from "./contracts.memo";
+import type { SuggestionRow } from "./contracts.suggestions";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -440,16 +441,19 @@ export async function getReviewDetail(db: Db, reviewId: string): Promise<Service
     { data: comments, error: cError },
     { data: edits, error: eError },
     { data: points, error: pError },
+    { data: suggestions, error: sError },
   ] = await Promise.all([
     db.from("review_feedback").select("*").eq("review_id", reviewId).order("created_at", { ascending: true }),
     db.from("manual_comments").select("*").eq("review_id", reviewId).order("created_at", { ascending: true }),
     db.from("review_revision_edits").select("*").eq("review_id", reviewId).order("created_at", { ascending: true }),
     db.from("negotiation_points").select("*").eq("review_id", reviewId),
+    db.from("review_suggestions").select("*").eq("review_id", reviewId).order("created_at", { ascending: true }),
   ]);
   if (fbError) return internalFailure(fbError);
   if (cError) return internalFailure(cError);
   if (eError) return internalFailure(eError);
   if (pError) return internalFailure(pError);
+  if (sError) return internalFailure(sError);
 
   const reviewRow = review as unknown as ReviewDetailRow;
   if (reviewRow.contract_docx_path && !(await docxObjectExists(reviewRow.contract_docx_path))) {
@@ -465,6 +469,7 @@ export async function getReviewDetail(db: Db, reviewId: string): Promise<Service
     comments: (comments ?? []) as unknown as ManualCommentRow[],
     revisionEdits: (edits ?? []) as unknown as RevisionEditRow[],
     negotiationPoints: (points ?? []) as unknown as NegotiationPointRow[],
+    suggestions: (suggestions ?? []) as unknown as SuggestionRow[],
   });
 }
 

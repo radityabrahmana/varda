@@ -17,6 +17,7 @@ import { downloadFile, storageEnabled, uploadFile } from "../../lib/storage";
 import { applyTrackedEdits, resolveTrackedChange, type EditInput } from "../../lib/docxTrackedChanges";
 import { failure, internalFailure, ok, type ServiceResult } from "../../lib/serviceResult";
 import { DOCX_MIME } from "./contracts.files";
+import { withReviewDocLock } from "./contracts.docLock";
 import { createFeedback, type FeedbackInput } from "./contracts.feedback";
 import type { ReviewFeedbackRow, ReviewOutput, Revision } from "./contracts.types";
 
@@ -62,12 +63,12 @@ export function revisionToEdit(rev: Revision, contractText: string): EditInput {
   return { find, replace: rev.suggested_text ?? "", context_before, context_after, reason: rev.rationale };
 }
 
-async function loadBytes(key: string): Promise<Buffer | null> {
+export async function loadBytes(key: string): Promise<Buffer | null> {
   const data = await downloadFile(key);
   return data ? Buffer.from(data) : null;
 }
 
-async function storeBytes(key: string, bytes: Buffer): Promise<void> {
+export async function storeBytes(key: string, bytes: Buffer): Promise<void> {
   const ab = new ArrayBuffer(bytes.byteLength);
   new Uint8Array(ab).set(bytes);
   await uploadFile(key, ab, DOCX_MIME);
@@ -114,7 +115,11 @@ export interface ProjectionSummary {
  * current working copy (or the original on first run) so re-running after new
  * revisions appear does not disturb resolved changes.
  */
-export async function projectRevisions(db: Db, args: { reviewId: string }): Promise<ServiceResult<ProjectionSummary>> {
+export function projectRevisions(db: Db, args: { reviewId: string }): Promise<ServiceResult<ProjectionSummary>> {
+  return withReviewDocLock(args.reviewId, () => projectRevisionsUnlocked(db, args));
+}
+
+async function projectRevisionsUnlocked(db: Db, args: { reviewId: string }): Promise<ServiceResult<ProjectionSummary>> {
   if (!storageEnabled) return failure("unavailable", "Penyimpanan dokumen belum dikonfigurasi.");
   const reviewR = await loadReview(db, args.reviewId);
   if (!reviewR.ok) return reviewR;
@@ -214,7 +219,14 @@ export interface ResolveResult {
  * Terima / Tolak: resolve the w:del/w:ins pair in the working copy and record
  * the Janus feedback row. Idempotent on an already-resolved edit.
  */
-export async function resolveRevision(
+export function resolveRevision(
+  db: Db,
+  args: { reviewId: string; revisionId: string; mode: "accept" | "reject"; userId: string; rationale?: string | null },
+): Promise<ServiceResult<ResolveResult>> {
+  return withReviewDocLock(args.reviewId, () => resolveRevisionUnlocked(db, args));
+}
+
+async function resolveRevisionUnlocked(
   db: Db,
   args: { reviewId: string; revisionId: string; mode: "accept" | "reject"; userId: string; rationale?: string | null },
 ): Promise<ServiceResult<ResolveResult>> {
@@ -266,7 +278,14 @@ export async function resolveRevision(
  * Ubah: the COO's wording replaces the AI's. Reject the AI change, apply the
  * COO text as a new tracked change under the COO's name, record feedback `edit`.
  */
-export async function editRevision(
+export function editRevision(
+  db: Db,
+  args: { reviewId: string; revisionId: string; editedText: string; userId: string; userEmail?: string },
+): Promise<ServiceResult<ResolveResult>> {
+  return withReviewDocLock(args.reviewId, () => editRevisionUnlocked(db, args));
+}
+
+async function editRevisionUnlocked(
   db: Db,
   args: { reviewId: string; revisionId: string; editedText: string; userId: string; userEmail?: string },
 ): Promise<ServiceResult<ResolveResult>> {

@@ -62,6 +62,12 @@ interface Props {
      */
     warning?: string | null;
     /**
+     * Endpoint listing the w:ids of the rendered file's tracked changes, for
+     * resources that are not Library documents (contract reviews). Defaults to
+     * `/single-documents/<documentId>/tracked-change-ids`.
+     */
+    trackedChangeIdsUrl?: string;
+    /**
      * Called when the user dismisses the warning banner.
      */
     onWarningDismiss?: () => void;
@@ -147,13 +153,15 @@ async function tagWIdsOnRenderedDom(
     container: HTMLElement,
     documentId: string,
     versionId: string | null | undefined,
+    idsUrl?: string,
 ): Promise<void> {
     try {
         const qs = versionId
             ? `?version_id=${encodeURIComponent(versionId)}`
             : "";
         const resp = await authenticatedFetch(
-            `${API_BASE}/single-documents/${documentId}/tracked-change-ids${qs}`,
+            idsUrl ??
+                `${API_BASE}/single-documents/${documentId}/tracked-change-ids${qs}`,
         );
         if (!resp.ok) {
             console.warn(
@@ -199,6 +207,7 @@ export function DocxView({
     quotes,
     quoteFocusKey,
     warning,
+    trackedChangeIdsUrl,
     onWarningDismiss,
     initialScrollTop,
     onScrollChange,
@@ -366,6 +375,7 @@ export function DocxView({
                     containerEl,
                     documentId,
                     versionId ?? null,
+                    trackedChangeIdsUrl,
                 );
                 if (cancelled) return;
                 // Scale to fit before scrolling so offsets are computed
