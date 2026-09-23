@@ -297,7 +297,26 @@ interface PlannedChange {
  * "replace this substring with that substring" card per edit, so only the
  * common prefix and suffix are trimmed and the rest is one span.
  */
-function collapseDiff(find: string, replace: string): { deleted: string; inserted: string; leadingEq: number; trailingEq: number } {
+const WORD_CHAR = /[\p{L}\p{N}_]/u;
+const DIGIT = /\p{N}/u;
+/**
+ * Whether str[i] continues a word. Digit-group separators count as part of a
+ * number ("50.000.000", "1,5"), so an amount changes as one token.
+ */
+function isWordAt(str: string, i: number): boolean {
+    const c = str[i];
+    if (c === undefined) return false;
+    if (WORD_CHAR.test(c)) return true;
+    return (c === "." || c === ",") && DIGIT.test(str[i - 1] ?? "") && DIGIT.test(str[i + 1] ?? "");
+}
+
+export type DiffGranularity = "char" | "word";
+
+function collapseDiff(
+    find: string,
+    replace: string,
+    granularity: DiffGranularity = "char",
+): { deleted: string; inserted: string; leadingEq: number; trailingEq: number } {
     // Find leading/trailing common substrings so the tracked range is minimal
     let leading = 0;
     const minLen = Math.min(find.length, replace.length);
@@ -308,6 +327,28 @@ function collapseDiff(find: string, replace: string): { deleted: string; inserte
         find[find.length - 1 - trailing] === replace[replace.length - 1 - trailing]
     ) {
         trailing++;
+    }
+    if (granularity === "word") {
+        // Widen the change to whole words the way Word's redline reads:
+        // "11 June" -> "12 June" is ~~11~~ 12, not 1~~1~~2. A kept prefix may
+        // only end, and a kept suffix may only start, where a word ends on
+        // BOTH sides (the shared character is a separator, or neither string
+        // continues the word there).
+        while (
+            leading > 0 &&
+            isWordAt(find, leading - 1) &&
+            (isWordAt(find, leading) || isWordAt(replace, leading))
+        ) {
+            leading--;
+        }
+        while (
+            trailing > 0 &&
+            isWordAt(find, find.length - trailing) &&
+            (isWordAt(find, find.length - trailing - 1) ||
+                isWordAt(replace, replace.length - trailing - 1))
+        ) {
+            trailing--;
+        }
     }
     const deleted = find.slice(leading, find.length - trailing);
     const inserted = replace.slice(leading, replace.length - trailing);
@@ -769,9 +810,17 @@ export async function extractTrackedChangeIds(
 export async function applyTrackedEdits(
     bytes: Buffer,
     edits: EditInput[],
-    opts?: { author?: string },
+    opts?: {
+        author?: string;
+        /**
+         * "char" (default) trims the change to the minimal differing span;
+         * "word" widens it to whole words, as Word shows a person's redline.
+         */
+        granularity?: DiffGranularity;
+    },
 ): Promise<ApplyTrackedEditsResult> {
     const author = opts?.author ?? "Varda";
+    const granularity = opts?.granularity ?? "char";
     const now = new Date().toISOString();
 
     const zip = await JSZip.loadAsync(bytes);
@@ -941,6 +990,7 @@ export async function applyTrackedEdits(
         const { deleted, inserted, leadingEq } = collapseDiff(
             originalFind,
             replace,
+            granularity,
         );
         const minStart = findStart + leadingEq;
         const minEnd = minStart + deleted.length;

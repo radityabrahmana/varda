@@ -183,6 +183,25 @@ async function suggestOnce(): Promise<{ del_w_id: string | null; ins_w_id: strin
   return fake.calls[3].payload as { del_w_id: string | null; ins_w_id: string | null };
 }
 
+describe("createSuggestion — whole words", () => {
+  it("records ~~11~~ 12 for a date change, not a one-letter splice", async () => {
+    files.set(ORIGINAL, await docx(["Perjanjian ini dibuat pada 11 June 2026."]));
+    const fake = scriptedDb([
+      { table: "reviews", data: REVIEW_ROW },
+      { table: "user_profiles", data: null },
+      { table: "reviews", op: "update", data: null },
+      { table: "review_suggestions", op: "insert", data: saved({}) },
+    ]);
+    const r = await createSuggestion(fake.db, {
+      reviewId: "r1",
+      userId: "u1",
+      input: input({ selected_text: "11 June 2026", replacement: "12 June 2026", context_before: "Perjanjian ini dibuat pada ", context_after: "." }),
+    });
+    expect(r.ok).toBe(true);
+    expect(fake.calls[3].payload).toMatchObject({ original_text: "11", suggested_text: "12" });
+  });
+});
+
 describe("resolveSuggestion", () => {
   it("Accept replaces the text; Reject restores the original", async () => {
     for (const [mode, expected, gone] of [

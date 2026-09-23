@@ -148,7 +148,8 @@ async function createSuggestionUnlocked(
           reason: input.note ?? undefined,
         },
       ],
-      { author },
+      // Whole-word changes, as Word shows a person's redline (~~11~~ 12, not 1~~1~~2).
+      { author, granularity: "word" },
     );
     after = result.changes.length ? await extractTrackedChangeIds(result.bytes) : before;
   } catch (e) {

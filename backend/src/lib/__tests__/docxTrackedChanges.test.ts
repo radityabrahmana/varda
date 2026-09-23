@@ -260,6 +260,51 @@ describe("applyTrackedEdits", () => {
     });
 });
 
+describe("applyTrackedEdits — word granularity", () => {
+    async function diff(text: string, find: string, replace: string, granularity?: "char" | "word") {
+        const idx = text.indexOf(find);
+        const result = await applyTrackedEdits(
+            await makeDocx(para(text)),
+            [{ find, replace, context_before: text.slice(0, idx), context_after: text.slice(idx + find.length) }],
+            granularity ? { granularity } : undefined,
+        );
+        expect(result.errors).toEqual([]);
+        const accepted = await extractDocxBodyText(result.bytes);
+        expect(accepted).toBe(text.slice(0, idx) + replace + text.slice(idx + find.length));
+        return { deleted: result.changes[0].deletedText, inserted: result.changes[0].insertedText, insId: result.changes[0].insId, delId: result.changes[0].delId };
+    }
+
+    it("keeps the minimal character diff by default (AI / Assistant edits)", async () => {
+        expect(await diff("Made on 11 June 2026.", "11 June 2026", "12 June 2026")).toMatchObject({ deleted: "1", inserted: "2" });
+    });
+
+    it("widens a change to whole words", async () => {
+        expect(await diff("Made on 11 June 2026.", "11 June 2026", "12 June 2026", "word")).toMatchObject({ deleted: "11", inserted: "12" });
+        expect(await diff("dalam 30 hari kerja", "30 hari", "14 hari", "word")).toMatchObject({ deleted: "30", inserted: "14" });
+        expect(await diff("jangka waktu harian", "harian", "bulanan", "word")).toMatchObject({ deleted: "harian", inserted: "bulanan" });
+        expect(await diff("Pihak Pertama wajib membayar", "Pertama", "Kedua", "word")).toMatchObject({ deleted: "Pertama", inserted: "Kedua" });
+    });
+
+    it("keeps a pure insertion or deletion at a word boundary as a lone w:ins / w:del", async () => {
+        const ins = await diff("dalam 30 hari setelah", "30 hari", "30 hari kalender", "word");
+        expect(ins).toMatchObject({ deleted: "", inserted: " kalender", delId: undefined });
+        const del = await diff("wajib dan segera membayar", "dan segera", "dan", "word");
+        expect(del).toMatchObject({ deleted: " segera", inserted: "", insId: undefined });
+    });
+
+    it("widens an in-word extension to the whole word instead of splicing letters", async () => {
+        // "hari" -> "harian": Word shows ~~hari~~ harian, not hari+an.
+        expect(await diff("tiap hari kerja", "hari", "harian", "word")).toMatchObject({ deleted: "hari", inserted: "harian" });
+    });
+
+    it("changes a formatted amount as one token, and stops at ordinary punctuation", async () => {
+        expect(await diff("Rp 50.000.000 per tahun", "50.000.000", "10.000.000", "word")).toMatchObject({ deleted: "50.000.000", inserted: "10.000.000" });
+        expect(await diff("denda 1,5% per bulan", "1,5%", "2%", "word")).toMatchObject({ deleted: "1,5", inserted: "2" });
+        expect(await diff("Pasal 5. Ganti rugi", "Pasal 5.", "Pasal 7.", "word")).toMatchObject({ deleted: "5", inserted: "7" });
+        expect(await diff("la société générale", "société", "sociétés", "word")).toMatchObject({ deleted: "société", inserted: "sociétés" });
+    });
+});
+
 describe("resolveTrackedChange", () => {
     /** Apply one replace edit and return the output bytes + w:ids. */
     async function trackedFixture() {
