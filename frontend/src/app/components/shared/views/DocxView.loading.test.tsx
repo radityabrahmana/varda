@@ -75,3 +75,31 @@ it("keeps the document visible during refresh, hides it on failure, and recovers
         ),
     ).toBeNull();
 });
+
+it("requests tracked-change ids while the file is still downloading and tags the rendered changes", async () => {
+    const { renderAsync } = await import("docx-preview");
+    vi.mocked(renderAsync).mockImplementationOnce(async (_bytes: unknown, container: HTMLElement) => {
+        container.innerHTML = "<p>a <ins>x</ins><del>y</del></p>";
+    });
+    let finishFile!: (response: Response) => void;
+    vi.mocked(authenticatedFetch).mockImplementation(async (url) => {
+        if (String(url).includes("tracked-change-ids")) {
+            return Response.json({ ids: [{ kind: "ins", w_id: "8" }, { kind: "del", w_id: "7" }] });
+        }
+        return new Promise<Response>((resolve) => {
+            finishFile = resolve;
+        });
+    });
+    const { container } = render(
+        <DocxView documentId="doc" cacheBytes={false} trackedChangeIdsUrl="/api/contracts/r1/tracked-change-ids" />,
+    );
+    // The file has not arrived yet, but the id list is already requested.
+    await waitFor(() =>
+        expect(vi.mocked(authenticatedFetch).mock.calls.map(([u]) => String(u))).toContain(
+            "/api/contracts/r1/tracked-change-ids",
+        ),
+    );
+    await act(async () => finishFile(new Response(new Uint8Array([1]))));
+    await waitFor(() => expect(container.querySelector('ins[data-w-id="8"]')).not.toBeNull());
+    expect(container.querySelector('del[data-w-id="7"]')).not.toBeNull();
+});

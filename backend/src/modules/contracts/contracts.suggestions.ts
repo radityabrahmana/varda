@@ -17,7 +17,8 @@ import { applyTrackedEdits, extractTrackedChangeIds, resolveTrackedChange } from
 import { failure, internalFailure, ok, type ServiceResult } from "../../lib/serviceResult";
 import { withReviewDocLock } from "./contracts.docLock";
 import { displayNameFromEmail } from "./contracts.feedback";
-import { loadBytes, redlineDocxKey, storeBytes } from "./contracts.redline";
+import { loadBytes, storeBytes, trackedIdsFor } from "./contracts.docCache";
+import { redlineDocxKey } from "./contracts.redline";
 
 export interface SuggestionRow {
   id: string;
@@ -261,7 +262,7 @@ export async function listTrackedChangeIds(
   if (!key) return ok({ ids: [] });
   try {
     const bytes = await loadBytes(key);
-    return ok({ ids: bytes ? await extractTrackedChangeIds(bytes) : [] });
+    return ok({ ids: bytes ? await trackedIdsFor(key, bytes) : [] });
   } catch (e) {
     return internalFailure(e);
   }

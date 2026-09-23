@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "../../../lib/supabase";
 import { scriptedDb } from "../../../__tests__/helpers/scriptedDb";
 
@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   copyFile: vi.fn(async () => undefined),
   deleteFile: vi.fn(async () => undefined),
   headFile: vi.fn(async (): Promise<{ size: number; etag: string | null; contentType: string | null } | null> => null),
+  downloadFile: vi.fn(async (): Promise<ArrayBuffer | null> => null),
   storageEnabled: true,
 }));
 vi.mock("../../../lib/storage", async (importOriginal) => ({
@@ -18,9 +19,17 @@ vi.mock("../../../lib/storage", async (importOriginal) => ({
   copyFile: mocks.copyFile,
   deleteFile: mocks.deleteFile,
   headFile: mocks.headFile,
+  downloadFile: mocks.downloadFile,
 }));
 
-import { attachDocxToReview, attachDocxUploadToReview, getReviewFileSource, isStashedDocxKey, parseCreateReviewBody, stashUploadedDocx } from "../contracts.service";
+import { attachDocxToReview, attachDocxUploadToReview, getReviewFileSource, isStashedDocxKey, parseCreateReviewBody, readReviewFile, stashUploadedDocx } from "../contracts.service";
+import { clearDocxCache, getCachedDocx } from "../contracts.docCache";
+
+beforeEach(() => {
+  clearDocxCache();
+  mocks.downloadFile.mockReset();
+  mocks.downloadFile.mockResolvedValue(null);
+});
 
 describe("stashUploadedDocx", () => {
   it("uploads under contracts/uploads/<uuid>.docx when storage is on", async () => {
@@ -65,18 +74,54 @@ describe("getReviewFileSource", () => {
     expect(r).toMatchObject({ ok: false, kind: "not_found" });
   });
 
-  it("is not_found when the recorded key no longer exists in storage (Janus snapshot paths)", async () => {
-    mocks.headFile.mockResolvedValueOnce(null);
-    const fake = scriptedDb([{ table: "reviews", data: { contract_docx_path: "fcc26ed8/legacy.docx", contract_redline_path: null, contract_filename: "legacy.docx", title: "t" } }]);
-    const r = await getReviewFileSource(fake.db as unknown as Db, "r1");
-    expect(r).toMatchObject({ ok: false, kind: "not_found" });
-  });
-
-  it("returns the key, filename and size when persisted", async () => {
-    mocks.headFile.mockResolvedValue({ size: 1234, etag: null, contentType: null });
+  it("returns the key and download filename (redline suffix for the working copy)", async () => {
     const fake = scriptedDb([{ table: "reviews", data: { contract_docx_path: "contracts/r1/original.docx", contract_filename: null, title: "PKS — A" } }]);
     const r = await getReviewFileSource(fake.db as unknown as Db, "r1");
-    expect(r).toMatchObject({ ok: true, data: { key: "contracts/r1/original.docx", filename: "PKS — A.docx", size: 1234 } });
+    expect(r).toEqual({ ok: true, data: { key: "contracts/r1/original.docx", filename: "PKS — A.docx" } });
+    const red = scriptedDb([
+      { table: "reviews", data: { contract_docx_path: "contracts/r1/original.docx", contract_redline_path: "contracts/r1/redline.docx", contract_filename: "Draft.docx", title: "t" } },
+    ]);
+    expect(await getReviewFileSource(red.db as unknown as Db, "r1")).toEqual({
+      ok: true,
+      data: { key: "contracts/r1/redline.docx", filename: "Draft - Redline.docx" },
+    });
+  });
+});
+
+describe("readReviewFile", () => {
+  it("is not_found when the recorded key no longer exists in storage (Janus snapshot paths)", async () => {
+    expect(await readReviewFile({ key: "fcc26ed8/legacy.docx", filename: "legacy.docx" })).toMatchObject({ ok: false, kind: "not_found" });
+  });
+
+  it("downloads once, then serves the same bytes from memory", async () => {
+    mocks.downloadFile.mockResolvedValue(new Uint8Array([80, 75, 3, 4]).buffer);
+    const first = await readReviewFile({ key: "contracts/r1/redline.docx", filename: "x.docx" });
+    const second = await readReviewFile({ key: "contracts/r1/redline.docx", filename: "x.docx" });
+    expect(first).toMatchObject({ ok: true });
+    expect(second.ok && first.ok && second.data === first.data).toBe(true);
+    expect(mocks.downloadFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("maps a storage failure to an internal error", async () => {
+    mocks.downloadFile.mockRejectedValue(new Error("s3 down"));
+    expect(await readReviewFile({ key: "contracts/r1/redline.docx", filename: "x.docx" })).toMatchObject({ ok: false, kind: "error" });
+  });
+});
+
+describe("cache coherence on writes", () => {
+  it("caches bytes attached from an upload and drops a copied-over original", async () => {
+    const up = scriptedDb([
+      { table: "reviews", data: { id: "r1", contract_docx_path: null } },
+      { table: "reviews", op: "update", data: null },
+    ]);
+    await attachDocxUploadToReview(up.db as unknown as Db, { reviewId: "r1", buffer: Buffer.from("PK-new"), filename: "a.docx" });
+    expect(getCachedDocx("contracts/r1/original.docx")?.toString()).toBe("PK-new");
+
+    await attachDocxToReview(scriptedDb([{ table: "reviews", op: "update", data: null }]).db as unknown as Db, {
+      reviewId: "r1",
+      stashedKey: "contracts/uploads/11111111-1111-4111-8111-111111111111.docx",
+    });
+    expect(getCachedDocx("contracts/r1/original.docx")).toBeNull();
   });
 });
 

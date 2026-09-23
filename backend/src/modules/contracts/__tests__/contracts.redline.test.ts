@@ -20,6 +20,7 @@ vi.mock("../../../lib/docxTrackedChanges", () => ({
 }));
 
 import { cooAuthor, editRevision, projectRevisions, resolveRevision, revisionToEdit } from "../contracts.service";
+import { clearDocxCache } from "../contracts.docCache";
 import type { Revision } from "../contracts.types";
 
 const REV: Revision = {
@@ -42,6 +43,7 @@ const REVIEW = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  clearDocxCache();
 });
 
 describe("revisionToEdit", () => {
