@@ -328,7 +328,7 @@ describe("ReviewWorkspace", () => {
         expect(screen.queryByTestId("contract-html")).toBeNull();
         // The viewer only scrolls internally as a height-constrained flex item;
         // a plain block pane clips multi-page contracts with no way to scroll.
-        expect(screen.getByTestId("document-pane")).toHaveClass("flex", "flex-col", "min-h-0", "overflow-hidden");
+        expect(screen.getByTestId("document-pane")).toHaveClass("lg:flex", "flex-col", "min-h-0", "overflow-hidden");
 
         await user.click(screen.getAllByRole("button", { name: /Lihat di dokumen/ })[0]);
         expect(screen.getByTestId("docx-view").getAttribute("data-quote")).toBe("Bagoes Andy Saputro");
@@ -467,5 +467,28 @@ describe("ReviewWorkspace", () => {
         await user.click(screen.getByRole("tab", { name: "Komentar (1)" }));
         expect(screen.getByTestId("comment-c1")).toHaveTextContent("Perlu definisi?");
         selection.mockRestore();
+    });
+
+    it("shows one pane at a time below lg and switches to the document on Lihat di dokumen", async () => {
+        const user = userEvent.setup();
+        mocks.getContract.mockResolvedValue(DETAIL);
+        render(<ReviewWorkspace reviewId="r1" />);
+        const docPane = await screen.findByTestId("document-pane");
+        const findingsPane = screen.getByTestId("findings-pane");
+        const views = screen.getByRole("tablist", { name: "Tampilan" });
+
+        // Findings first on a phone; both panes are restored side by side at lg.
+        expect(within(views).getByRole("tab", { name: "Temuan" })).toHaveAttribute("aria-selected", "true");
+        expect(docPane).toHaveClass("hidden", "lg:block");
+        expect(findingsPane).toHaveClass("flex", "flex-1", "lg:flex", "lg:flex-none");
+
+        await user.click(within(views).getByRole("tab", { name: "Dokumen" }));
+        expect(docPane).not.toHaveClass("hidden");
+        expect(findingsPane).toHaveClass("hidden", "lg:flex");
+
+        await user.click(within(views).getByRole("tab", { name: "Temuan" }));
+        await user.click(screen.getAllByRole("button", { name: /Lihat di dokumen/ })[0]);
+        expect(within(views).getByRole("tab", { name: "Dokumen" })).toHaveAttribute("aria-selected", "true");
+        expect(docPane).not.toHaveClass("hidden");
     });
 });

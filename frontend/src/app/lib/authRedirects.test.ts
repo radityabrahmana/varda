@@ -108,4 +108,11 @@ describe("login round-trip helpers", () => {
         window.history.replaceState({}, "", "/login");
         expect(requestedAuthNext("/onboarding/profile")).toBe("/onboarding/profile");
     });
+
+    it("falls back without a window during server rendering", () => {
+        vi.stubGlobal("window", undefined);
+
+        expect(loginUrlForCurrentLocation()).toBe("/login");
+        expect(requestedAuthNext("/onboarding/profile")).toBe("/onboarding/profile");
+    });
 });

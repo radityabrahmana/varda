@@ -44,6 +44,8 @@ export function reviewableKeys(output: ReviewOutput): string[] {
 const GATE_LOCKED_STATUSES = new Set(["clevel_reviewed", "signed", "archived"]);
 
 type PanelTab = "draft" | "comments" | "table" | "negotiation";
+/** Below `lg` the document and the findings panel do not fit side by side; one is shown at a time. */
+type MobileView = "document" | "findings";
 /** Tabs that show the review-progress footer with the C-Level gate. */
 const GATE_TABS = new Set<PanelTab>(["draft", "table"]);
 const MIN_SELECTION_CHARS = 5;
@@ -55,6 +57,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
     const [gateBusy, setGateBusy] = useState(false);
     const [docRefetchKey, setDocRefetchKey] = useState(0);
     const [panelTab, setPanelTab] = useState<PanelTab>("draft");
+    const [mobileView, setMobileView] = useState<MobileView>("findings");
     const [commentAnchor, setCommentAnchor] = useState<SelectionAnchor | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const docPaneRef = useRef<HTMLDivElement>(null);
@@ -74,6 +77,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
     const locate = useCallback((text: string) => {
         setActiveQuote(text);
         setQuoteFocusKey((k) => k + 1);
+        setMobileView("document");
     }, []);
     const [gateMessage, setGateMessage] = useState<string | null>(null);
 
@@ -318,7 +322,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                 </div>
             ) : (
                 <>
-                    <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-6 py-3">
+                    <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-3 sm:gap-3 sm:px-6">
                         <div className="min-w-0 flex-1">
                             <h1 className="truncate font-serif text-xl font-medium text-gray-900">{review.title}</h1>
                             <p className="mt-0.5 text-xs text-gray-500">
@@ -396,6 +400,26 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                         {projectMessage ? <span className="text-xs text-gray-600" role="status">{projectMessage}</span> : null}
                     </div>
 
+                    <div className="flex gap-1 border-b border-gray-200 bg-white px-4 py-2 lg:hidden" role="tablist" aria-label="Tampilan">
+                        {(
+                            [
+                                { id: "findings", label: "Temuan" },
+                                { id: "document", label: "Dokumen" },
+                            ] as { id: MobileView; label: string }[]
+                        ).map((view) => (
+                            <button
+                                key={view.id}
+                                type="button"
+                                role="tab"
+                                aria-selected={mobileView === view.id}
+                                onClick={() => setMobileView(view.id)}
+                                className={`flex-1 rounded-full px-3 py-1.5 text-sm ${mobileView === view.id ? "bg-gray-900 font-medium text-white" : "text-gray-600 hover:bg-gray-100"}`}
+                            >
+                                {view.label}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
                         {/* DocxView scrolls inside its own container only when it is a
                             height-constrained flex item (its root is `flex-1 overflow-hidden`).
@@ -405,12 +429,19 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                             ref={docPaneRef}
                             onMouseUp={handleDocMouseUp}
                             data-testid="document-pane"
-                            className={review.contract_docx_path ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "min-h-0 flex-1 overflow-y-auto bg-gray-100 p-6"}
+                            className={
+                                review.contract_docx_path
+                                    ? `${mobileView === "document" ? "flex" : "hidden"} min-h-0 flex-1 flex-col overflow-hidden lg:flex`
+                                    : `${mobileView === "document" ? "block" : "hidden"} min-h-0 flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:block`
+                            }
                         >
                             <ContractDocument review={review} activeQuote={activeQuote} quoteFocusKey={quoteFocusKey} refetchKey={docRefetchKey} />
                         </div>
-                        <aside className="flex min-h-0 w-full flex-col border-t border-gray-200 bg-gray-50 lg:w-[440px] lg:border-l lg:border-t-0 xl:w-[500px]">
-                            <div className="flex items-center gap-1 border-b border-gray-200 bg-white px-3 pt-2" role="tablist">
+                        <aside
+                            data-testid="findings-pane"
+                            className={`${mobileView === "findings" ? "flex" : "hidden"} min-h-0 w-full flex-1 flex-col bg-gray-50 lg:flex lg:w-[440px] lg:flex-none lg:border-l lg:border-gray-200 xl:w-[500px]`}
+                        >
+                            <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 bg-white px-3 pt-2" role="tablist">
                                 {(
                                     [
                                         { id: "draft", label: "Draf", disabled: false },
@@ -426,7 +457,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                                         aria-selected={panelTab === tab.id}
                                         disabled={tab.disabled}
                                         onClick={() => setPanelTab(tab.id)}
-                                        className={`-mb-px border-b-2 px-3 py-2 text-sm ${panelTab === tab.id ? "border-gray-900 font-medium text-gray-900" : "border-transparent text-gray-500 hover:text-gray-800"} disabled:cursor-not-allowed disabled:opacity-40`}
+                                        className={`-mb-px shrink-0 border-b-2 px-3 py-2 text-sm ${panelTab === tab.id ? "border-gray-900 font-medium text-gray-900" : "border-transparent text-gray-500 hover:text-gray-800"} disabled:cursor-not-allowed disabled:opacity-40`}
                                         title={tab.disabled ? "Memo negosiasi belum tersedia" : undefined}
                                     >
                                         {tab.label}
@@ -439,7 +470,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                                     <button type="button" onClick={() => setNotice(null)} aria-label="Tutup" className="text-emerald-700 hover:text-emerald-900">×</button>
                                 </div>
                             ) : null}
-                            <div className={GATE_TABS.has(panelTab) ? "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-5 pb-28" : "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-5"}>
+                            <div className={GATE_TABS.has(panelTab) ? "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 pb-28 sm:p-5 sm:pb-28" : "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5"}>
                                 {panelTab === "comments" ? (
                                     <CommentsTab
                                         reviewId={review.id}
