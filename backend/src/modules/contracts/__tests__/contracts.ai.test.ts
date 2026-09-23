@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { ChatFn, ChatRequest, ChatResponse } from "../../../lib/openRouterChat";
 import {
   FALLBACK_MODEL,
+  NDA_COMPLIANCE_SLUGS,
   PLAYBOOK_COMPLIANCE_SLUGS,
   PRIMARY_MODEL,
   REVIEW_MAX_OUTPUT_TOKENS,
@@ -12,6 +13,7 @@ import {
   buildReviewUserMessage,
   generateMemoAi,
   normalizeReviewOutput,
+  reviewToolFor,
   runContractReviewAi,
 } from "../contracts.ai";
 import type { ReviewOutput } from "../contracts.types";
@@ -65,6 +67,24 @@ describe("review prompt", () => {
     expect(buildReviewSystemPrompt(RULES)).toContain(PLAYBOOK_COMPLIANCE_SLUGS.join(", "));
   });
 
+  it("switches persona, checks and compliance slugs for an NDA", () => {
+    const nda = buildReviewSystemPrompt(RULES, "NDA");
+    expect(nda).toContain("NON-DISCLOSURE AGREEMENT");
+    expect(nda).toContain("Termination on notice is ACCEPTABLE");
+    expect(nda).toContain("CHECK E — Hidden deal terms");
+    expect(nda).toContain(NDA_COMPLIANCE_SLUGS.join(", "));
+    expect(nda).not.toContain("LOGISTICS SERVICE PROVIDER");
+    expect(nda).not.toContain("payment_terms");
+    const pks = buildReviewSystemPrompt(RULES, "Client Template");
+    expect(pks).toContain("LOGISTICS SERVICE PROVIDER");
+    expect(pks).toContain(PLAYBOOK_COMPLIANCE_SLUGS.join(", "));
+
+    const tool = reviewToolFor("NDA");
+    const pc = (tool.function.parameters as { properties: Record<string, { properties?: Record<string, unknown>; required?: string[] }> }).properties.playbook_compliance;
+    expect(Object.keys(pc.properties ?? {})).toEqual([...NDA_COMPLIANCE_SLUGS]);
+    expect(pc.required).toEqual([...NDA_COMPLIANCE_SLUGS]);
+  });
+
   it("fills the user message with defaults for absent context", () => {
     const msg = buildReviewUserMessage({ contract_text: "PKS...", client_name: "A", document_type: "PKS" });
     expect(msg).toContain("CLIENT\nA");
@@ -99,6 +119,13 @@ describe("runContractReviewAi", () => {
     expect(req.messages[0].content).toContain("RULE 1 (CRITICAL)");
     expect(req.temperature).toBe(0.1);
     expect(req.max_tokens).toBe(REVIEW_MAX_OUTPUT_TOKENS);
+    expect(req.tools?.[0]).toEqual(REVIEW_TOOL);
+
+    const ndaChat = vi.fn<ChatFn>().mockResolvedValue(toolResponse(OUTPUT));
+    await runContractReviewAi({ rules: RULES, input: { contract_text: "NDA...", client_name: "Investor X", document_type: "NDA" } }, ndaChat);
+    const ndaReq = ndaChat.mock.calls[0][0] as ChatRequest;
+    expect(ndaReq.messages[0].content).toContain("NON-DISCLOSURE AGREEMENT");
+    expect(ndaReq.tools?.[0]).toEqual(reviewToolFor("NDA"));
     expect(REVIEW_MAX_OUTPUT_TOKENS).toBeGreaterThanOrEqual(16000);
   });
 

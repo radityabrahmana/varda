@@ -12,7 +12,7 @@ vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
     updatePlaybookRule: mocks.updatePlaybookRule,
 }));
 
-const RULE: PlaybookRule = { id: "a", rule_number: "RULE 6", title: "Insurance", description: "Klien mengasuransikan barang.", thresholds: {}, severity: "HIGH", is_active: true, created_at: "2026-09-21T00:00:00Z", updated_at: null };
+const RULE: PlaybookRule = { id: "a", rule_number: "RULE 6", title: "Insurance", description: "Klien mengasuransikan barang.", thresholds: {}, severity: "HIGH", is_active: true, applies_to: null, created_at: "2026-09-21T00:00:00Z", updated_at: null };
 
 describe("PlaybookRuleDrawer", () => {
     beforeEach(() => {
@@ -73,6 +73,7 @@ describe("PlaybookRuleDrawer", () => {
                 severity: "HIGH",
                 is_active: false,
                 thresholds: {},
+                applies_to: null,
             }),
         );
         expect(screen.queryByRole("dialog")).toBeNull();

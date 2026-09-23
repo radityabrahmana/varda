@@ -22,8 +22,8 @@ vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
 }));
 
 const RULES: PlaybookRule[] = [
-    { id: "a", rule_number: "RULE 1", title: "Liability cap", description: "≤ 10x biaya.", thresholds: { max_multiple: 10 }, severity: "CRITICAL", is_active: true, created_at: "2026-09-21T00:00:00Z", updated_at: null },
-    { id: "b", rule_number: "RULE 2", title: "Indemnity", description: "Asimetri.", thresholds: {}, severity: "HIGH", is_active: false, created_at: "2026-09-21T00:00:00Z", updated_at: null },
+    { id: "a", rule_number: "RULE 1", title: "Liability cap", description: "≤ 10x biaya.", thresholds: { max_multiple: 10 }, severity: "CRITICAL", is_active: true, applies_to: null, created_at: "2026-09-21T00:00:00Z", updated_at: null },
+    { id: "b", rule_number: "RULE 2", title: "Indemnity", description: "Asimetri.", thresholds: {}, severity: "HIGH", is_active: false, applies_to: ["PKS", "LOI"], created_at: "2026-09-21T00:00:00Z", updated_at: null },
 ];
 
 describe("PlaybookAdmin", () => {
@@ -69,7 +69,7 @@ describe("PlaybookAdmin", () => {
         await user.clear(thresholds);
         await user.type(thresholds, '{{"min_months": 6}');
         await user.click(within(dialog).getByRole("button", { name: "Buat" }));
-        await waitFor(() => expect(mocks.createPlaybookRule).toHaveBeenCalledWith({ rule_number: "RULE 15", title: "Baru", description: "Desk", thresholds: { min_months: 6 }, severity: "MEDIUM" }));
+        await waitFor(() => expect(mocks.createPlaybookRule).toHaveBeenCalledWith({ rule_number: "RULE 15", title: "Baru", description: "Desk", thresholds: { min_months: 6 }, severity: "MEDIUM", applies_to: null }));
         expect(await screen.findByText("Aturan dibuat.")).toBeInTheDocument();
         expect(screen.getByTestId("rule-RULE 15")).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "2 Aturan Aktif" })).toBeInTheDocument();

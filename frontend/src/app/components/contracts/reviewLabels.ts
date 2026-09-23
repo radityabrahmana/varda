@@ -14,6 +14,20 @@ export const PLAYBOOK_LABELS: Record<string, string> = {
     late_payment: "Keterlambatan Pembayaran",
     ownership_after_settlement: "Kepemilikan Setelah Penyelesaian",
     auto_renewal: "Perpanjangan Otomatis",
+    // NDA review slugs
+    mutuality: "Mutualitas Kewajiban",
+    confidentiality_definition: "Definisi Informasi Rahasia",
+    purpose_limitation: "Pembatasan Tujuan Penggunaan",
+    term_survival: "Jangka Waktu & Keberlakuan Pasca-Pengakhiran",
+    permitted_disclosure: "Pengungkapan yang Diizinkan",
+    return_destruction: "Pengembalian / Pemusnahan Informasi",
+    remedies_penalty: "Pemulihan & Denda",
+    non_compete_non_solicit: "Non-Kompetisi & Non-Solicit",
+    no_obligation_no_license: "Tanpa Kewajiban Bertransaksi / Lisensi",
+    personal_data: "Pelindungan Data Pribadi",
+    governing_law_language: "Hukum & Bahasa yang Berlaku",
+    exclusivity_standstill: "Eksklusivitas / Standstill Tersembunyi",
+    residuals: "Klausul Residual",
 };
 
 export const PLAYBOOK_STATUS_LABEL: Record<string, string> = {

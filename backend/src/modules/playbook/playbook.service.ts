@@ -9,4 +9,5 @@ export {
   parsePatchRuleBody,
   updatePlaybookRule,
 } from "./playbook.rules";
-export type { CreateRuleInput, PatchRuleInput, PlaybookRuleRow, PromptRule, RuleSeverity } from "./playbook.rules";
+export type { CreateRuleInput, PatchRuleInput, PlaybookRuleRow, PromptRule, RuleDocumentType, RuleSeverity } from "./playbook.rules";
+export { RULE_DOCUMENT_TYPES, normalizeRuleDocumentType } from "./playbook.rules";

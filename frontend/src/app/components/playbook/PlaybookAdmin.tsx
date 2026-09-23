@@ -7,7 +7,7 @@ import { createPlaybookRule, getMe, listPlaybookRules, updatePlaybookRule } from
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { Modal } from "@/app/components/modals/Modal";
 import { EMPTY_RULE_FORM, RuleForm, type RuleFormValue } from "./RuleForm";
-import { SEVERITY_TONE, parseThresholds, type PlaybookRule } from "./playbookTypes";
+import { SEVERITY_TONE, parseThresholds, type PlaybookRule, documentTypeLabel } from "./playbookTypes";
 
 // /playbook (Janus "Aturan Playbook"): the rule set every AI review is scored
 // against. Any signed-in user can read; admins add, edit and toggle rules.
@@ -22,6 +22,7 @@ function toForm(rule: PlaybookRule): RuleFormValue {
         thresholdsText: JSON.stringify(rule.thresholds ?? {}, null, 2),
         severity: rule.severity,
         is_active: rule.is_active,
+        applies_to: rule.applies_to ?? [],
     };
 }
 
@@ -79,6 +80,7 @@ export function PlaybookAdmin() {
             description: editor.form.description.trim(),
             thresholds,
             severity: editor.form.severity,
+            applies_to: editor.form.applies_to.length ? editor.form.applies_to : null,
         };
         try {
             const saved = editor.rule ? await updatePlaybookRule(editor.rule.id, payload) : await createPlaybookRule(payload);
@@ -147,6 +149,11 @@ export function PlaybookAdmin() {
                                             <span className="w-[68px] shrink-0 font-mono text-[11px] font-semibold tracking-wide text-gray-400">{rule.rule_number}</span>
                                             <span className="flex-1 truncate text-sm font-medium text-gray-900">{rule.title}</span>
                                             <span className="rounded px-2 py-0.5 text-[11px] font-semibold" style={{ background: tone.bg, color: tone.color }}>{rule.severity}</span>
+                                            {rule.applies_to?.length ? (
+                                                <span className="rounded border border-gray-200 bg-white px-2 py-0.5 text-[10.5px] text-gray-600" title="Berlaku untuk jenis dokumen ini">
+                                                    {rule.applies_to.map(documentTypeLabel).join(" · ")}
+                                                </span>
+                                            ) : null}
                                             {!rule.is_active ? <span className="rounded border border-gray-200 bg-white px-2 py-0.5 text-[10.5px] text-gray-500">Nonaktif</span> : null}
                                             <ChevronDown className="h-3.5 w-3.5 text-gray-400 transition-transform" style={{ transform: open ? "rotate(180deg)" : undefined }} />
                                         </button>

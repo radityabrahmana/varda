@@ -104,6 +104,7 @@ function RuleDrawerBody({ rule, isAdmin, onSaved, onClose }: { rule: PlaybookRul
         thresholdsText: JSON.stringify(rule.thresholds ?? {}, null, 2),
         severity: rule.severity,
         is_active: rule.is_active,
+        applies_to: rule.applies_to ?? [],
     });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -118,7 +119,7 @@ function RuleDrawerBody({ rule, isAdmin, onSaved, onClose }: { rule: PlaybookRul
         setSaving(true);
         setError(null);
         try {
-            onSaved(await updatePlaybookRule(rule.id, { title: form.title.trim(), description: form.description.trim(), severity: form.severity, is_active: form.is_active, thresholds }));
+            onSaved(await updatePlaybookRule(rule.id, { title: form.title.trim(), description: form.description.trim(), severity: form.severity, is_active: form.is_active, thresholds, applies_to: form.applies_to.length ? form.applies_to : null }));
         } catch (e) {
             setError(userFacingApiError(e, "Gagal menyimpan."));
         } finally {

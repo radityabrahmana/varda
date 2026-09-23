@@ -1,6 +1,6 @@
 "use client";
 
-import { RULE_SEVERITIES, type RuleSeverity } from "./playbookTypes";
+import { RULE_DOCUMENT_TYPES, RULE_SEVERITIES, type RuleSeverity } from "./playbookTypes";
 
 // The rule editor fields, shared by the /playbook modal and the workspace
 // drawer. Thresholds are edited as JSON text; the caller parses on save.
@@ -12,6 +12,8 @@ export interface RuleFormValue {
     thresholdsText: string;
     severity: RuleSeverity;
     is_active: boolean;
+    /** Empty = applies to every document type. */
+    applies_to: string[];
 }
 
 export const EMPTY_RULE_FORM: RuleFormValue = {
@@ -21,6 +23,7 @@ export const EMPTY_RULE_FORM: RuleFormValue = {
     thresholdsText: "{}",
     severity: "HIGH",
     is_active: true,
+    applies_to: [],
 };
 
 const field = "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500";
@@ -75,6 +78,28 @@ export function RuleForm({
                 <span className={label}>Deskripsi</span>
                 <textarea value={value.description} onChange={(e) => set("description", e.target.value)} disabled={disabled} rows={4} placeholder="Deskripsi aturan secara detail..." className={field} />
             </label>
+            <fieldset className="space-y-1.5">
+                <legend className={label}>Berlaku untuk jenis dokumen</legend>
+                <div className="flex flex-wrap gap-2">
+                    {RULE_DOCUMENT_TYPES.map((d) => {
+                        const checked = value.applies_to.includes(d.value);
+                        return (
+                            <label key={d.value} className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${checked ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-700"}`}>
+                                <input
+                                    type="checkbox"
+                                    className="sr-only"
+                                    checked={checked}
+                                    disabled={disabled}
+                                    onChange={(e) => set("applies_to", e.target.checked ? [...value.applies_to, d.value] : value.applies_to.filter((v) => v !== d.value))}
+                                    aria-label={`Berlaku untuk ${d.label}`}
+                                />
+                                {d.label}
+                            </label>
+                        );
+                    })}
+                </div>
+                <span className="block text-xs text-gray-500">{value.applies_to.length === 0 ? "Tidak ada yang dipilih = berlaku untuk semua jenis dokumen." : "Aturan hanya dipakai saat meninjau jenis dokumen yang dipilih."}</span>
+            </fieldset>
             <label className="block space-y-1.5">
                 <span className={label}>Thresholds (JSON)</span>
                 <textarea value={value.thresholdsText} onChange={(e) => set("thresholdsText", e.target.value)} disabled={disabled} rows={3} placeholder='{"min_months": 6}' className={`${field} font-mono text-xs`} />
