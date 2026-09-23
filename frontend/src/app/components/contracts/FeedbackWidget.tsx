@@ -7,6 +7,7 @@ import { useDraftFeedback } from "@/app/hooks/useDraftFeedback";
 import { postContractFeedback } from "@/app/lib/mikeApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import type { ReviewFeedbackRow } from "./reviewTypes";
+import { useReviewAccess } from "./reviewAccess";
 
 // The four Janus feedback variants, labels verbatim. One review_feedback row per
 // save; the parent receives the row and hides the widget behind a status pill
@@ -109,8 +110,10 @@ export function FeedbackWidget({
     const { action, rationale, adjustedSeverity, editedText } = draft;
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { canEdit } = useReviewAccess();
 
     if (existing) return <FeedbackRecorded feedback={existing} />;
+    if (!canEdit) return null;
 
     const save = async (selectedAction: string) => {
         setSaving(true);

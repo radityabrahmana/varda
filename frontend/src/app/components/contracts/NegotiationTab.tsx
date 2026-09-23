@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, Copy, Loader2, Lock, RefreshCw, Shield } fro
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { setNegotiationPointStatus } from "@/app/lib/mikeApi";
 import type { NegotiationMemo, NegotiationPoint, NegotiationPointRow, NegotiationStatus } from "./reviewTypes";
+import { useReviewAccess } from "./reviewAccess";
 
 // Negosiasi tab (ported from Janus): the BD memo with per-point status. Labels
 // verbatim. Memo generation itself is triggered by the workspace (C-Level gate
@@ -94,6 +95,7 @@ function PointCard({
     status: NegotiationStatus;
     onStatusChange: (pointId: string, status: NegotiationStatus) => void;
 }) {
+    const { canEdit } = useReviewAccess();
     const [expanded, setExpanded] = useState(true);
     return (
         <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm" style={{ borderLeft: `3px solid ${accent}` }}>
@@ -111,6 +113,7 @@ function PointCard({
                     </span>
                     <select
                         aria-label={`Status ${point.id}`}
+                        disabled={!canEdit}
                         value={status}
                         onChange={(e) => onStatusChange(point.id, e.target.value as NegotiationStatus)}
                         className={`rounded-lg px-2 py-1 text-xs ${STATUS_CLASS[status] ?? ""}`}
@@ -156,6 +159,7 @@ export interface NegotiationTabProps {
 }
 
 export function NegotiationTab({ reviewId, clientName, memo, generatedAt, generating, error, points, onRegenerate, onPointSaved }: NegotiationTabProps) {
+    const { canEdit } = useReviewAccess();
     const [saveError, setSaveError] = useState<string | null>(null);
     const statusOf = (pointId: string): NegotiationStatus => points.find((p) => p.point_id === pointId)?.status ?? "pending";
 
@@ -224,9 +228,11 @@ export function NegotiationTab({ reviewId, clientName, memo, generatedAt, genera
                     <PillButtonUI tone="white" size="xs" onClick={() => void navigator.clipboard?.writeText(memoToMarkdown(memo))}>
                         <Copy className="mr-1 h-3 w-3" /> Salin Memo
                     </PillButtonUI>
-                    <PillButtonUI tone="white" size="xs" onClick={onRegenerate}>
-                        <RefreshCw className="mr-1 h-3 w-3" /> Buat Ulang
-                    </PillButtonUI>
+                    {canEdit ? (
+                        <PillButtonUI tone="white" size="xs" onClick={onRegenerate}>
+                            <RefreshCw className="mr-1 h-3 w-3" /> Buat Ulang
+                        </PillButtonUI>
+                    ) : null}
                 </div>
             </div>
             {error ? <p className="text-xs text-red-600">{error}</p> : null}

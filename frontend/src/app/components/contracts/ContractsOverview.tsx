@@ -93,7 +93,9 @@ export function ContractsOverview() {
     );
 
     const monthName = now.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
-    const canDelete = Boolean(me?.isAdmin);
+    // Owners (uploader or an "owner" grant) and admins may delete; the backend checks too.
+    const canDeleteRow = (r: { access_role?: string }) => Boolean(me?.isAdmin) || r.access_role === "owner";
+    const canDelete = reviews.some(canDeleteRow);
 
     async function handleDelete(e: React.MouseEvent, id: string, title: string | null) {
         e.stopPropagation();
@@ -300,6 +302,7 @@ export function ContractsOverview() {
                                                 </td>
                                                 {canDelete && (
                                                     <td className="px-2 py-3">
+                                                        {canDeleteRow(r) ? (
                                                         <button
                                                             onClick={(e) => handleDelete(e, r.id, r.title)}
                                                             title="Hapus tinjauan"
@@ -307,6 +310,7 @@ export function ContractsOverview() {
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </button>
+                                                        ) : null}
                                                     </td>
                                                 )}
                                             </tr>

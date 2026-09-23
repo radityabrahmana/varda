@@ -16,6 +16,10 @@ const mocks = vi.hoisted(() => ({
     postContractFeedbackBulk: vi.fn(),
     postContractComment: vi.fn(),
     attachContractDocx: vi.fn(),
+    getContractPeople: vi.fn(),
+    getContractAccess: vi.fn(),
+    grantContractAccess: vi.fn(),
+    revokeContractAccess: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -40,6 +44,10 @@ vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
     postContractFeedbackBulk: mocks.postContractFeedbackBulk,
     postContractComment: mocks.postContractComment,
     attachContractDocx: mocks.attachContractDocx,
+    getContractPeople: mocks.getContractPeople,
+    getContractAccess: mocks.getContractAccess,
+    grantContractAccess: mocks.grantContractAccess,
+    revokeContractAccess: mocks.revokeContractAccess,
 }));
 
 const DETAIL: ContractReviewDetail = {
@@ -172,30 +180,73 @@ describe("ReviewWorkspace", () => {
         expect(mocks.getContract).toHaveBeenCalledWith("r1");
     });
 
-    it("copies the contract link for Slack and confirms it", async () => {
-        mocks.getContract.mockResolvedValue(DETAIL);
+    const PEOPLE = {
+        scope: "direct" as const,
+        owner: { user_id: "u1", email: "aditya@dashelectric.co", display_name: "Aditya", role: "owner" as const },
+        members: [{ user_id: "u2", email: "donnie@dashelectric.co", display_name: "Donnie", role: "viewer" as const }],
+    };
+
+    it("opens the share dialog from the top-right Bagikan action and copies a link from it", async () => {
+        mocks.getContract.mockResolvedValue({ ...DETAIL, access: { role: "owner", via: "creator" } });
+        mocks.getContractPeople.mockResolvedValue(PEOPLE);
+        mocks.getContractAccess.mockResolvedValue({
+            scope: "direct",
+            org_id: null,
+            access_role: "owner",
+            grants: [{ email: "donnie@dashelectric.co", role: "viewer" }],
+        });
         // user-event installs its own clipboard stub during setup; spy on that one.
         const user = userEvent.setup();
         const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
         render(<ReviewWorkspace reviewId="r1" />);
 
         await user.click(await screen.findByRole("button", { name: /Bagikan/ }));
+        expect(await screen.findByText("donnie@dashelectric.co")).toBeInTheDocument();
+        expect(mocks.getContractPeople).toHaveBeenCalledWith("r1");
+        await waitFor(() => expect(mocks.getContractAccess).toHaveBeenCalledWith("r1"));
 
+        await user.click(screen.getByRole("button", { name: /Salin tautan/ }));
         expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/contracts/r1`);
-        expect(await screen.findByRole("status")).toHaveTextContent("Tautan disalin");
+        expect(await screen.findByText("Tautan disalin")).toBeInTheDocument();
     });
 
-    it("falls back to a selectable link when the clipboard is blocked", async () => {
+    it("falls back to a selectable link in the share dialog when the clipboard is blocked", async () => {
         mocks.getContract.mockResolvedValue(DETAIL);
+        mocks.getContractPeople.mockResolvedValue(PEOPLE);
+        mocks.getContractAccess.mockResolvedValue({ scope: "direct", org_id: null, access_role: "owner", grants: [] });
         const user = userEvent.setup();
         vi.spyOn(navigator.clipboard, "writeText").mockRejectedValue(new Error("Write permission denied"));
         render(<ReviewWorkspace reviewId="r1" />);
 
         await user.click(await screen.findByRole("button", { name: /Bagikan/ }));
+        await user.click(await screen.findByRole("button", { name: /Salin tautan/ }));
 
         const field = await screen.findByRole("textbox", { name: "Tautan tinjauan" });
         expect(field).toHaveValue(`${window.location.origin}/contracts/r1`);
         expect(screen.queryByText("Tautan disalin")).not.toBeInTheDocument();
+    });
+
+    it("shows a viewer the review read-only: no feedback, gate, redline or stage controls", async () => {
+        mocks.getContract.mockResolvedValue({ ...DETAIL, access: { role: "viewer", via: "grant" } });
+        mocks.getContractPeople.mockResolvedValue(PEOPLE);
+        const user = userEvent.setup();
+        render(<ReviewWorkspace reviewId="r1" />);
+        await screen.findByRole("heading", { name: "PKS — Markas Daging" });
+
+        expect(screen.getByText("Akses lihat")).toBeInTheDocument();
+        expect(screen.getByTestId("progress-label")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Tandai Sudah Ditinjau C-Level" })).toBeNull();
+        expect(screen.queryByRole("button", { name: "Setuju" })).toBeNull();
+        expect(screen.queryByRole("button", { name: /Abaikan/ })).toBeNull();
+        expect(screen.queryByRole("button", { name: /Unggah DOCX asli/ })).toBeNull();
+        expect(screen.getByRole("button", { name: "Tahap kontrak" })).toBeDisabled();
+        // Locating findings still works.
+        expect(screen.getAllByRole("button", { name: /Lihat di dokumen/ }).length).toBeGreaterThan(0);
+
+        // The share dialog opens as a roster only: no grants fetch, no add field.
+        await user.click(screen.getByRole("button", { name: /Bagikan/ }));
+        expect(await screen.findByText("donnie@dashelectric.co")).toBeInTheDocument();
+        expect(mocks.getContractAccess).not.toHaveBeenCalled();
     });
 
     it("offers to re-upload the original DOCX when none was persisted and reloads after attaching", async () => {

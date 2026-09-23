@@ -72,21 +72,12 @@ describe("getReviewStatus", () => {
 });
 
 describe("deleteReview", () => {
-  it("refuses a caller without the admin role before touching reviews", async () => {
-    const fake = scriptedDb([{ table: "user_roles", data: null }]);
-    const r = await deleteReview(fake.db as unknown as Db, { userId: "u1", reviewId: "r1" });
-    expect(r).toMatchObject({ ok: false, kind: "forbidden" });
-    expect(fake.calls.map((c) => c.table)).toEqual(["user_roles"]);
-  });
-
-  it("deletes by id for an admin", async () => {
-    const fake = scriptedDb([
-      { table: "user_roles", data: { role: "admin" } },
-      { table: "reviews", op: "delete", data: null },
-    ]);
-    const r = await deleteReview(fake.db as unknown as Db, { userId: "u1", reviewId: "r1" });
+  it("deletes by id (the route has already checked container.delete)", async () => {
+    const fake = scriptedDb([{ table: "reviews", op: "delete", data: null }]);
+    const r = await deleteReview(fake.db as unknown as Db, { reviewId: "r1" });
     expect(r).toMatchObject({ ok: true });
-    expect(fake.calls[1].filters).toEqual([["eq", "id", "r1"]]);
+    expect(fake.calls[0].filters).toEqual([["eq", "id", "r1"]]);
+    fake.done();
   });
 });
 

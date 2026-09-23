@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type {
     AccessAssignmentRole,
     ProjectPeople,
@@ -50,6 +50,8 @@ interface Props {
     currentUserId?: string | null;
     breadcrumb: string[];
     access: AccessControls;
+    /** Optional control in the modal header (e.g. "copy link"). */
+    headerAction?: ReactNode;
 }
 
 export function AccessModal({
@@ -61,6 +63,7 @@ export function AccessModal({
     currentUserId,
     breadcrumb,
     access,
+    headerAction,
 }: Props) {
     const [busy, setBusy] = useState(false);
     const [pendingEmail, setPendingEmail] = useState<string | null>(null);
@@ -365,6 +368,7 @@ export function AccessModal({
             open={open}
             onClose={onClose}
             breadcrumbs={[...breadcrumb.slice(0, -1), "Access"]}
+            headerAction={headerAction}
         >
             <div className="flex min-h-0 flex-1 flex-col pb-5">
                 <AccessEditor

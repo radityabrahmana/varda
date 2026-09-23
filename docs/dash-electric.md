@@ -39,6 +39,10 @@ Open PRs against **this fork** — `gh pr create -R radityabrahmana/varda --base
 
 - `backend/src/modules/contracts/` — reviews, AI prompts (`contracts.ai.ts`), redline projection,
   DOCX persistence, feedback, memo. Facade `contracts.service.ts`.
+- Contract reviews are **private**: visible to the uploader, people they share with (Bagikan →
+  `review_access_grants`, owner/editor/viewer), and Varda admins (`user_roles.role = 'admin'`).
+  Enforced per route in `contracts.access.ts`; contract tables have no `anon`/`authenticated`
+  table privileges (backend service role only).
 - `backend/src/modules/playbook/` — playbook rules, scoped per document type (`applies_to`).
 - `backend/src/modules/chat/engine/tools/contractReviewTool.ts` — the Assistant's `review_contract` tool.
 - `frontend/src/app/components/contracts/`, `components/playbook/`, pages `/contracts`, `/contracts/new`,
@@ -58,7 +62,6 @@ Full session-by-session log (decisions, incidents, verification evidence):
 `~/.gstack/projects/radityabrahmana-janusid-dd78a9ba/HANDOFF-mike-migration.md` (local file on
 Raditya's Mac). Cutover runbook: `~/Desktop/varda-cutover-runbook-2026-09-22.md`.
 
-Known follow-ups as of 2026-09-23: workspace layout below 1024px squeezes the document pane;
-"new clause" revisions cannot be projected as tracked changes (insertion support needed);
+Known follow-ups as of 2026-09-23: "new clause" revisions cannot be projected as tracked changes (insertion support needed);
 Janus Lovable project still hosts the redirect and must be kept ~2 weeks, then frozen;
 remove `ALLOWED_ORIGINS` from the backend once the old Railway URL is unused.

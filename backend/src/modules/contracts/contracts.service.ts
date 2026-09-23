@@ -12,7 +12,18 @@ export { CONTRACT_UPLOAD_MAX_BYTES, extractContract } from "./contracts.extract"
 export type { ExtractedContract } from "./contracts.extract";
 
 export {
+  REVIEW_GRANTS_TABLE,
   callerIsAdmin,
+  grantReviewAccess,
+  listReviewGrants,
+  listReviewPeople,
+  requireReviewCapability,
+  resolveReviewAccess,
+  revokeReviewAccess,
+} from "./contracts.access";
+export type { ReviewAccess, ReviewAccessGrant, ReviewAccessVia, ReviewPeople } from "./contracts.access";
+
+export {
   createReview,
   createReviewFromDocx,
   deleteReview,

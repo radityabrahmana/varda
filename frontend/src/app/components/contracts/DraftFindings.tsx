@@ -20,6 +20,7 @@ import {
     SECTION_TITLES,
     SEVERITY_COLOR,
 } from "./reviewLabels";
+import { useReviewAccess } from "./reviewAccess";
 
 // The "Draf" view: every AI finding as a card, in Janus order with verbatim
 // Bahasa section titles, each with its FeedbackWidget variant. Synthetic ids
@@ -77,6 +78,7 @@ const RECOMMENDATION_OPTIONS = [
 
 function SaveClauseButton({ reviewId, title, wording }: { reviewId: string; title: string; wording: string }) {
     const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+    const { canEdit } = useReviewAccess();
     const save = async () => {
         setState("saving");
         try {
@@ -86,6 +88,7 @@ function SaveClauseButton({ reviewId, title, wording }: { reviewId: string; titl
             setState("error");
         }
     };
+    if (!canEdit) return null;
     if (state === "saved") return <span className="text-xs text-emerald-700">Tersimpan ke Pustaka Klausul</span>;
     return (
         <button
@@ -377,6 +380,7 @@ function ExecutiveSummaryFeedback({
     const [rationale, setRationale] = useState("");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { canEdit } = useReviewAccess();
 
     if (existing) {
         return (
@@ -391,6 +395,7 @@ function ExecutiveSummaryFeedback({
             </div>
         );
     }
+    if (!canEdit) return null;
 
     const agree = async () => {
         setBusy(true);
