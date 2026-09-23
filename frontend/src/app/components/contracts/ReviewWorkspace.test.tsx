@@ -477,6 +477,14 @@ describe("ReviewWorkspace", () => {
         const findingsPane = screen.getByTestId("findings-pane");
         const views = screen.getByRole("tablist", { name: "Tampilan" });
 
+        // The heading carries the full title on its own line; the page-header crumb
+        // shows a short label on phones instead of repeating it.
+        const heading = screen.getByRole("heading", { level: 1 });
+        expect(heading).toHaveClass("line-clamp-2", "sm:line-clamp-1");
+        expect(heading.parentElement).toHaveClass("basis-full", "sm:basis-auto");
+        // (PageHeader also renders hidden measurement copies of each crumb.)
+        for (const crumb of screen.getAllByText("Tinjauan", { selector: "span" })) expect(crumb).toHaveClass("sm:hidden");
+
         // Findings first on a phone; both panes are restored side by side at lg.
         expect(within(views).getByRole("tab", { name: "Temuan" })).toHaveAttribute("aria-selected", "true");
         expect(docPane).toHaveClass("hidden", "lg:block");

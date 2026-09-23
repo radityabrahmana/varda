@@ -306,7 +306,20 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                 loading={state.kind === "loading"}
                 breadcrumbs={[
                     { label: "Contracts", onClick: () => router.push("/contracts"), title: "Kembali ke Tinjauan Kontrak" },
-                    state.kind === "loading" ? { loading: true, skeletonClassName: "w-40" } : { label: review?.title ?? "Tinjauan" },
+                    state.kind === "loading"
+                        ? { loading: true, skeletonClassName: "w-40" }
+                        : {
+                              // On phones the header shows only the last crumb; the full title
+                              // is already the workspace heading right below it.
+                              label: review?.title ? (
+                                  <>
+                                      <span className="sm:hidden">Tinjauan</span>
+                                      <span className="hidden sm:inline">{review.title}</span>
+                                  </>
+                              ) : (
+                                  "Tinjauan"
+                              ),
+                          },
                 ]}
             />
 
@@ -323,8 +336,8 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
             ) : (
                 <>
                     <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-3 sm:gap-3 sm:px-6">
-                        <div className="min-w-0 flex-1">
-                            <h1 className="truncate font-serif text-xl font-medium text-gray-900">{review.title}</h1>
+                        <div className="min-w-0 flex-1 basis-full sm:basis-auto">
+                            <h1 className="line-clamp-2 break-words font-serif text-lg font-medium text-gray-900 sm:line-clamp-1 sm:text-xl" title={review.title ?? undefined}>{review.title}</h1>
                             <p className="mt-0.5 text-xs text-gray-500">
                                 {review.document_type} · {review.client_name}
                                 {review.created_at ? ` · Dibuat ${formatCreatedAt(review.created_at)}` : ""}

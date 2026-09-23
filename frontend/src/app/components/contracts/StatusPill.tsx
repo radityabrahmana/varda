@@ -181,7 +181,9 @@ export function StatusPill({
                     type="button"
                     onClick={dismissHint}
                     aria-label="Tutup petunjuk"
-                    className="absolute left-0 top-full z-10 mt-1 whitespace-nowrap rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-500 shadow-sm hover:bg-gray-50"
+                    // Below lg the Temuan/Dokumen toggle sits right under the header
+                    // and this floating hint would cover it; the pill's chevron is enough there.
+                    className="absolute left-0 top-full z-10 mt-1 hidden whitespace-nowrap lg:block rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-500 shadow-sm hover:bg-gray-50"
                 >
                     Klik untuk ubah tahap →
                 </button>
