@@ -7,6 +7,7 @@ import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { COMMENT_TYPE_LABEL, groupReplies, locateQuote } from "./findingAnnotations";
 import type { ManualCommentRow } from "./reviewTypes";
+import { useReviewAccess } from "./reviewAccess";
 
 // Komentar tab: the manual annotations Janus showed beside the document on
 // "Tinjauan AI". Root comments are ordered by their anchor in the contract;
@@ -75,6 +76,7 @@ function CommentCard({
     const [text, setText] = useState("");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { canEdit } = useReviewAccess();
     const canLocate = (comment.highlight_text?.length ?? 0) >= 5;
 
     const sendReply = async () => {
@@ -157,7 +159,7 @@ function CommentCard({
                             {error ? <span className="text-xs text-red-600">{error}</span> : null}
                         </div>
                     </div>
-                ) : (
+                ) : !canEdit ? null : (
                     <button type="button" onClick={() => setReplying(true)} className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800">
                         <MessageSquare className="h-3 w-3" /> Balas
                     </button>

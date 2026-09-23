@@ -3016,6 +3016,35 @@ export async function getContract(id: string): Promise<ContractReviewDetail> {
     );
 }
 
+// Contract sharing — same shapes as the chat access endpoints so the shared
+// AccessModal can drive it.
+export async function getContractPeople(id: string): Promise<ProjectPeople> {
+    return apiRequest<ProjectPeople>(`/contracts/${encodeURIComponent(id)}/people`);
+}
+
+export async function getContractAccess(id: string): Promise<ContentAccess> {
+    return apiRequest<ContentAccess>(`/contracts/${encodeURIComponent(id)}/access`);
+}
+
+export async function grantContractAccess(
+    id: string,
+    email: string,
+    role: AccessAssignmentRole,
+): Promise<ContentAccessGrant> {
+    return apiRequest<ContentAccessGrant>(`/contracts/${encodeURIComponent(id)}/access`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, role }),
+    });
+}
+
+export async function revokeContractAccess(id: string, email: string): Promise<void> {
+    await apiRequest(
+        `/contracts/${encodeURIComponent(id)}/access/${encodeURIComponent(email)}`,
+        { method: "DELETE" },
+    );
+}
+
 export async function deleteContract(id: string): Promise<void> {
     await apiRequest<void>(`/contracts/${encodeURIComponent(id)}`, {
         method: "DELETE",

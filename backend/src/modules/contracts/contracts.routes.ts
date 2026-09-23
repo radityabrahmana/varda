@@ -1,5 +1,5 @@
 // HTTP layer for the contracts module (Janus contract review inside Varda):
-//   GET    /contracts               team-wide review list for the dashboard
+//   GET    /contracts               reviews the caller can see (own + shared; all for admins)
 //   GET    /contracts/me            caller identity + admin flag (client-side gating)
 //   GET    /contracts/:id           full review + feedback + comments (workspace)
 //   GET    /contracts/:id/file      stream the working redline DOCX (or ?variant=original; ?download=1)
@@ -10,7 +10,11 @@
 //   POST   /contracts/upload        raw DOCX bytes → extracted text + HTML
 //   POST   /contracts               create a review row and start the async AI review
 //   GET    /contracts/:id/status    poll review processing state
-//   DELETE /contracts/:id           admin only
+//   DELETE /contracts/:id           owner or admin
+//   GET    /contracts/:id/people    share-dialog roster (uploader + grants)
+//   GET    /contracts/:id/access    direct grants (owner or admin)
+//   POST   /contracts/:id/access    grant / re-role one recipient { email, role }
+//   DELETE /contracts/:id/access/:email  revoke one recipient
 //   PATCH  /contracts/:id           status / lifecycle_stage (+status sync) / dates / COO override
 //   POST   /contracts/:id/feedback  one review_feedback row (the moat); /feedback/bulk for many
 //   POST   /contracts/:id/comments  manual comment or reply (parent_comment_id)
@@ -19,6 +23,10 @@
 //
 // Handlers parse the request, call contracts.service, and map ServiceResults
 // onto status codes. Never query the database here.
+//
+// Access: every /:id route first resolves the caller's standing on the review
+// (router.param below → res.locals.reviewAccess; 404 when they may not see it),
+// then declares the capability it needs with `allowed(res, …)`.
 //
 // The upload endpoint takes the file as a raw body (Content-Type
 // application/octet-stream, filename in `?filename=` or `x-filename`) instead of
@@ -32,6 +40,7 @@ import { asyncRoute, routerErrorHandler } from "../../middleware/asyncRoute";
 import { createServerSupabase } from "../../lib/supabase";
 import { buildContentDisposition, createFileReadStream } from "../../lib/storage";
 import { sendServiceFailure } from "../../lib/serviceResult";
+import type { Capability } from "../../lib/permissions";
 import {
   CONTRACT_UPLOAD_MAX_BYTES,
   DOCX_MIME,
@@ -50,7 +59,14 @@ import {
   getReviewDetail,
   getReviewFileSource,
   getReviewStatus,
+  grantReviewAccess,
+  listReviewGrants,
+  listReviewPeople,
   listReviews,
+  requireReviewCapability,
+  resolveReviewAccess,
+  revokeReviewAccess,
+  type ReviewAccess,
   parseClauseBody,
   parseCommentBody,
   parseCreateReviewBody,
@@ -71,8 +87,37 @@ import {
 export const contractsRouter = Router();
 contractsRouter.use(requireAuth);
 
+contractsRouter.param("id", (req, res, next, id: string) => {
+  resolveReviewAccess(createServerSupabase(), {
+    reviewId: id,
+    userId: res.locals.userId as string,
+    email: res.locals.userEmail as string | undefined,
+  })
+    .then((access) => {
+      if (!access.ok) return void sendServiceFailure(res, access);
+      res.locals.reviewAccess = access.data;
+      next();
+    })
+    .catch(next);
+});
+
+function reviewAccess(res: express.Response): ReviewAccess {
+  return res.locals.reviewAccess as ReviewAccess;
+}
+
+/** Sends 403 and returns false when the caller's role on the review lacks `capability`. */
+function allowed(res: express.Response, capability: Capability): boolean {
+  const check = requireReviewCapability(reviewAccess(res), capability);
+  if (check.ok) return true;
+  sendServiceFailure(res, check);
+  return false;
+}
+
 contractsRouter.get("/", asyncRoute(async (_req, res) => {
-  const result = await listReviews(createServerSupabase());
+  const result = await listReviews(createServerSupabase(), {
+    userId: res.locals.userId as string,
+    email: res.locals.userEmail as string | undefined,
+  });
   if (!result.ok) return void sendServiceFailure(res, result);
   res.json(result.data);
 }));
@@ -145,7 +190,8 @@ contractsRouter.post("/", asyncRoute(async (req, res) => {
 contractsRouter.get("/:id", asyncRoute(async (req, res) => {
   const result = await getReviewDetail(createServerSupabase(), req.params.id);
   if (!result.ok) return void sendServiceFailure(res, result);
-  res.json(result.data);
+  const access = reviewAccess(res);
+  res.json({ ...result.data, access: { role: access.role, via: access.via } });
 }));
 
 contractsRouter.get("/:id/file", asyncRoute(async (req, res) => {
@@ -175,6 +221,7 @@ contractsRouter.post(
   "/:id/docx",
   express.raw({ type: () => true, limit: CONTRACT_UPLOAD_MAX_BYTES }),
   asyncRoute(async (req, res) => {
+    if (!allowed(res, "content.edit")) return;
     const buffer = Buffer.isBuffer(req.body) ? Buffer.from(req.body) : Buffer.alloc(0);
     const db = createServerSupabase();
     const attached = await attachDocxUploadToReview(db, { reviewId: req.params.id, buffer, filename: uploadFilename(req) });
@@ -185,12 +232,14 @@ contractsRouter.post(
 );
 
 contractsRouter.post("/:id/redline/project", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
   const result = await projectRevisions(createServerSupabase(), { reviewId: req.params.id });
   if (!result.ok) return void sendServiceFailure(res, result);
   res.json(result.data);
 }));
 
 contractsRouter.post("/:id/revisions/:revisionId/:verb", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
   const { id, revisionId, verb } = req.params;
   const body = (req.body ?? {}) as { rationale?: unknown; edited_text?: unknown };
   const rationale = typeof body.rationale === "string" ? body.rationale.trim() : "";
@@ -220,12 +269,14 @@ contractsRouter.post("/:id/revisions/:revisionId/:verb", asyncRoute(async (req, 
 }));
 
 contractsRouter.post("/:id/memo", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
   const result = await generateNegotiationMemo(createServerSupabase(), { reviewId: req.params.id });
   if (!result.ok) return void sendServiceFailure(res, result);
   res.json(result.data);
 }));
 
 contractsRouter.put("/:id/negotiation-points/:pointId", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
   const parsed = parsePointStatusBody(req.body);
   if (!parsed.ok) return void sendServiceFailure(res, parsed);
   const result = await upsertNegotiationPoint(createServerSupabase(), {
@@ -246,6 +297,7 @@ contractsRouter.get("/:id/status", asyncRoute(async (req, res) => {
 }));
 
 contractsRouter.patch("/:id", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
   const parsed = parseReviewPatch(req.body);
   if (!parsed.ok) return void sendServiceFailure(res, parsed);
   const result = await updateReviewMeta(createServerSupabase(), { reviewId: req.params.id, patch: parsed.data });
@@ -254,6 +306,7 @@ contractsRouter.patch("/:id", asyncRoute(async (req, res) => {
 }));
 
 contractsRouter.post("/:id/feedback", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
   const parsed = parseFeedbackBody(req.body);
   if (!parsed.ok) return void sendServiceFailure(res, parsed);
   const result = await createFeedback(createServerSupabase(), {
@@ -266,6 +319,7 @@ contractsRouter.post("/:id/feedback", asyncRoute(async (req, res) => {
 }));
 
 contractsRouter.post("/:id/feedback/bulk", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
   const parsed = parseFeedbackBulkBody(req.body);
   if (!parsed.ok) return void sendServiceFailure(res, parsed);
   const result = await createFeedbackBulk(createServerSupabase(), {
@@ -278,6 +332,7 @@ contractsRouter.post("/:id/feedback/bulk", asyncRoute(async (req, res) => {
 }));
 
 contractsRouter.post("/:id/comments", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
   const parsed = parseCommentBody(req.body);
   if (!parsed.ok) return void sendServiceFailure(res, parsed);
   const result = await createComment(createServerSupabase(), {
@@ -291,6 +346,7 @@ contractsRouter.post("/:id/comments", asyncRoute(async (req, res) => {
 }));
 
 contractsRouter.post("/:id/missed-clause", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
   const parsed = parseMissedClauseBody(req.body);
   if (!parsed.ok) return void sendServiceFailure(res, parsed);
   const result = await createMissedClauseSignal(createServerSupabase(), {
@@ -303,6 +359,7 @@ contractsRouter.post("/:id/missed-clause", asyncRoute(async (req, res) => {
 }));
 
 contractsRouter.post("/:id/clauses", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
   const parsed = parseClauseBody(req.body);
   if (!parsed.ok) return void sendServiceFailure(res, parsed);
   const result = await saveClauseToLibrary(createServerSupabase(), {
@@ -315,9 +372,49 @@ contractsRouter.post("/:id/clauses", asyncRoute(async (req, res) => {
 }));
 
 contractsRouter.delete("/:id", asyncRoute(async (req, res) => {
-  const result = await deleteReview(createServerSupabase(), {
-    userId: res.locals.userId as string,
+  if (!allowed(res, "container.delete")) return;
+  const result = await deleteReview(createServerSupabase(), { reviewId: req.params.id });
+  if (!result.ok) return void sendServiceFailure(res, result);
+  res.status(204).send();
+}));
+
+// --- Sharing (mirrors /chat/:chatId/people|access) ---------------------------
+
+contractsRouter.get("/:id/people", asyncRoute(async (_req, res) => {
+  const result = await listReviewPeople(createServerSupabase(), reviewAccess(res));
+  if (!result.ok) return void sendServiceFailure(res, result);
+  res.json(result.data);
+}));
+
+contractsRouter.get("/:id/access", asyncRoute(async (req, res) => {
+  if (!allowed(res, "access.manage")) return;
+  const result = await listReviewGrants(createServerSupabase(), req.params.id);
+  if (!result.ok) return void sendServiceFailure(res, result);
+  res.json({ scope: "direct", org_id: null, access_role: reviewAccess(res).role, grants: result.data });
+}));
+
+contractsRouter.post("/:id/access", asyncRoute(async (req, res) => {
+  if (!allowed(res, "access.manage")) return;
+  const body = (req.body ?? {}) as { email?: unknown; role?: unknown };
+  const callerEmail = ((res.locals.userEmail as string | undefined) ?? "").trim().toLowerCase();
+  if (typeof body.email === "string" && callerEmail && body.email.trim().toLowerCase() === callerEmail) {
+    return void res.status(400).json({ detail: "Anda tidak dapat membagikan tinjauan kepada diri sendiri." });
+  }
+  const result = await grantReviewAccess(createServerSupabase(), {
+    access: reviewAccess(res),
+    grantedBy: res.locals.userId as string,
+    email: body.email,
+    role: body.role,
+  });
+  if (!result.ok) return void sendServiceFailure(res, result);
+  res.status(201).json(result.data);
+}));
+
+contractsRouter.delete("/:id/access/:email", asyncRoute(async (req, res) => {
+  if (!allowed(res, "access.manage")) return;
+  const result = await revokeReviewAccess(createServerSupabase(), {
     reviewId: req.params.id,
+    email: decodeURIComponent(req.params.email),
   });
   if (!result.ok) return void sendServiceFailure(res, result);
   res.status(204).send();

@@ -221,12 +221,17 @@ export interface NegotiationPointRow {
     updated_at: string;
 }
 
+/** The caller's role on a review (backend contracts.access.ts). */
+export type ReviewAccessRole = "owner" | "editor" | "viewer";
+
 export interface ContractReviewDetail {
     review: ReviewDetailRow;
     feedback: ReviewFeedbackRow[];
     comments: ManualCommentRow[];
     revisionEdits: RevisionEditRow[];
     negotiationPoints: NegotiationPointRow[];
+    /** How the caller reaches this review: uploader, direct grant, or Varda admin. */
+    access?: { role: ReviewAccessRole; via: "creator" | "grant" | "admin" };
 }
 
 /** Feedback rows are keyed `${finding_type}:${finding_id}` everywhere (Janus contract). */

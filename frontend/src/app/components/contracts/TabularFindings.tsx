@@ -18,6 +18,7 @@ import {
 } from "./findingAnnotations";
 import type { ReviewFeedbackRow } from "./reviewTypes";
 import { PRIORITY_LABEL, SEVERITY_COLOR } from "./reviewLabels";
+import { useReviewAccess } from "./reviewAccess";
 
 // Tabel tab (Janus TabularReviewTab): every finding as a sortable, filterable
 // row with multi-select bulk actions. Rows still "Belum ditinjau" can be
@@ -100,6 +101,8 @@ export function TabularFindings({ reviewId, annotations, onLocate, onFeedbackSav
     const [rationale, setRationale] = useState("");
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
+    // Viewers can filter and locate findings but not select them for bulk actions.
+    const { canEdit } = useReviewAccess();
 
     const sorted = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -250,7 +253,7 @@ export function TabularFindings({ reviewId, annotations, onLocate, onFeedbackSav
                                     type="checkbox"
                                     aria-label="Pilih semua temuan yang masih bisa ditindaklanjuti"
                                     checked={allSelected}
-                                    disabled={selectableKeys.length === 0}
+                                    disabled={!canEdit || selectableKeys.length === 0}
                                     onChange={toggleAll}
                                 />
                             </th>
@@ -277,7 +280,7 @@ export function TabularFindings({ reviewId, annotations, onLocate, onFeedbackSav
                                             type="checkbox"
                                             aria-label={`Pilih ${a.id}`}
                                             checked={checked}
-                                            disabled={status !== "pending"}
+                                            disabled={!canEdit || status !== "pending"}
                                             onChange={() => toggleRow(a.key)}
                                         />
                                     </td>

@@ -90,6 +90,10 @@ import {
     getProjectAccess,
     grantProjectAccess,
     grantChatAccess,
+    getContractAccess,
+    getContractPeople,
+    grantContractAccess,
+    revokeContractAccess,
     grantTabularReviewAccess,
     listChats,
     listMyOrgInvitations,
@@ -2392,6 +2396,30 @@ describe("thin endpoint wrappers", () => {
             name: "revokeChatAccess",
             call: () => revokeChatAccess("c1", "a+b@example.com"),
             url: "/chat/c1/access/a%2Bb%40example.com",
+            method: "DELETE",
+        },
+        // Contract sharing
+        {
+            name: "getContractPeople",
+            call: () => getContractPeople("r1"),
+            url: "/contracts/r1/people",
+        },
+        {
+            name: "getContractAccess",
+            call: () => getContractAccess("r1"),
+            url: "/contracts/r1/access",
+        },
+        {
+            name: "grantContractAccess",
+            call: () => grantContractAccess("r1", "donnie@dashelectric.co", "editor"),
+            url: "/contracts/r1/access",
+            method: "POST",
+            body: { email: "donnie@dashelectric.co", role: "editor" },
+        },
+        {
+            name: "revokeContractAccess",
+            call: () => revokeContractAccess("r1", "a+b@dashelectric.co"),
+            url: "/contracts/r1/access/a%2Bb%40dashelectric.co",
             method: "DELETE",
         },
         // Tabular review

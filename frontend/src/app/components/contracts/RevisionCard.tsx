@@ -7,6 +7,7 @@ import { resolveContractRevision } from "@/app/lib/mikeApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import type { ReviewFeedbackRow, Revision, RevisionEditRow } from "./reviewTypes";
 import { FeedbackRecorded, FeedbackWidget } from "./FeedbackWidget";
+import { useReviewAccess } from "./reviewAccess";
 
 // A revision that was projected into the DOCX as a tracked change: Terima /
 // Tolak / Ubah rewrite the document AND record the Janus feedback row. When the
@@ -32,6 +33,7 @@ export function RevisionCardActions({ reviewId, revision, edit, existing, onReso
     const [rationale, setRationale] = useState("");
     const [busy, setBusy] = useState<"accept" | "reject" | "edit" | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const { canEdit } = useReviewAccess();
 
     if (!tracked) {
         return (
@@ -53,6 +55,8 @@ export function RevisionCardActions({ reviewId, revision, edit, existing, onReso
             </>
         );
     }
+
+    if (!canEdit && !existing && edit!.status === "pending") return null;
 
     if (existing || edit!.status !== "pending") {
         return (

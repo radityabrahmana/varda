@@ -2,13 +2,15 @@
 // ported into Varda). Every function takes the service-role `db` first and
 // returns a ServiceResult; nothing here touches req/res.
 //
-// Scope: reviews are TEAM-WIDE (Janus's is_team_member model), so list/status
-// deliberately do not filter by user_id. requireAuth gates the surface and the
-// service-role client bypasses RLS. Multi-tenant deployments must re-apply a
-// team predicate here from the caller identity.
+// Scope: reviews are PRIVATE to their uploader, people they share with, and
+// Varda admins (see contracts.access.ts). The service-role client bypasses RLS,
+// so listReviews filters by caller here and every /contracts/:id route resolves
+// the caller's access before calling into this file.
 
 import type { Db } from "../../lib/supabase";
 import { failure, internalFailure, ok, type ServiceResult } from "../../lib/serviceResult";
+import type { ProjectRole } from "../../lib/permissions";
+import { callerIsAdmin, listGrantedReviewRoles, type ReviewCaller } from "./contracts.access";
 import { listPromptRules } from "../playbook/playbook.service";
 import { runContractReviewAi } from "./contracts.ai";
 import { buildReviewContextFor } from "./contracts.context";
@@ -26,6 +28,8 @@ import type {
 } from "./contracts.types";
 import { projectRevisions, type RevisionEditRow } from "./contracts.redline";
 import type { NegotiationPointRow } from "./contracts.memo";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Narrow list payload — the dashboard never needs contract_text/contract_html/
 // ai_output, which are large. Keep in sync with the columns the dashboard renders.
@@ -45,7 +49,7 @@ export type ReviewListRow = {
   expiry_date: string | null;
 };
 
-export type ReviewListItem = ReviewListRow & { uploader_email: string | null };
+export type ReviewListItem = ReviewListRow & { uploader_email: string | null; access_role: ProjectRole };
 
 export type ReviewStatus = {
   id: string;
@@ -68,16 +72,6 @@ export type CreateReviewInput = {
   title: string;
 };
 
-export async function callerIsAdmin(db: Db, userId: string): Promise<boolean> {
-  const { data } = await db
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  return Boolean(data);
-}
-
 /** Identity + role for client-side gating; authorization stays server-side. */
 export async function getCallerIdentity(
   db: Db,
@@ -87,12 +81,30 @@ export async function getCallerIdentity(
   return ok({ userId: args.userId, email: args.email || null, isAdmin });
 }
 
-/** Team-wide review list for the dashboard, enriched with the uploader email. */
-export async function listReviews(db: Db): Promise<ServiceResult<ReviewListItem[]>> {
-  const { data, error } = await db
-    .from("reviews")
-    .select(LIST_COLUMNS)
-    .order("created_at", { ascending: false });
+/**
+ * Dashboard list: every review for an admin; otherwise the caller's own
+ * uploads plus reviews shared with their email. Enriched with the uploader
+ * email and the caller's role on each row.
+ */
+export async function listReviews(db: Db, caller: ReviewCaller): Promise<ServiceResult<ReviewListItem[]>> {
+  let isAdmin: boolean;
+  let granted: Map<string, ProjectRole>;
+  try {
+    [isAdmin, granted] = await Promise.all([callerIsAdmin(db, caller.userId), listGrantedReviewRoles(db, caller.email)]);
+  } catch (e) {
+    return internalFailure(e);
+  }
+
+  let query = db.from("reviews").select(LIST_COLUMNS);
+  if (!isAdmin) {
+    // Both values are uuids (auth id / grant rows), so they are safe inside the
+    // PostgREST filter string.
+    const grantedIds = [...granted.keys()].filter((id) => UUID_RE.test(id));
+    query = grantedIds.length
+      ? query.or(`user_id.eq.${caller.userId},id.in.(${grantedIds.join(",")})`)
+      : query.eq("user_id", caller.userId);
+  }
+  const { data, error } = await query.order("created_at", { ascending: false });
   if (error) return internalFailure(error);
 
   const reviews = (data ?? []) as unknown as ReviewListRow[];
@@ -113,6 +125,7 @@ export async function listReviews(db: Db): Promise<ServiceResult<ReviewListItem[
     reviews.map((r) => ({
       ...r,
       uploader_email: r.user_id ? emailByUserId[r.user_id] ?? null : null,
+      access_role: r.user_id === caller.userId || isAdmin ? "owner" : granted.get(r.id) ?? "viewer",
     })),
   );
 }
@@ -466,12 +479,8 @@ export async function getReviewStatus(db: Db, reviewId: string): Promise<Service
   return ok(data as unknown as ReviewStatus);
 }
 
-/** Admin-only (role-based via user_roles, enforced here, not in the client). */
-export async function deleteReview(
-  db: Db,
-  args: { userId: string; reviewId: string },
-): Promise<ServiceResult<null>> {
-  if (!(await callerIsAdmin(db, args.userId))) return failure("forbidden", "Admin role required");
+/** Deletes the row (children cascade). The route checks container.delete (owner or admin) first. */
+export async function deleteReview(db: Db, args: { reviewId: string }): Promise<ServiceResult<null>> {
   const { error } = await db.from("reviews").delete().eq("id", args.reviewId);
   if (error) return internalFailure(error);
   return ok(null);

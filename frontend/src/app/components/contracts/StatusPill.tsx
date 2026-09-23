@@ -7,6 +7,7 @@ import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { patchContract, type ContractPatch } from "@/app/lib/mikeApi";
 import { cn } from "@/app/lib/utils";
 import { differenceInDays } from "./reviewHelpers";
+import { useReviewAccess } from "./reviewAccess";
 
 // Compact lifecycle pill (ported from Janus StatusPill): click → popover with the
 // 8 stages as a checklist plus signing / expiry / renewal dates. Stage changes
@@ -40,6 +41,7 @@ export function StatusPill({
     review: StatusPillReview;
     onUpdate: (patch: ContractPatch) => void;
 }) {
+    const { canEdit } = useReviewAccess();
     const currentIdx = LIFECYCLE_STAGES.findIndex((s) => s.value === review.lifecycle_stage);
     const currentStage = currentIdx >= 0 ? LIFECYCLE_STAGES[currentIdx] : null;
 
@@ -112,6 +114,7 @@ export function StatusPill({
                             expiryWarn ? "border-red-500 text-red-600" : "border-gray-200 text-gray-800 hover:bg-gray-50",
                         )}
                         aria-label="Tahap kontrak"
+                        disabled={!canEdit}
                     >
                         {expiryWarn ? <AlertTriangle className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
                         {currentStage?.label ?? "Status"}
@@ -176,7 +179,7 @@ export function StatusPill({
                     {message ? <div className="px-3 py-2 text-xs text-gray-600" role="status">{message}</div> : null}
                 </PopoverContent>
             </Popover>
-            {showHint ? (
+            {showHint && canEdit ? (
                 <button
                     type="button"
                     onClick={dismissHint}

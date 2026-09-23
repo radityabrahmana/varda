@@ -14,6 +14,8 @@ export type ReviewRow = {
   created_at: string;
   expiry_date: string | null;
   uploader_email: string | null;
+  /** Caller's role on the row; absent from older backends. */
+  access_role?: "owner" | "editor" | "viewer";
 };
 
 export interface ReviewStats {

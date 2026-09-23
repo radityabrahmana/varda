@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { Download, FileDiff, Link2, Upload } from "lucide-react";
+import { Download, Eye, FileDiff, Upload, Users } from "lucide-react";
 import { MikeApiError, attachContractDocx, generateContractMemo, getContract, getContractDownloadUrl, patchContract, projectContractRedline, type ContractPatch } from "@/app/lib/mikeApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PageHeader } from "@/app/components/shared/PageHeader";
@@ -14,6 +14,8 @@ import { StatusPill } from "./StatusPill";
 import { NegotiationTab } from "./NegotiationTab";
 import { TabularFindings } from "./TabularFindings";
 import { CommentsTab } from "./CommentsTab";
+import { ContractAccessModal } from "./ContractAccessModal";
+import { ReviewAccessProvider, reviewAccessFor } from "./reviewAccess";
 import { AddCommentPopover, type SelectionAnchor } from "./AddCommentPopover";
 import { buildAnnotations } from "./findingAnnotations";
 import { PlaybookDrawerProvider } from "@/app/components/playbook/PlaybookRuleDrawer";
@@ -65,13 +67,10 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
     const [memoError, setMemoError] = useState<string | null>(null);
     const [projecting, setProjecting] = useState(false);
     const [projectMessage, setProjectMessage] = useState<string | null>(null);
-    const [shareMessage, setShareMessage] = useState<string | null>(null);
+    const [shareOpen, setShareOpen] = useState(false);
     const [attachingDocx, setAttachingDocx] = useState(false);
     const [attachMessage, setAttachMessage] = useState<string | null>(null);
     const docxInputRef = useRef<HTMLInputElement>(null);
-    // Shown when the clipboard is blocked (embedded browsers, strict policies) so the
-    // link can still be copied by hand.
-    const [shareFallbackUrl, setShareFallbackUrl] = useState<string | null>(null);
     const [activeQuote, setActiveQuote] = useState<string | null>(null);
     const [quoteFocusKey, setQuoteFocusKey] = useState(0);
     const locate = useCallback((text: string) => {
@@ -101,6 +100,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
     const detail = state.kind === "ready" ? state.detail : null;
     const review = detail?.review ?? null;
     const output = review?.ai_output ?? null;
+    const access = reviewAccessFor(detail?.access?.role);
 
     const feedbackMap = useMemo(() => {
         const map = new Map<string, ReviewFeedbackRow>();
@@ -135,6 +135,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
     // "Tinjauan AI" selection → AddCommentPopover). Offsets come from
     // contract_text so a comment stays anchored across viewer implementations.
     const handleDocMouseUp = useCallback(() => {
+        if (!access.canEdit) return;
         const pane = docPaneRef.current;
         const sel = typeof window !== "undefined" ? window.getSelection() : null;
         if (!pane || !sel || sel.isCollapsed || sel.rangeCount === 0) return;
@@ -152,7 +153,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                 left: Math.max(8, Math.min(rect.left, window.innerWidth - 336)),
             },
         });
-    }, [review?.contract_text]);
+    }, [review?.contract_text, access.canEdit]);
 
     const onReviewPatched = useCallback((patch: Partial<ReviewDetailRow> | ContractPatch) => {
         setState((prev) =>
@@ -179,21 +180,6 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
         // The working DOCX changed on the server; make the viewer refetch it.
         setDocRefetchKey((k) => k + 1);
     }, []);
-
-    // Reps paste this into Slack; the recipient logs in and lands on this contract.
-    const shareLink = async () => {
-        if (!review) return;
-        const url = `${window.location.origin}/contracts/${review.id}`;
-        try {
-            await navigator.clipboard.writeText(url);
-            setShareFallbackUrl(null);
-            setShareMessage("Tautan disalin");
-            window.setTimeout(() => setShareMessage(null), 3000);
-        } catch {
-            setShareMessage(null);
-            setShareFallbackUrl(url);
-        }
-    };
 
     // Repair: the original DOCX was not persisted at creation (storage hiccup or a
     // retried upload), so the workspace is in HTML-only mode without redlines.
@@ -300,10 +286,24 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
 
     return (
         <PlaybookDrawerProvider>
+        <ReviewAccessProvider role={detail?.access?.role}>
         <div className="flex h-full min-h-0 flex-col">
             <PageHeader
                 shrink
                 loading={state.kind === "loading"}
+                actions={
+                    review
+                        ? [
+                              {
+                                  icon: <Users className="h-4 w-4" />,
+                                  label: "Bagikan",
+                                  onClick: () => setShareOpen(true),
+                                  // Also the accessible name (PageHeader uses title as aria-label).
+                                  title: "Bagikan",
+                              },
+                          ]
+                        : undefined
+                }
                 breadcrumbs={[
                     { label: "Contracts", onClick: () => router.push("/contracts"), title: "Kembali ke Tinjauan Kontrak" },
                     state.kind === "loading"
@@ -353,23 +353,13 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                             </span>
                         ) : null}
                         <StatusPill review={review} onUpdate={onReviewPatched} />
-                        <PillButtonUI tone="white" size="xs" onClick={() => void shareLink()} title="Salin tautan tinjauan ini untuk dibagikan di Slack">
-                            <Link2 className="mr-1 h-3 w-3" /> Bagikan
-                        </PillButtonUI>
-                        {shareMessage ? <span className="text-xs text-gray-600" role="status">{shareMessage}</span> : null}
-                        {shareFallbackUrl ? (
-                            <label className="flex items-center gap-1.5 text-xs text-gray-600" role="status">
-                                Salin manual:
-                                <input
-                                    readOnly
-                                    autoFocus
-                                    value={shareFallbackUrl}
-                                    aria-label="Tautan tinjauan"
-                                    onFocus={(e) => e.currentTarget.select()}
-                                    onBlur={() => setShareFallbackUrl(null)}
-                                    className="w-72 max-w-full rounded border border-gray-200 bg-white px-2 py-0.5 font-mono text-[11px] text-gray-800"
-                                />
-                            </label>
+                        {!access.canEdit ? (
+                            <span
+                                className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600"
+                                title="Pemilik membagikan tinjauan ini kepada Anda dengan akses lihat saja"
+                            >
+                                <Eye className="h-3 w-3" /> Akses lihat
+                            </span>
                         ) : null}
                         {review.contract_docx_path ? (
                             <a
@@ -380,7 +370,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                                 <Download className="h-3.5 w-3.5" /> Ekspor
                             </a>
                         ) : null}
-                        {!review.contract_docx_path ? (
+                        {!review.contract_docx_path && access.canEdit ? (
                             <>
                                 <input
                                     ref={docxInputRef}
@@ -405,7 +395,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                             </>
                         ) : null}
                         {attachMessage ? <span className="text-xs text-gray-600" role="status">{attachMessage}</span> : null}
-                        {review.contract_docx_path && (output.revisions.length > editsByRevision.size) ? (
+                        {access.canEdit && review.contract_docx_path && (output.revisions.length > editsByRevision.size) ? (
                             <PillButtonUI tone="white" size="xs" onClick={projectRedline} loading={projecting}>
                                 <FileDiff className="mr-1 h-3 w-3" /> Petakan revisi ke dokumen
                             </PillButtonUI>
@@ -533,6 +523,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                                             style={{ width: `${progress.percent}%`, background: progress.percent === 100 ? "#16A34A" : "#111827" }}
                                         />
                                     </div>
+                                    {access.canEdit ? (
                                     <div className="mt-3 flex items-center gap-3">
                                         <PillButtonUI
                                             tone="black"
@@ -545,10 +536,18 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                                         </PillButtonUI>
                                         {gateMessage ? <span className="text-xs text-gray-600" role="status">{gateMessage}</span> : null}
                                     </div>
+                                    ) : null}
                                 </div>
                             ) : null}
                         </aside>
                     </div>
+                    <ContractAccessModal
+                        open={shareOpen}
+                        reviewId={review.id}
+                        title={review.title}
+                        canManage={access.canManage}
+                        onClose={() => setShareOpen(false)}
+                    />
                     {commentAnchor ? (
                         <AddCommentPopover
                             reviewId={review.id}
@@ -561,6 +560,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                 </>
             )}
         </div>
+        </ReviewAccessProvider>
         </PlaybookDrawerProvider>
     );
 }
