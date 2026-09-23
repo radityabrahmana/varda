@@ -13,7 +13,7 @@ import { listPromptRules } from "../playbook/playbook.service";
 import { runContractReviewAi } from "./contracts.ai";
 import { buildReviewContextFor } from "./contracts.context";
 import { extractContract } from "./contracts.extract";
-import { attachDocxBytesToReview, isStashedDocxKey } from "./contracts.files";
+import { attachDocxBytesToReview, docxObjectExists, isStashedDocxKey } from "./contracts.files";
 import type {
   ManualCommentRow,
   MissingClause,
@@ -438,8 +438,16 @@ export async function getReviewDetail(db: Db, reviewId: string): Promise<Service
   if (eError) return internalFailure(eError);
   if (pError) return internalFailure(pError);
 
+  const reviewRow = review as unknown as ReviewDetailRow;
+  if (reviewRow.contract_docx_path && !(await docxObjectExists(reviewRow.contract_docx_path))) {
+    // Snapshot rows from Janus reference Lovable storage keys that do not exist
+    // here; present them as HTML-only so the workspace offers a re-upload.
+    reviewRow.contract_docx_path = null;
+    reviewRow.contract_redline_path = null;
+  }
+
   return ok({
-    review: review as unknown as ReviewDetailRow,
+    review: reviewRow,
     feedback: (feedback ?? []) as unknown as ReviewFeedbackRow[],
     comments: (comments ?? []) as unknown as ManualCommentRow[],
     revisionEdits: (edits ?? []) as unknown as RevisionEditRow[],

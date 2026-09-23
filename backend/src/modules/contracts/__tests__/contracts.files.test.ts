@@ -65,6 +65,13 @@ describe("getReviewFileSource", () => {
     expect(r).toMatchObject({ ok: false, kind: "not_found" });
   });
 
+  it("is not_found when the recorded key no longer exists in storage (Janus snapshot paths)", async () => {
+    mocks.headFile.mockResolvedValueOnce(null);
+    const fake = scriptedDb([{ table: "reviews", data: { contract_docx_path: "fcc26ed8/legacy.docx", contract_redline_path: null, contract_filename: "legacy.docx", title: "t" } }]);
+    const r = await getReviewFileSource(fake.db as unknown as Db, "r1");
+    expect(r).toMatchObject({ ok: false, kind: "not_found" });
+  });
+
   it("returns the key, filename and size when persisted", async () => {
     mocks.headFile.mockResolvedValue({ size: 1234, etag: null, contentType: null });
     const fake = scriptedDb([{ table: "reviews", data: { contract_docx_path: "contracts/r1/original.docx", contract_filename: null, title: "PKS — A" } }]);
@@ -89,6 +96,19 @@ describe("attachDocxUploadToReview", () => {
   it("refuses non-DOCX files, unknown reviews, and reviews that already have an original", async () => {
     expect(await attachDocxUploadToReview(scriptedDb([]).db as unknown as Db, { reviewId: "r1", buffer: Buffer.from("x"), filename: "a.pdf" })).toMatchObject({ ok: false, kind: "validation" });
     expect(await attachDocxUploadToReview(scriptedDb([{ table: "reviews", data: null }]).db as unknown as Db, { reviewId: "r1", buffer: Buffer.from("x"), filename: "a.docx" })).toMatchObject({ ok: false, kind: "not_found" });
+    mocks.headFile.mockResolvedValueOnce({ size: 10, etag: null, contentType: null });
     expect(await attachDocxUploadToReview(scriptedDb([{ table: "reviews", data: { id: "r1", contract_docx_path: "contracts/r1/original.docx" } }]).db as unknown as Db, { reviewId: "r1", buffer: Buffer.from("x"), filename: "a.docx" })).toMatchObject({ ok: false, kind: "conflict" });
+  });
+
+  it("allows re-attaching when the recorded original is missing from storage", async () => {
+    mocks.headFile.mockResolvedValueOnce(null);
+    mocks.uploadFile.mockClear();
+    const fake = scriptedDb([
+      { table: "reviews", data: { id: "r1", contract_docx_path: "fcc26ed8/legacy.docx" } },
+      { table: "reviews", op: "update", data: null },
+    ]);
+    const r = await attachDocxUploadToReview(fake.db as unknown as Db, { reviewId: "r1", buffer: Buffer.from("PK"), filename: "NDA.docx" });
+    expect(r).toMatchObject({ ok: true, data: { contract_docx_path: "contracts/r1/original.docx" } });
+    expect(mocks.uploadFile).toHaveBeenCalledTimes(1);
   });
 });

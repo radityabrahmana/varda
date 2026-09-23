@@ -88,6 +88,7 @@ export {
   attachDocxBytesToReview,
   attachDocxToReview,
   attachDocxUploadToReview,
+  docxObjectExists,
   getReviewFileSource,
   isStashedDocxKey,
   originalDocxKey,
