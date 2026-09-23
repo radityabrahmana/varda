@@ -1,6 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Db } from "../../../lib/supabase";
 import { scriptedDb } from "../../../__tests__/helpers/scriptedDb";
+
+const storageMocks = vi.hoisted(() => ({
+  headFile: vi.fn(async (): Promise<{ size: number; etag: string | null; contentType: string | null } | null> => null),
+}));
+vi.mock("../../../lib/storage", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../lib/storage")>()),
+  storageEnabled: true,
+  headFile: storageMocks.headFile,
+}));
+
 import {
   deleteReview,
   extractContract,
@@ -103,5 +113,32 @@ describe("getReviewDetail", () => {
     });
     expect(fake.calls[1].filters).toContainEqual(["eq", "review_id", "r1"]);
     expect(fake.calls[2].filters).toContainEqual(["eq", "review_id", "r1"]);
+  });
+
+  it("presents a review whose DOCX object is missing from storage as HTML-only", async () => {
+    storageMocks.headFile.mockResolvedValueOnce(null);
+    const fake = scriptedDb([
+      { table: "reviews", data: { id: "r1", contract_docx_path: "fcc26ed8/legacy.docx", contract_redline_path: "fcc26ed8/redline.docx", ai_output: {} } },
+      { table: "review_feedback", data: [] },
+      { table: "manual_comments", data: [] },
+      { table: "review_revision_edits", data: [] },
+      { table: "negotiation_points", data: [] },
+    ]);
+    const r = await getReviewDetail(fake.db as unknown as Db, "r1");
+    expect(r).toMatchObject({ ok: true, data: { review: { contract_docx_path: null, contract_redline_path: null } } });
+    expect(storageMocks.headFile).toHaveBeenCalledWith("fcc26ed8/legacy.docx");
+  });
+
+  it("keeps the DOCX paths when the object exists", async () => {
+    storageMocks.headFile.mockResolvedValueOnce({ size: 5, etag: null, contentType: null });
+    const fake = scriptedDb([
+      { table: "reviews", data: { id: "r1", contract_docx_path: "contracts/r1/original.docx", contract_redline_path: null, ai_output: {} } },
+      { table: "review_feedback", data: [] },
+      { table: "manual_comments", data: [] },
+      { table: "review_revision_edits", data: [] },
+      { table: "negotiation_points", data: [] },
+    ]);
+    const r = await getReviewDetail(fake.db as unknown as Db, "r1");
+    expect(r).toMatchObject({ ok: true, data: { review: { contract_docx_path: "contracts/r1/original.docx" } } });
   });
 });

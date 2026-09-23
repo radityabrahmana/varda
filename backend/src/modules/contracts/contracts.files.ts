@@ -83,6 +83,22 @@ export async function attachDocxBytesToReview(
 const DOCX_FILENAME = /\.docx$/i;
 
 /**
+ * Whether the object a review points at actually exists. The Janus data
+ * snapshot carried `contract_docx_path` values from Lovable's bucket that were
+ * never copied here; treating them as absent lets the workspace fall back to
+ * HTML and offer a re-upload instead of streaming into a 502. Only a definite
+ * 404 counts as missing — a storage outage must not hide real files.
+ */
+export async function docxObjectExists(key: string | null | undefined): Promise<boolean> {
+  if (!key || !storageEnabled) return false;
+  try {
+    return (await headFile(key)) !== null;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Repair path: attach an uploaded DOCX to a review that has none (for example
  * when the original attach failed at creation time). Refuses to replace an
  * existing original because tracked changes may already hang off it.
@@ -101,7 +117,9 @@ export async function attachDocxUploadToReview(
   if (error) return internalFailure(error);
   const row = data as { id: string; contract_docx_path: string | null } | null;
   if (!row) return failure("not_found", "Tinjauan tidak ditemukan.");
-  if (row.contract_docx_path) return failure("conflict", "Tinjauan ini sudah memiliki DOCX asli.");
+  if (row.contract_docx_path && (await docxObjectExists(row.contract_docx_path))) {
+    return failure("conflict", "Tinjauan ini sudah memiliki DOCX asli.");
+  }
   return attachDocxBytesToReview(db, { reviewId: args.reviewId, buffer: args.buffer });
 }
 
@@ -132,7 +150,8 @@ export async function getReviewFileSource(
   if (!key) return failure("not_found", "Kontrak asli DOCX tidak ditemukan.");
   if (!storageEnabled) return failure("unavailable", "Penyimpanan dokumen belum dikonfigurasi.");
   const meta = await headFile(key);
+  if (!meta) return failure("not_found", "File DOCX tidak tersedia di penyimpanan.");
   const base = (row.contract_filename || `${row.title ?? "kontrak"}.docx`).replace(/\.docx$/i, "");
   const filename = key === row.contract_redline_path ? `${base} - Redline.docx` : `${base}.docx`;
-  return ok({ key, filename, size: meta?.size ?? null });
+  return ok({ key, filename, size: meta.size });
 }
