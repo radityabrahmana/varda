@@ -96,6 +96,7 @@ describe("getReviewDetail", () => {
       { table: "manual_comments", data: [{ id: "c1", comment_text: "note" }] },
       { table: "review_revision_edits", data: [{ id: "e1", revision_id: "REV-001" }] },
       { table: "negotiation_points", data: [] },
+      { table: "review_suggestions", data: [] },
     ]);
     const r = await getReviewDetail(fake.db as unknown as Db, "r1");
     expect(r).toMatchObject({
@@ -114,6 +115,7 @@ describe("getReviewDetail", () => {
       { table: "manual_comments", data: [] },
       { table: "review_revision_edits", data: [] },
       { table: "negotiation_points", data: [] },
+      { table: "review_suggestions", data: [] },
     ]);
     const r = await getReviewDetail(fake.db as unknown as Db, "r1");
     expect(r).toMatchObject({ ok: true, data: { review: { contract_docx_path: null, contract_redline_path: null } } });
@@ -128,6 +130,7 @@ describe("getReviewDetail", () => {
       { table: "manual_comments", data: [] },
       { table: "review_revision_edits", data: [] },
       { table: "negotiation_points", data: [] },
+      { table: "review_suggestions", data: [] },
     ]);
     const r = await getReviewDetail(fake.db as unknown as Db, "r1");
     expect(r).toMatchObject({ ok: true, data: { review: { contract_docx_path: "contracts/r1/original.docx" } } });

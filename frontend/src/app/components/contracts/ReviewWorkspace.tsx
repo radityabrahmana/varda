@@ -15,11 +15,13 @@ import { NegotiationTab } from "./NegotiationTab";
 import { TabularFindings } from "./TabularFindings";
 import { CommentsTab } from "./CommentsTab";
 import { ContractAccessModal } from "./ContractAccessModal";
+import { SuggestionsTab } from "./SuggestionsTab";
+import { captureDocxSelection, type DocxSelection } from "./docxSelection";
 import { ReviewAccessProvider, reviewAccessFor } from "./reviewAccess";
 import { AddCommentPopover, type SelectionAnchor } from "./AddCommentPopover";
 import { buildAnnotations } from "./findingAnnotations";
 import { PlaybookDrawerProvider } from "@/app/components/playbook/PlaybookRuleDrawer";
-import type { ContractReviewDetail, ManualCommentRow, NegotiationPointRow, ReviewDetailRow, ReviewFeedbackRow, ReviewOutput, RevisionEditRow } from "./reviewTypes";
+import type { ContractReviewDetail, ManualCommentRow, NegotiationPointRow, ReviewDetailRow, ReviewFeedbackRow, ReviewOutput, RevisionEditRow, SuggestionRow } from "./reviewTypes";
 import { feedbackKey } from "./reviewTypes";
 import { RISK_DOT } from "./reviewHelpers";
 import { RECOMMENDATION_PILL, RISK_HEADER_LABEL, formatCreatedAt } from "./reviewLabels";
@@ -45,7 +47,7 @@ export function reviewableKeys(output: ReviewOutput): string[] {
 
 const GATE_LOCKED_STATUSES = new Set(["clevel_reviewed", "signed", "archived"]);
 
-type PanelTab = "draft" | "comments" | "table" | "negotiation";
+type PanelTab = "draft" | "suggestions" | "comments" | "table" | "negotiation";
 /** Below `lg` the document and the findings panel do not fit side by side; one is shown at a time. */
 type MobileView = "document" | "findings";
 /** Tabs that show the review-progress footer with the C-Level gate. */
@@ -61,6 +63,9 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
     const [panelTab, setPanelTab] = useState<PanelTab>("draft");
     const [mobileView, setMobileView] = useState<MobileView>("findings");
     const [commentAnchor, setCommentAnchor] = useState<SelectionAnchor | null>(null);
+    // Suggestion mode for the current selection (DOCX only): what the popover can propose.
+    const [selectionSuggestion, setSelectionSuggestion] = useState<DocxSelection | null>(null);
+    const [highlightEdit, setHighlightEdit] = useState<{ key: string; ins_w_id?: string | null; del_w_id?: string | null; inserted_text?: string; deleted_text?: string } | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const docPaneRef = useRef<HTMLDivElement>(null);
     const [memoGenerating, setMemoGenerating] = useState(false);
@@ -142,8 +147,10 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
         if (!pane.contains(sel.anchorNode) || !pane.contains(sel.focusNode)) return;
         const text = sel.toString().trim();
         if (text.length < MIN_SELECTION_CHARS) return;
-        const rect = sel.getRangeAt(0).getBoundingClientRect();
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
         const start = review?.contract_text?.indexOf(text) ?? -1;
+        setSelectionSuggestion(review?.contract_docx_path ? captureDocxSelection(pane, range) : null);
         setCommentAnchor({
             text,
             start,
@@ -153,7 +160,37 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                 left: Math.max(8, Math.min(rect.left, window.innerWidth - 336)),
             },
         });
-    }, [review?.contract_text, access.canEdit]);
+    }, [review?.contract_text, review?.contract_docx_path, access.canEdit]);
+
+    const onSuggestionSaved = useCallback((row: SuggestionRow) => {
+        setState((prev) =>
+            prev.kind === "ready" ? { kind: "ready", detail: { ...prev.detail, suggestions: [...(prev.detail.suggestions ?? []), row] } } : prev,
+        );
+        // The working DOCX now carries the new w:del/w:ins; show it.
+        setDocRefetchKey((k) => k + 1);
+        setPanelTab("suggestions");
+        setNotice("Saran tersimpan sebagai perubahan terlacak. Dokumen berubah setelah saran diterima.");
+    }, []);
+
+    const onSuggestionResolved = useCallback((row: SuggestionRow) => {
+        setState((prev) =>
+            prev.kind === "ready"
+                ? { kind: "ready", detail: { ...prev.detail, suggestions: (prev.detail.suggestions ?? []).map((s) => (s.id === row.id ? row : s)) } }
+                : prev,
+        );
+        setDocRefetchKey((k) => k + 1);
+    }, []);
+
+    const locateSuggestion = useCallback((s: SuggestionRow) => {
+        setHighlightEdit({
+            key: `${s.id}:${Date.now()}`,
+            ins_w_id: s.ins_w_id,
+            del_w_id: s.del_w_id,
+            inserted_text: s.suggested_text || undefined,
+            deleted_text: s.original_text || undefined,
+        });
+        setMobileView("document");
+    }, []);
 
     const onReviewPatched = useCallback((patch: Partial<ReviewDetailRow> | ContractPatch) => {
         setState((prev) =>
@@ -252,6 +289,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
         () => (output ? buildAnnotations({ output, comments: detail?.comments ?? [], feedbackMap, contractText: review?.contract_text ?? null }) : []),
         [output, detail?.comments, feedbackMap, review?.contract_text],
     );
+    const pendingSuggestionCount = (detail?.suggestions ?? []).filter((s) => s.status === "pending").length;
     const rootCommentCount = useMemo(() => (detail?.comments ?? []).filter((c) => !c.parent_comment_id).length, [detail?.comments]);
 
     const progress = useMemo(() => {
@@ -438,7 +476,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                                     : `${mobileView === "document" ? "block" : "hidden"} min-h-0 flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:block`
                             }
                         >
-                            <ContractDocument review={review} activeQuote={activeQuote} quoteFocusKey={quoteFocusKey} refetchKey={docRefetchKey} />
+                            <ContractDocument review={review} activeQuote={activeQuote} quoteFocusKey={quoteFocusKey} refetchKey={docRefetchKey} highlightEdit={highlightEdit} />
                         </div>
                         <aside
                             data-testid="findings-pane"
@@ -448,6 +486,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                                 {(
                                     [
                                         { id: "draft", label: "Draf", disabled: false },
+                                        { id: "suggestions", label: pendingSuggestionCount ? `Saran (${pendingSuggestionCount})` : "Saran", disabled: false },
                                         { id: "comments", label: rootCommentCount ? `Komentar (${rootCommentCount})` : "Komentar", disabled: false },
                                         { id: "table", label: "Tabel", disabled: false },
                                         { id: "negotiation", label: "Negosiasi", disabled: !review.negotiation_memo && !memoGenerating },
@@ -474,7 +513,15 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                                 </div>
                             ) : null}
                             <div className={GATE_TABS.has(panelTab) ? "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 pb-28 sm:p-5 sm:pb-28" : "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5"}>
-                                {panelTab === "comments" ? (
+                                {panelTab === "suggestions" ? (
+                                    <SuggestionsTab
+                                        reviewId={review.id}
+                                        suggestions={detail?.suggestions ?? []}
+                                        hasDocx={Boolean(review.contract_docx_path)}
+                                        onLocate={locateSuggestion}
+                                        onResolved={onSuggestionResolved}
+                                    />
+                                ) : panelTab === "comments" ? (
                                     <CommentsTab
                                         reviewId={review.id}
                                         comments={state.detail.comments}
@@ -555,6 +602,8 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
                             onClose={() => setCommentAnchor(null)}
                             onCommentSaved={onCommentSaved}
                             onSignalSaved={onSignalSaved}
+                            suggestion={selectionSuggestion}
+                            onSuggestionSaved={onSuggestionSaved}
                         />
                     ) : null}
                 </>

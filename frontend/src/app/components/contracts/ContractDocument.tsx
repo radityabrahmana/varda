@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { DocxView } from "@/app/components/shared/views/DocxView";
 import { clearDocxQuoteHighlights, highlightDocxQuote } from "@/app/components/shared/views/highlightDocxQuote";
-import { getContractFileUrl } from "@/app/lib/mikeApi";
+import { getContractFileUrl, getContractTrackedChangeIdsUrl } from "@/app/lib/mikeApi";
 import { ContractHtmlView } from "./ContractHtmlView";
 import type { ReviewDetailRow } from "./reviewTypes";
 
@@ -18,15 +18,19 @@ export interface ContractDocumentProps {
     quoteFocusKey: number;
     /** Bump after the working DOCX changed server-side (accept / reject / edit). */
     refetchKey?: number;
+    /** Tracked change to scroll to and flash (a suggestion's "Lihat di dokumen"). */
+    highlightEdit?: { key: string; ins_w_id?: string | null; del_w_id?: string | null; inserted_text?: string; deleted_text?: string } | null;
 }
 
-export function ContractDocument({ review, activeQuote, quoteFocusKey, refetchKey }: ContractDocumentProps) {
+export function ContractDocument({ review, activeQuote, quoteFocusKey, refetchKey, highlightEdit }: ContractDocumentProps) {
     if (review.contract_docx_path) {
         return (
             <DocxView
                 documentId={review.id}
                 displayUrl={getContractFileUrl(review.id)}
                 refetchKey={refetchKey}
+                trackedChangeIdsUrl={getContractTrackedChangeIdsUrl(review.id)}
+                highlightEdit={highlightEdit}
                 quotes={activeQuote ? [{ quote: activeQuote }] : undefined}
                 quoteFocusKey={quoteFocusKey}
                 rounded={false}

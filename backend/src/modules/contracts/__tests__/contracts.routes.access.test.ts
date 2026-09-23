@@ -18,6 +18,9 @@ const svc = vi.hoisted(() => ({
   listReviewGrants: vi.fn(),
   grantReviewAccess: vi.fn(),
   revokeReviewAccess: vi.fn(),
+  createSuggestion: vi.fn(),
+  resolveSuggestion: vi.fn(),
+  listTrackedChangeIds: vi.fn(),
 }));
 
 vi.mock("../../../middleware/auth", () => ({
@@ -54,7 +57,12 @@ beforeEach(() => {
   svc.listReviewGrants.mockResolvedValue({ ok: true, data: [] });
   svc.grantReviewAccess.mockResolvedValue({ ok: true, data: { email: "d@dashelectric.co", role: "viewer" } });
   svc.revokeReviewAccess.mockResolvedValue({ ok: true, data: null });
+  svc.createSuggestion.mockResolvedValue({ ok: true, data: { id: "s1" } });
+  svc.resolveSuggestion.mockResolvedValue({ ok: true, data: { id: "s1", status: "accepted" } });
+  svc.listTrackedChangeIds.mockResolvedValue({ ok: true, data: { ids: [] } });
 });
+
+const suggestion = { selected_text: "30 hari", replacement: "14 hari", context_before: "", context_after: "" };
 
 const feedback = { finding_type: "red_flag", finding_id: "RF-001", action: "valid" };
 
@@ -71,6 +79,8 @@ describe("contracts routes — privacy", () => {
     await request(app).get(`/contracts/${REVIEW}/status`).expect(404);
     await request(app).get(`/contracts/${REVIEW}/file`).expect(404);
     await request(app).get(`/contracts/${REVIEW}/people`).expect(404);
+    await request(app).get(`/contracts/${REVIEW}/tracked-change-ids`).expect(404);
+    await request(app).post(`/contracts/${REVIEW}/suggestions`).send(suggestion).expect(404);
     await request(app).post(`/contracts/${REVIEW}/feedback`).send(feedback).expect(404);
     await request(app).post(`/contracts/${REVIEW}/access`).send({ email: "x@dashelectric.co", role: "viewer" }).expect(404);
     await request(app).delete(`/contracts/${REVIEW}`).expect(404);
@@ -100,6 +110,11 @@ describe("contracts routes — privacy", () => {
     await request(app).get(`/contracts/${REVIEW}/access`).expect(403);
     await request(app).post(`/contracts/${REVIEW}/access`).send({ email: "x@dashelectric.co", role: "viewer" }).expect(403);
     await request(app).delete(`/contracts/${REVIEW}`).expect(403);
+    await request(app).post(`/contracts/${REVIEW}/suggestions`).send(suggestion).expect(403);
+    await request(app).post(`/contracts/${REVIEW}/suggestions/s1/accept`).expect(403);
+    await request(app).get(`/contracts/${REVIEW}/tracked-change-ids`).expect(200);
+    expect(svc.createSuggestion).not.toHaveBeenCalled();
+    expect(svc.resolveSuggestion).not.toHaveBeenCalled();
     expect(svc.createFeedback).not.toHaveBeenCalled();
     expect(svc.updateReviewMeta).not.toHaveBeenCalled();
     expect(svc.deleteReview).not.toHaveBeenCalled();
@@ -109,6 +124,16 @@ describe("contracts routes — privacy", () => {
     asRole("editor");
     await request(app).post(`/contracts/${REVIEW}/feedback`).send(feedback).expect(201);
     await request(app).patch(`/contracts/${REVIEW}`).send({ status: "clevel_reviewed" }).expect(200);
+    await request(app).post(`/contracts/${REVIEW}/suggestions`).send(suggestion).expect(201);
+    await request(app).post(`/contracts/${REVIEW}/suggestions/s1/reject`).expect(200);
+    await request(app).post(`/contracts/${REVIEW}/suggestions/s1/merge`).expect(404);
+    expect(svc.createSuggestion).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ reviewId: REVIEW, userId: "u-member" }));
+    expect(svc.resolveSuggestion).toHaveBeenCalledWith(expect.anything(), {
+      reviewId: REVIEW,
+      suggestionId: "s1",
+      mode: "reject",
+      userId: "u-member",
+    });
     await request(app).post(`/contracts/${REVIEW}/access`).send({ email: "x@dashelectric.co", role: "viewer" }).expect(403);
     await request(app).delete(`/contracts/${REVIEW}/access/x%40dashelectric.co`).expect(403);
     await request(app).delete(`/contracts/${REVIEW}`).expect(403);

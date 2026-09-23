@@ -91,6 +91,9 @@ import {
     grantProjectAccess,
     grantChatAccess,
     getContractAccess,
+    getContractTrackedChangeIdsUrl,
+    postContractSuggestion,
+    resolveContractSuggestion,
     getContractPeople,
     grantContractAccess,
     revokeContractAccess,
@@ -1708,6 +1711,12 @@ describe("tabular cell operations", () => {
     });
 });
 
+describe("getContractTrackedChangeIdsUrl", () => {
+    it("points the viewer at the contract's own tracked-change list", () => {
+        expect(getContractTrackedChangeIdsUrl("r 1")).toBe("/api/contracts/r%201/tracked-change-ids");
+    });
+});
+
 describe("query and payload defaults", () => {
     it("getDocumentFile appends version_id only when a version is requested", async () => {
         expect(getDocumentFileUrl("d 1")).toBe(
@@ -2397,6 +2406,20 @@ describe("thin endpoint wrappers", () => {
             call: () => revokeChatAccess("c1", "a+b@example.com"),
             url: "/chat/c1/access/a%2Bb%40example.com",
             method: "DELETE",
+        },
+        // Contract suggestion mode
+        {
+            name: "postContractSuggestion",
+            call: () => postContractSuggestion("r1", { selected_text: "30 hari", replacement: "14 hari", context_before: "dalam ", context_after: " setelah" }),
+            url: "/contracts/r1/suggestions",
+            method: "POST",
+            body: { selected_text: "30 hari", replacement: "14 hari", context_before: "dalam ", context_after: " setelah" },
+        },
+        {
+            name: "resolveContractSuggestion",
+            call: () => resolveContractSuggestion("r1", "s1", "accept"),
+            url: "/contracts/r1/suggestions/s1/accept",
+            method: "POST",
         },
         // Contract sharing
         {

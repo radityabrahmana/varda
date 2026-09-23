@@ -202,4 +202,6 @@ export interface ReviewDetail {
   comments: ManualCommentRow[];
   revisionEdits: import("./contracts.redline").RevisionEditRow[];
   negotiationPoints: import("./contracts.memo").NegotiationPointRow[];
+  /** People's suggested edits written into the working DOCX (suggestion mode). */
+  suggestions: import("./contracts.suggestions").SuggestionRow[];
 }

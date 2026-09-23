@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertOctagon, MessageSquare } from "lucide-react";
+import { AlertOctagon, MessageSquare, PenLine } from "lucide-react";
 import { postContractComment, postContractMissedClause, type ContractCommentInput, type ContractMissedClauseInput } from "@/app/lib/mikeApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
-import type { ManualCommentRow } from "./reviewTypes";
+import type { ManualCommentRow, SuggestionRow } from "./reviewTypes";
+import type { DocxSelection } from "./docxSelection";
+import { SuggestEditForm } from "./SuggestEditForm";
 
 // Selection popover (Janus AddCommentPopover). Four comment types write a
 // manual_comments row; "AI melewatkan klausul ini" is a training signal that
@@ -43,9 +45,16 @@ export interface AddCommentPopoverProps {
     onClose: () => void;
     onCommentSaved: (row: ManualCommentRow) => void;
     onSignalSaved: () => void;
+    /**
+     * Suggestion mode is offered when the workspace renders the real DOCX:
+     * the captured selection (or why it cannot carry a suggestion).
+     */
+    suggestion?: DocxSelection | null;
+    onSuggestionSaved?: (row: SuggestionRow) => void;
 }
 
-export function AddCommentPopover({ reviewId, anchor, onClose, onCommentSaved, onSignalSaved }: AddCommentPopoverProps) {
+export function AddCommentPopover({ reviewId, anchor, onClose, onCommentSaved, onSignalSaved, suggestion, onSuggestionSaved }: AddCommentPopoverProps) {
+    const [tab, setTab] = useState<"suggest" | "comment">(suggestion?.ok ? "suggest" : "comment");
     const [type, setType] = useState<CommentType>("note");
     const [text, setText] = useState("");
     const [suggested, setSuggested] = useState("");
@@ -92,6 +101,53 @@ export function AddCommentPopover({ reviewId, anchor, onClose, onCommentSaved, o
 
     const selectClass = "h-8 w-full rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-800 focus:border-gray-400 focus:outline-none";
 
+    const tabs = suggestion ? (
+        <div className="flex gap-1 border-b border-gray-100 pb-2" role="tablist" aria-label="Jenis masukan">
+            {(
+                [
+                    { id: "suggest", label: "Sarankan perubahan", Icon: PenLine },
+                    { id: "comment", label: "Komentar", Icon: MessageSquare },
+                ] as const
+            ).map(({ id, label, Icon }) => (
+                <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === id}
+                    onClick={() => setTab(id)}
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ${tab === id ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+                >
+                    <Icon className="h-3 w-3" /> {label}
+                </button>
+            ))}
+        </div>
+    ) : null;
+
+    if (suggestion && tab === "suggest") {
+        return (
+            <div
+                role="dialog"
+                aria-label="Sarankan perubahan"
+                className="fixed z-50 w-80 space-y-2.5 rounded-xl border border-gray-200 bg-white p-4 text-sm shadow-xl"
+                style={{ top: anchor.position.top, left: anchor.position.left }}
+            >
+                {tabs}
+                {suggestion.ok ? (
+                    <SuggestEditForm
+                        reviewId={reviewId}
+                        selected={suggestion.selected}
+                        contextBefore={suggestion.contextBefore}
+                        contextAfter={suggestion.contextAfter}
+                        onSaved={(row) => onSuggestionSaved?.(row)}
+                        onClose={onClose}
+                    />
+                ) : (
+                    <p className="rounded bg-amber-50 p-2 text-xs text-amber-800" role="status">{suggestion.reason}</p>
+                )}
+            </div>
+        );
+    }
+
     return (
         <div
             role="dialog"
@@ -99,6 +155,7 @@ export function AddCommentPopover({ reviewId, anchor, onClose, onCommentSaved, o
             className="fixed z-50 w-80 space-y-2.5 rounded-xl border border-gray-200 bg-white p-4 text-sm shadow-xl"
             style={{ top: anchor.position.top, left: anchor.position.left }}
         >
+            {tabs}
             <div className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700">
                 {isMissed ? <AlertOctagon className="h-3.5 w-3.5 text-amber-600" /> : <MessageSquare className="h-3.5 w-3.5 text-gray-500" />}
                 {isMissed ? "Tandai sebagai dilewati AI" : "Tambah Komentar"}

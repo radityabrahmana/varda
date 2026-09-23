@@ -13,6 +13,7 @@ import type {
     NegotiationStatus,
     ReviewFeedbackRow,
     RevisionEditRow,
+    SuggestionRow,
 } from "@/app/components/contracts/reviewTypes";
 import type { PlaybookRule, PlaybookRuleInput, PlaybookRulePatch } from "@/app/components/playbook/playbookTypes";
 import { authenticatedFetch } from "@/app/lib/authEvents";
@@ -3014,6 +3015,41 @@ export async function getContract(id: string): Promise<ContractReviewDetail> {
     return apiRequest<ContractReviewDetail>(
         `/contracts/${encodeURIComponent(id)}`,
     );
+}
+
+export interface ContractSuggestionInput {
+    /** The selected text, exactly as shown (accepted view). */
+    selected_text: string;
+    /** What should replace it; "" deletes, selection + added text inserts. */
+    replacement: string;
+    /** Paragraph text right before / after the selection, for anchoring. */
+    context_before: string;
+    context_after: string;
+    note?: string | null;
+}
+
+/** Suggestion mode: write a tracked change under the caller's name into the working DOCX. */
+export async function postContractSuggestion(id: string, input: ContractSuggestionInput): Promise<SuggestionRow> {
+    return apiRequest<SuggestionRow>(`/contracts/${encodeURIComponent(id)}/suggestions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+    });
+}
+
+export async function resolveContractSuggestion(
+    id: string,
+    suggestionId: string,
+    mode: "accept" | "reject",
+): Promise<SuggestionRow> {
+    return apiRequest<SuggestionRow>(
+        `/contracts/${encodeURIComponent(id)}/suggestions/${encodeURIComponent(suggestionId)}/${mode}`,
+        { method: "POST" },
+    );
+}
+
+export function getContractTrackedChangeIdsUrl(id: string): string {
+    return `${API_BASE}/contracts/${encodeURIComponent(id)}/tracked-change-ids`;
 }
 
 // Contract sharing — same shapes as the chat access endpoints so the shared

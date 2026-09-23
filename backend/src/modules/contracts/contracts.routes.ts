@@ -11,6 +11,9 @@
 //   POST   /contracts               create a review row and start the async AI review
 //   GET    /contracts/:id/status    poll review processing state
 //   DELETE /contracts/:id           owner or admin
+//   POST   /contracts/:id/suggestions            suggestion mode: tracked change by a person
+//   POST   /contracts/:id/suggestions/:sid/accept|reject  resolve it in the working DOCX
+//   GET    /contracts/:id/tracked-change-ids     ordered w:ids for the viewer's <ins>/<del> tagging
 //   GET    /contracts/:id/people    share-dialog roster (uploader + grants)
 //   GET    /contracts/:id/access    direct grants (owner or admin)
 //   POST   /contracts/:id/access    grant / re-role one recipient { email, role }
@@ -51,6 +54,10 @@ import {
   createFeedbackBulk,
   createMissedClauseSignal,
   createReview,
+  createSuggestion,
+  listTrackedChangeIds,
+  parseSuggestionBody,
+  resolveSuggestion,
   deleteReview,
   editRevision,
   generateNegotiationMemo,
@@ -376,6 +383,43 @@ contractsRouter.delete("/:id", asyncRoute(async (req, res) => {
   const result = await deleteReview(createServerSupabase(), { reviewId: req.params.id });
   if (!result.ok) return void sendServiceFailure(res, result);
   res.status(204).send();
+}));
+
+// --- Suggestion mode ------------------------------------------------------------
+
+contractsRouter.post("/:id/suggestions", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
+  const parsed = parseSuggestionBody(req.body);
+  if (!parsed.ok) return void sendServiceFailure(res, parsed);
+  const result = await createSuggestion(createServerSupabase(), {
+    reviewId: req.params.id,
+    userId: res.locals.userId as string,
+    userEmail: res.locals.userEmail as string | undefined,
+    input: parsed.data,
+  });
+  if (!result.ok) return void sendServiceFailure(res, result);
+  res.status(201).json(result.data);
+}));
+
+contractsRouter.post("/:id/suggestions/:suggestionId/:verb", asyncRoute(async (req, res) => {
+  if (!allowed(res, "content.edit")) return;
+  const { verb } = req.params;
+  if (verb !== "accept" && verb !== "reject") return void res.status(404).json({ detail: "Aksi tidak dikenal." });
+  const result = await resolveSuggestion(createServerSupabase(), {
+    reviewId: req.params.id,
+    suggestionId: req.params.suggestionId,
+    mode: verb,
+    userId: res.locals.userId as string,
+  });
+  if (!result.ok) return void sendServiceFailure(res, result);
+  res.json(result.data);
+}));
+
+contractsRouter.get("/:id/tracked-change-ids", asyncRoute(async (req, res) => {
+  const result = await listTrackedChangeIds(createServerSupabase(), req.params.id);
+  if (!result.ok) return void sendServiceFailure(res, result);
+  res.setHeader("Cache-Control", "no-store");
+  res.json(result.data);
 }));
 
 // --- Sharing (mirrors /chat/:chatId/people|access) ---------------------------
