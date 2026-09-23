@@ -25,6 +25,7 @@ import {
   resolveSuggestion,
   type SuggestionInput,
 } from "../contracts.service";
+import { clearDocxCache } from "../contracts.docCache";
 
 const ORIGINAL = "contracts/r1/original.docx";
 const REDLINE = "contracts/r1/redline.docx";
@@ -61,6 +62,7 @@ const saved = (payload: unknown) => ({ id: "s1", status: "pending", ...(payload 
 
 beforeEach(async () => {
   files.clear();
+  clearDocxCache();
   files.set(ORIGINAL, await docx(["Pembayaran dilakukan dalam 30 hari setelah invoice diterima.", "Denda keterlambatan 2% per bulan."]));
 });
 

@@ -37,11 +37,10 @@
 // object-storage session protocol, and a 25MB in-memory DOCX needs no session.
 
 import express, { Router } from "express";
-import { pipeline } from "node:stream/promises";
 import { requireAuth } from "../../middleware/auth";
 import { asyncRoute, routerErrorHandler } from "../../middleware/asyncRoute";
 import { createServerSupabase } from "../../lib/supabase";
-import { buildContentDisposition, createFileReadStream } from "../../lib/storage";
+import { buildContentDisposition } from "../../lib/storage";
 import { sendServiceFailure } from "../../lib/serviceResult";
 import type { Capability } from "../../lib/permissions";
 import {
@@ -65,6 +64,7 @@ import {
   getCallerIdentity,
   getReviewDetail,
   getReviewFileSource,
+  readReviewFile,
   getReviewStatus,
   grantReviewAccess,
   listReviewGrants,
@@ -203,23 +203,18 @@ contractsRouter.get("/:id", asyncRoute(async (req, res) => {
 
 contractsRouter.get("/:id/file", asyncRoute(async (req, res) => {
   const variant = req.query.variant === "original" ? "original" : "current";
-  const result = await getReviewFileSource(createServerSupabase(), req.params.id, variant);
-  if (!result.ok) return void sendServiceFailure(res, result);
+  const source = await getReviewFileSource(createServerSupabase(), req.params.id, variant);
+  if (!source.ok) return void sendServiceFailure(res, source);
+  const file = await readReviewFile(source.data);
+  if (!file.ok) return void sendServiceFailure(res, file);
   res.setHeader("Content-Type", DOCX_MIME);
-  if (result.data.size) res.setHeader("Content-Length", result.data.size);
+  res.setHeader("Content-Length", file.data.byteLength);
   res.setHeader("Cache-Control", "no-store");
   res.setHeader(
     "Content-Disposition",
-    buildContentDisposition(req.query.download === "1" ? "attachment" : "inline", result.data.filename),
+    buildContentDisposition(req.query.download === "1" ? "attachment" : "inline", source.data.filename),
   );
-  const source = createFileReadStream(result.data.key);
-  try {
-    await pipeline(source, res);
-  } catch (error) {
-    source.destroy();
-    if (!res.headersSent && !res.destroyed) res.status(500).end();
-    else console.error("[contracts] file stream failed", error);
-  }
+  res.end(file.data);
 }));
 
 // Repair path for a review whose DOCX was never persisted: accept the original

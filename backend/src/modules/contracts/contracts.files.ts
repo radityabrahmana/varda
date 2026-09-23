@@ -17,7 +17,9 @@ import {
 } from "../../lib/storage";
 import { failure, internalFailure, ok, type ServiceResult } from "../../lib/serviceResult";
 
-export const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+import { DOCX_MIME, getCachedDocx, invalidateCachedDocx, loadBytes, putCachedDocx } from "./contracts.docCache";
+
+export { DOCX_MIME };
 const UPLOAD_PREFIX = "contracts/uploads/";
 
 export function originalDocxKey(reviewId: string): string {
@@ -47,6 +49,7 @@ export async function attachDocxToReview(
   const target = originalDocxKey(args.reviewId);
   try {
     await copyFile(args.stashedKey, target);
+    invalidateCachedDocx(target);
   } catch (e) {
     return internalFailure(e);
   }
@@ -72,6 +75,7 @@ export async function attachDocxBytesToReview(
     const bytes = new ArrayBuffer(args.buffer.byteLength);
     new Uint8Array(bytes).set(args.buffer);
     await uploadFile(target, bytes, DOCX_MIME);
+    putCachedDocx(target, args.buffer);
   } catch (e) {
     return internalFailure(e);
   }
@@ -91,6 +95,7 @@ const DOCX_FILENAME = /\.docx$/i;
  */
 export async function docxObjectExists(key: string | null | undefined): Promise<boolean> {
   if (!key || !storageEnabled) return false;
+  if (getCachedDocx(key)) return true;
   try {
     return (await headFile(key)) !== null;
   } catch {
@@ -123,7 +128,7 @@ export async function attachDocxUploadToReview(
   return attachDocxBytesToReview(db, { reviewId: args.reviewId, buffer: args.buffer });
 }
 
-export type ReviewFileSource = { key: string; filename: string; size: number | null };
+export type ReviewFileSource = { key: string; filename: string };
 
 /** Resolve the streamable original for a review, or not_found when none was persisted. */
 export async function getReviewFileSource(
@@ -149,9 +154,23 @@ export async function getReviewFileSource(
   const key = variant === "original" ? row.contract_docx_path : row.contract_redline_path ?? row.contract_docx_path;
   if (!key) return failure("not_found", "Kontrak asli DOCX tidak ditemukan.");
   if (!storageEnabled) return failure("unavailable", "Penyimpanan dokumen belum dikonfigurasi.");
-  const meta = await headFile(key);
-  if (!meta) return failure("not_found", "File DOCX tidak tersedia di penyimpanan.");
   const base = (row.contract_filename || `${row.title ?? "kontrak"}.docx`).replace(/\.docx$/i, "");
   const filename = key === row.contract_redline_path ? `${base} - Redline.docx` : `${base}.docx`;
-  return ok({ key, filename, size: meta.size });
+  return ok({ key, filename });
+}
+
+/**
+ * The file's bytes (cache first, then storage), or not_found. Loaded whole
+ * rather than streamed so a missing object is a clean 404 before any header is
+ * sent, and so the next suggestion / tracked-change-id request hits the cache.
+ */
+export async function readReviewFile(source: ReviewFileSource): Promise<ServiceResult<Buffer>> {
+  let bytes: Buffer | null;
+  try {
+    bytes = await loadBytes(source.key);
+  } catch (e) {
+    return internalFailure(e);
+  }
+  if (!bytes) return failure("not_found", "File DOCX tidak tersedia di penyimpanan.");
+  return ok(bytes);
 }

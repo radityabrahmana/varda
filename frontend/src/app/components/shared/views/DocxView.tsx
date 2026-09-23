@@ -143,18 +143,18 @@ function scrollToHighlight(
     }, 2000);
 }
 
+type TrackedChangeIds = { kind: "ins" | "del"; w_id: string }[];
+
 /**
  * Fetch the ordered list of w:ids for every w:ins/w:del in the current
- * version and tag each rendered <ins>/<del> with data-w-id. The backend
- * returns ids in document order, and docx-preview emits <ins>/<del>
- * in the same order, so we can align by index.
+ * version. Started together with the byte download (not after rendering) so
+ * the round trip overlaps it; null when the list could not be loaded.
  */
-async function tagWIdsOnRenderedDom(
-    container: HTMLElement,
+async function fetchTrackedChangeIds(
     documentId: string,
     versionId: string | null | undefined,
     idsUrl?: string,
-): Promise<void> {
+): Promise<TrackedChangeIds | null> {
     try {
         const qs = versionId
             ? `?version_id=${encodeURIComponent(versionId)}`
@@ -168,25 +168,33 @@ async function tagWIdsOnRenderedDom(
                 "[DocxView] tracked-change-ids fetch failed",
                 resp.status,
             );
-            return;
+            return null;
         }
-        const data = (await resp.json()) as {
-            ids: { kind: "ins" | "del"; w_id: string }[];
-        };
-        const domEls = Array.from(
-            container.querySelectorAll("ins, del"),
-        ) as HTMLElement[];
-        const ids = data.ids ?? [];
-        for (let i = 0; i < Math.min(domEls.length, ids.length); i++) {
-            const el = domEls[i];
-            const info = ids[i];
-            if (el.tagName.toLowerCase() !== info.kind) {
-                continue;
-            }
-            el.setAttribute("data-w-id", info.w_id);
-        }
+        const data = (await resp.json()) as { ids?: TrackedChangeIds };
+        return data.ids ?? [];
     } catch (e) {
-        console.warn("[DocxView] tagWIdsOnRenderedDom failed", e);
+        console.warn("[DocxView] tracked-change-ids fetch failed", e);
+        return null;
+    }
+}
+
+/**
+ * Tag each rendered <ins>/<del> with data-w-id. The backend returns ids in
+ * document order, and docx-preview emits <ins>/<del> in the same order, so
+ * we can align by index.
+ */
+function tagWIdsOnRenderedDom(container: HTMLElement, ids: TrackedChangeIds | null): void {
+    if (!ids) return;
+    const domEls = Array.from(
+        container.querySelectorAll("ins, del"),
+    ) as HTMLElement[];
+    for (let i = 0; i < Math.min(domEls.length, ids.length); i++) {
+        const el = domEls[i];
+        const info = ids[i];
+        if (el.tagName.toLowerCase() !== info.kind) {
+            continue;
+        }
+        el.setAttribute("data-w-id", info.w_id);
     }
 }
 
@@ -246,6 +254,17 @@ export function DocxView({
         displayUrl,
         cacheBytes,
     );
+
+    // Same triggers as the byte fetch, so the id list downloads in parallel
+    // with the file instead of after the render.
+    const trackedIdsRef = useRef<Promise<TrackedChangeIds | null> | null>(null);
+    useEffect(() => {
+        trackedIdsRef.current = fetchTrackedChangeIds(
+            documentId,
+            versionId,
+            trackedChangeIdsUrl,
+        );
+    }, [documentId, versionId, refetchKey, trackedChangeIdsUrl]);
 
     /**
      * Highlight every quote in `list` inside the rendered DOM and scroll
@@ -371,12 +390,14 @@ export function DocxView({
                     experimental: true,
                 });
                 if (cancelled) return;
-                await tagWIdsOnRenderedDom(
-                    containerEl,
-                    documentId,
-                    versionId ?? null,
-                    trackedChangeIdsUrl,
-                );
+                const ids = await (trackedIdsRef.current ??
+                    fetchTrackedChangeIds(
+                        documentId,
+                        versionId,
+                        trackedChangeIdsUrl,
+                    ));
+                if (cancelled) return;
+                tagWIdsOnRenderedDom(containerEl, ids);
                 if (cancelled) return;
                 // Scale to fit before scrolling so offsets are computed
                 // against the post-zoom layout.

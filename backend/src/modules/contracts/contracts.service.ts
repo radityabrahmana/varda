@@ -110,6 +110,7 @@ export {
   attachDocxUploadToReview,
   docxObjectExists,
   getReviewFileSource,
+  readReviewFile,
   isStashedDocxKey,
   originalDocxKey,
   stashUploadedDocx,

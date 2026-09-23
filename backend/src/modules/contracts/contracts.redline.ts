@@ -13,11 +13,13 @@
 // an `error` row and stay card-only.
 
 import type { Db } from "../../lib/supabase";
-import { downloadFile, storageEnabled, uploadFile } from "../../lib/storage";
+import { storageEnabled } from "../../lib/storage";
 import { applyTrackedEdits, resolveTrackedChange, type EditInput } from "../../lib/docxTrackedChanges";
 import { failure, internalFailure, ok, type ServiceResult } from "../../lib/serviceResult";
-import { DOCX_MIME } from "./contracts.files";
 import { withReviewDocLock } from "./contracts.docLock";
+import { loadBytes, storeBytes } from "./contracts.docCache";
+
+export { loadBytes, storeBytes };
 import { createFeedback, type FeedbackInput } from "./contracts.feedback";
 import type { ReviewFeedbackRow, ReviewOutput, Revision } from "./contracts.types";
 
@@ -63,16 +65,6 @@ export function revisionToEdit(rev: Revision, contractText: string): EditInput {
   return { find, replace: rev.suggested_text ?? "", context_before, context_after, reason: rev.rationale };
 }
 
-export async function loadBytes(key: string): Promise<Buffer | null> {
-  const data = await downloadFile(key);
-  return data ? Buffer.from(data) : null;
-}
-
-export async function storeBytes(key: string, bytes: Buffer): Promise<void> {
-  const ab = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(ab).set(bytes);
-  await uploadFile(key, ab, DOCX_MIME);
-}
 
 export async function listRevisionEdits(db: Db, reviewId: string): Promise<ServiceResult<RevisionEditRow[]>> {
   const { data, error } = await db
