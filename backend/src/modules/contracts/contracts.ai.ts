@@ -9,7 +9,7 @@
 
 import { AiGatewayError, choiceDiagnostics, firstMessage, openRouterChat, type ChatFn, type ChatTool } from "../../lib/openRouterChat";
 import type { NegotiationMemo, ReviewOutput } from "./contracts.types";
-import type { PromptRule } from "../playbook/playbook.service";
+import { normalizeRuleDocumentType, type PromptRule } from "../playbook/playbook.service";
 
 export const PRIMARY_MODEL = process.env.CONTRACTS_AI_MODEL?.trim() || "google/gemini-2.5-pro";
 export const FALLBACK_MODEL = process.env.CONTRACTS_AI_FALLBACK_MODEL?.trim() || "google/gemini-2.5-flash";
@@ -23,7 +23,37 @@ export const REVIEW_MAX_OUTPUT_TOKENS = Number(process.env.CONTRACTS_AI_MAX_TOKE
 
 // ── Contract review ────────────────────────────────────────────────────────
 
-export function buildReviewSystemPrompt(rules: PromptRule[]): string {
+/** Persona + checklist + compliance slugs differ per document type. */
+type PromptProfile = {
+  persona: string;
+  checks: string;
+  complianceSlugs: readonly string[];
+};
+
+const PKS_PROFILE: PromptProfile = {
+  persona:
+    "You are a senior legal and contract reviewer (ex-Chief Legal Officer, 20 years B2B commercial law in Indonesia, in-house counsel for a logistics company). Review contracts from our company's perspective as the LOGISTICS SERVICE PROVIDER. Protect our interests while keeping fairness.",
+  checks: `CHECK A — Bilingual consistency (EN/ID translation mismatches, governing language)
+CHECK B — Signatory completeness (names, addresses, titles, blanks, placeholders)
+CHECK C — Operational specifics (temperature, vehicle type, loading/unloading, staff, return logistics, parking, tolls, detention, working hours, surcharges)
+CHECK D — Indonesian regulatory (KUH Perdata, BANI arbitration, materai, PPN/PPh)
+CHECK E — Insurance (recommend if goods > IDR 500k/package)`,
+  complianceSlugs: [] as readonly string[], // filled below
+};
+
+const NDA_PROFILE: PromptProfile = {
+  persona: `You are a senior legal reviewer (ex-Chief Legal Officer, 20 years B2B commercial law in Indonesia, in-house counsel for a logistics company). This document is a NON-DISCLOSURE AGREEMENT, not a service contract. Review it from our company's perspective in the role stated in PROJECT CONTEXT (disclosing party, receiving party, or both). Our exposure as DISCLOSER is our operational data, routes, pricing and client information; as RECIPIENT it is liability for the counterparty's information and personal data of their customers.
+Do NOT apply service-contract expectations: there are no payment terms, SLAs, liability caps per package or claim procedures to score. Termination on notice is ACCEPTABLE as long as confidentiality obligations survive termination — do not flag it as a red flag. A disclosure compelled by law or court order with prior notice is a normal, acceptable exception.`,
+  checks: `CHECK A — Bilingual consistency (EN/ID mismatches; Indonesian text must prevail per UU 24/2009)
+CHECK B — Signatory completeness (Director or power of attorney, names, titles, placeholders)
+CHECK C — Role & mutuality: who discloses under this NDA, whether obligations are mutual, and whether one-way obligations only bind us
+CHECK D — Indonesian regulatory (KUH Perdata 1266/1267 waiver, UU PDP 27/2022 for personal data, materai)
+CHECK E — Hidden deal terms inside the NDA: exclusivity, standstill, right of first refusal, non-compete, residuals, licence grants, fixed penalties (denda)`,
+  complianceSlugs: [] as readonly string[],
+};
+
+export function buildReviewSystemPrompt(rules: PromptRule[], documentType: string = "PKS"): string {
+  const profile = promptProfileFor(documentType);
   const rulesBlock = rules
     .map((r) => {
       const thresholdInfo = Object.keys(r.thresholds || {}).length > 0 ? ` Thresholds: ${JSON.stringify(r.thresholds)}.` : "";
@@ -48,7 +78,7 @@ Untuk kutipan klausul kontrak (original_text, highlight_text, clause_text), guna
 
 Untuk setiap item dalam red_flags, revisions, clarifications, yellow_flags, dan positive_findings, WAJIB sertakan field 'highlight_text': kutipan PERSIS dari teks kontrak (10-100 kata) yang bisa di-match secara programatis.
 
-You are a senior legal and contract reviewer (ex-Chief Legal Officer, 20 years B2B commercial law in Indonesia, in-house counsel for a logistics company). Review contracts from our company's perspective as the LOGISTICS SERVICE PROVIDER. Protect our interests while keeping fairness.
+${profile.persona}
 
 OUR CONTRACT REVIEW PLAYBOOK (MANDATORY RULES)
 Evaluate EVERY contract against these rules. Any violation MUST be flagged.
@@ -56,11 +86,7 @@ Evaluate EVERY contract against these rules. Any violation MUST be flagged.
 ${rulesBlock}
 
 ADDITIONAL CHECKS
-CHECK A — Bilingual consistency (EN/ID translation mismatches, governing language)
-CHECK B — Signatory completeness (names, addresses, titles, blanks, placeholders)
-CHECK C — Operational specifics (temperature, vehicle type, loading/unloading, staff, return logistics, parking, tolls, detention, working hours, surcharges)
-CHECK D — Indonesian regulatory (KUH Perdata, BANI arbitration, materai, PPN/PPh)
-CHECK E — Insurance (recommend if goods > IDR 500k/package)
+${profile.checks}
 
 CLAUSE LIBRARY CONTEXT — Jika tersedia, prefer wording dari pustaka klausul. Set from_clause_library=true dan cite clause_library_source.
 
@@ -68,7 +94,7 @@ PAST FEEDBACK CONTEXT — Pertimbangkan koreksi C-Level sebelumnya.
 
 SECTION RISK SCORING — score every major clause 1-10. Labels: 1-3=RENDAH, 4-6=SEDANG, 7-8=TINGGI, 9-10=KRITIS.
 
-PLAYBOOK COMPLIANCE — Untuk setiap rule (contract_period, payment_terms, liability_scope, claim_process, claim_settlement, liability_cap, indirect_loss, termination, signatory, late_payment, ownership_after_settlement, auto_renewal): WAJIB sertakan status, assessment, clause_reference, clause_text, dan playbook_threshold. Jika tidak ditemukan, isi clause_reference="Tidak ditemukan" dan clause_text="Tidak ada klausul terkait".
+PLAYBOOK COMPLIANCE — Untuk setiap rule (${profile.complianceSlugs.join(", ")}): WAJIB sertakan status, assessment, clause_reference, clause_text, dan playbook_threshold. Jika tidak ditemukan, isi clause_reference="Tidak ditemukan" dan clause_text="Tidak ada klausul terkait".
 
 CRITICAL: Kembalikan hasil HANYA dengan memanggil function "submit_contract_review". JANGAN tulis JSON sebagai teks. JANGAN tulis penjelasan di luar tool call.`;
 }
@@ -106,7 +132,25 @@ PAST REVIEW PATTERNS
 ${input.past_feedback_context || "No past reviews for this client."}`;
 }
 
-/** The compliance slugs the prompt asks the model to score, in prompt order. */
+/** NDA compliance slugs (one per NDA playbook theme), in prompt order. */
+export const NDA_COMPLIANCE_SLUGS = [
+  "mutuality",
+  "confidentiality_definition",
+  "purpose_limitation",
+  "term_survival",
+  "permitted_disclosure",
+  "return_destruction",
+  "remedies_penalty",
+  "non_compete_non_solicit",
+  "no_obligation_no_license",
+  "personal_data",
+  "governing_law_language",
+  "signatory",
+  "exclusivity_standstill",
+  "residuals",
+] as const;
+
+/** The PKS/LOI compliance slugs the prompt asks the model to score, in prompt order. */
 export const PLAYBOOK_COMPLIANCE_SLUGS = [
   "contract_period",
   "payment_terms",
@@ -122,6 +166,17 @@ export const PLAYBOOK_COMPLIANCE_SLUGS = [
   "auto_renewal",
 ] as const;
 
+PKS_PROFILE.complianceSlugs = PLAYBOOK_COMPLIANCE_SLUGS;
+NDA_PROFILE.complianceSlugs = NDA_COMPLIANCE_SLUGS;
+
+function promptProfileFor(documentType: string): PromptProfile {
+  return normalizeRuleDocumentType(documentType) === "NDA" ? NDA_PROFILE : PKS_PROFILE;
+}
+
+export function complianceSlugsFor(documentType: string): readonly string[] {
+  return promptProfileFor(documentType).complianceSlugs;
+}
+
 const PLAYBOOK_COMPLIANCE_ITEM = {
   type: "object",
   properties: {
@@ -134,8 +189,10 @@ const PLAYBOOK_COMPLIANCE_ITEM = {
   required: ["status", "assessment"],
 };
 
-/** Tool/function schema mirroring ReviewOutput (contracts.types.ts). */
-export const REVIEW_TOOL: ChatTool = {
+/** Tool/function schema mirroring ReviewOutput (contracts.types.ts), with the compliance slugs for one document type. */
+export function reviewToolFor(documentType: string): ChatTool {
+  const slugs = complianceSlugsFor(documentType);
+  return {
   type: "function",
   function: {
     name: "submit_contract_review",
@@ -271,8 +328,8 @@ export const REVIEW_TOOL: ChatTool = {
           // Gemini's function-calling schema subset ignores `additionalProperties`
           // (the Lovable gateway tolerated it; OpenRouter passes the schema
           // through and the model returned {}), so the slugs are enumerated.
-          properties: Object.fromEntries(PLAYBOOK_COMPLIANCE_SLUGS.map((slug) => [slug, PLAYBOOK_COMPLIANCE_ITEM])),
-          required: [...PLAYBOOK_COMPLIANCE_SLUGS],
+          properties: Object.fromEntries(slugs.map((slug) => [slug, PLAYBOOK_COMPLIANCE_ITEM])),
+          required: [...slugs],
         },
       },
       required: [
@@ -295,6 +352,10 @@ export const REVIEW_TOOL: ChatTool = {
     },
   },
 };
+}
+
+/** PKS-shaped default schema (kept for callers and tests that predate document-type scoping). */
+export const REVIEW_TOOL: ChatTool = reviewToolFor("PKS");
 
 const ARRAY_FIELDS = ["red_flags", "revisions", "clarifications", "financial_review", "missing_clauses", "yellow_flags", "positive_findings", "section_risks"] as const;
 const RECOMMENDATIONS = ["READY_TO_SIGN", "NEEDS_REVISIONS", "ESCALATE_TO_CEO_COO", "DO_NOT_SIGN"];
@@ -377,15 +438,16 @@ export async function runContractReviewAi(
   args: { rules: PromptRule[]; input: ReviewPromptInput },
   chat: ChatFn = openRouterChat,
 ): Promise<ReviewOutput> {
-  const systemPrompt = buildReviewSystemPrompt(args.rules);
+  const systemPrompt = buildReviewSystemPrompt(args.rules, args.input.document_type);
   const userMessage = buildReviewUserMessage(args.input);
+  const reviewTool = reviewToolFor(args.input.document_type);
   const request = (model: string) => ({
     model,
     messages: [
       { role: "system" as const, content: systemPrompt },
       { role: "user" as const, content: userMessage },
     ],
-    tools: [REVIEW_TOOL],
+    tools: [reviewTool],
     tool_choice: { type: "function" as const, function: { name: "submit_contract_review" } },
     temperature: 0.1,
     max_tokens: REVIEW_MAX_OUTPUT_TOKENS,

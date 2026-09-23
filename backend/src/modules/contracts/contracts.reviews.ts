@@ -217,7 +217,7 @@ export async function executeReview(
     // /playbook applies to the next review with no redeploy (Janus parity).
     const [ctx, playbookRules] = await Promise.all([
       buildReviewContextFor(db, input.client_name, input.document_type),
-      listPromptRules(db),
+      listPromptRules(db, input.document_type),
     ]);
     if (playbookRules.length === 0) {
       return await markFailed(db, reviewId, failure("unavailable", "Tidak ada aturan playbook aktif; tinjauan dibatalkan."));

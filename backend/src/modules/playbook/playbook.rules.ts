@@ -11,6 +11,30 @@ import { failure, internalFailure, ok, type ServiceResult } from "../../lib/serv
 export const RULE_SEVERITIES = ["CRITICAL", "HIGH", "MEDIUM"] as const;
 export type RuleSeverity = (typeof RULE_SEVERITIES)[number];
 
+/**
+ * Document types a rule can be scoped to. These are the values stored on
+ * `reviews.document_type` by the new-review form; the Assistant tool's Bahasa
+ * labels ("Template Klien", "Lainnya") are folded onto them by
+ * `normalizeRuleDocumentType`. A rule with `applies_to = null` applies to all.
+ */
+export const RULE_DOCUMENT_TYPES = ["PKS", "LOI", "NDA", "Client Template", "Other"] as const;
+export type RuleDocumentType = (typeof RULE_DOCUMENT_TYPES)[number];
+
+const DOCUMENT_TYPE_ALIASES: Record<string, RuleDocumentType> = {
+  "template klien": "Client Template",
+  "client template": "Client Template",
+  lainnya: "Other",
+  other: "Other",
+  pks: "PKS",
+  loi: "LOI",
+  nda: "NDA",
+};
+
+export function normalizeRuleDocumentType(value: string | null | undefined): RuleDocumentType {
+  const key = (value ?? "").trim().toLowerCase();
+  return DOCUMENT_TYPE_ALIASES[key] ?? "Other";
+}
+
 export interface PlaybookRuleRow {
   id: string;
   rule_number: string;
@@ -19,6 +43,8 @@ export interface PlaybookRuleRow {
   thresholds: Record<string, unknown>;
   severity: RuleSeverity;
   is_active: boolean;
+  /** Document types the rule is scored against; null = every type. */
+  applies_to: RuleDocumentType[] | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -39,6 +65,7 @@ const fields = {
   thresholds: thresholdsSchema,
   severity: z.enum(RULE_SEVERITIES),
   is_active: z.boolean(),
+  applies_to: z.array(z.enum(RULE_DOCUMENT_TYPES)).min(1).nullable(),
 };
 
 const createSchema = z.object({
@@ -46,6 +73,7 @@ const createSchema = z.object({
   thresholds: fields.thresholds.default({}),
   severity: fields.severity.default("HIGH"),
   is_active: fields.is_active.default(true),
+  applies_to: fields.applies_to.default(null),
 });
 export type CreateRuleInput = z.infer<typeof createSchema>;
 
@@ -59,6 +87,7 @@ const patchSchema = z
     thresholds: fields.thresholds.optional(),
     severity: fields.severity.optional(),
     is_active: fields.is_active.optional(),
+    applies_to: fields.applies_to.optional(),
   })
   .refine((p) => Object.values(p).some((v) => v !== undefined), { message: "Tidak ada perubahan." });
 export type PatchRuleInput = z.infer<typeof patchSchema>;
@@ -84,13 +113,21 @@ export async function listPlaybookRules(db: Db): Promise<ServiceResult<PlaybookR
   return ok((data ?? []) as unknown as PlaybookRuleRow[]);
 }
 
-/** Active rules in prompt order; what runReview forwards to review-contract. */
-export async function listPromptRules(db: Db): Promise<PromptRule[]> {
-  const { data, error } = await db
+/**
+ * Active rules in prompt order for one document type: universal rules
+ * (`applies_to` null) plus rules scoped to that type. Without a type every
+ * active rule is returned (legacy callers).
+ */
+export async function listPromptRules(db: Db, documentType?: string | null): Promise<PromptRule[]> {
+  let query = db
     .from("playbook_rules")
     .select("rule_number, title, description, thresholds, severity")
-    .eq("is_active", true)
-    .order("rule_number");
+    .eq("is_active", true);
+  if (documentType !== undefined && documentType !== null) {
+    const type = normalizeRuleDocumentType(documentType);
+    query = query.or(`applies_to.is.null,applies_to.cs.{"${type}"}`);
+  }
+  const { data, error } = await query.order("rule_number");
   if (error) throw new Error(`Gagal memuat aturan playbook: ${error.message}`);
   return (data ?? []) as unknown as PromptRule[];
 }

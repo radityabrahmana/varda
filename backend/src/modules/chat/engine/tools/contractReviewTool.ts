@@ -19,6 +19,8 @@ import { resolveDocLabel, type DocIndex, type DocStore } from "../types";
 
 export const REVIEW_CONTRACT_TOOL_NAME = "review_contract";
 
+// Bahasa labels the model picks from; the contracts module folds them onto the
+// stored document_type values (see playbook normalizeRuleDocumentType).
 export const CONTRACT_DOCUMENT_TYPES = ["PKS", "LOI", "NDA", "Template Klien", "Lainnya"] as const;
 
 export const CONTRACT_REVIEW_TOOLS = [
