@@ -10,3 +10,8 @@ no Janus tables, so any `alter table reviews …` there would break it.
 Apply these files in filename order in the Supabase SQL editor of the Mike
 project, and record the last applied filename in the migration handoff doc.
 Every file is idempotent (`if not exists` / `add column if not exists`).
+
+Later Dash-side additions that follow the same convention: `review_access_grants`,
+`review_suggestions`, `review_revision_edits`, and the regulation library
+(`regulations`, `regulation_nodes`, `search_regulation_nodes()`; see
+`docs/regulation-library.md`).

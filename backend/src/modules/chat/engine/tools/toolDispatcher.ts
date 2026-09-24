@@ -13,6 +13,7 @@ import {
 import { executeMcpToolCall, type McpToolEvent } from "../../../../lib/mcpConnectors";
 import { isPasalToolName, runPasalTool } from "./pasalTools";
 import { KBLI_TOOL_NAME, runKbliTool } from "./kbliTool";
+import { isRegulationLibraryToolName, runRegulationLibraryTool } from "./regulationLibraryTools";
 import {
   type DocStore,
   type DocIndex,
@@ -451,6 +452,24 @@ export async function runToolCalls(
       const { content, event } = await runPasalTool({
         toolName: tc.function.name,
         args,
+        write,
+      });
+      toolResults.push({
+        role: "tool",
+        tool_call_id: tc.id,
+        content,
+      });
+      mcpEvents.push(event);
+      continue;
+    }
+
+    // The organization's own regulation library (modules/regulations).
+    if (isRegulationLibraryToolName(tc.function.name)) {
+      const { content, event } = await runRegulationLibraryTool({
+        toolName: tc.function.name,
+        args,
+        userId,
+        db,
         write,
       });
       toolResults.push({

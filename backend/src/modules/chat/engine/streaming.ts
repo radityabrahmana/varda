@@ -13,6 +13,8 @@ import { pasalConfigured } from "../../../lib/pasal";
 import { kbliAvailable } from "../../../lib/kbli";
 import { PASAL_TOOLS } from "./tools/pasalTools";
 import { KBLI_TOOLS } from "./tools/kbliTool";
+import { REGULATION_LIBRARY_SYSTEM_PROMPT, REGULATION_LIBRARY_TOOLS } from "./tools/regulationLibraryTools";
+import { hasVisibleRegulations } from "../../regulations/regulations.service";
 import type { SourceDocument } from "../../../lib/sourceDocuments";
 import {
   COURTLISTENER_TOOLS,
@@ -210,6 +212,12 @@ export async function runLLMStream(params: {
   includePasalTools?: boolean;
   /** Local KBLI (business classification) lookup. Defaults to "dataset bundled"; narrow surfaces pass false. */
   includeKbliTool?: boolean;
+  /**
+   * The organization's regulation library (search_regulations / read_regulation).
+   * Undefined means "offer it when the caller can see at least one parsed
+   * regulation", decided per turn; narrow surfaces pass false.
+   */
+  includeRegulationLibrary?: boolean;
   /** Expose ask_inputs only to clients that can render and answer it. */
   includeAskInputs?: boolean;
   /**
@@ -276,6 +284,7 @@ export async function runLLMStream(params: {
     includeResearchTools = true,
     includePasalTools = pasalConfigured(),
     includeKbliTool = kbliAvailable(),
+    includeRegulationLibrary,
     includeAskInputs = true,
     allowDocumentMutation = true,
     workflowStore,
@@ -297,6 +306,10 @@ export async function runLLMStream(params: {
   const researchTools = includeResearchTools ? COURTLISTENER_TOOLS : [];
   const pasalTools = includePasalTools ? PASAL_TOOLS : [];
   const kbliTools = includeKbliTool ? KBLI_TOOLS : [];
+  // Per-user data, so decided here rather than in the static prompt builder:
+  // the model is told about the library only when it can actually reach one.
+  const regulationLibrary = includeRegulationLibrary ?? (await hasVisibleRegulations(userId, db));
+  const regulationTools = regulationLibrary ? REGULATION_LIBRARY_TOOLS : [];
   const mcpTools = await buildUserMcpTools(userId, db);
   const conversationTools = includeAskInputs
     ? TOOLS
@@ -309,6 +322,7 @@ export async function runLLMStream(params: {
     ...researchTools,
     ...pasalTools,
     ...kbliTools,
+    ...regulationTools,
     ...WORKFLOW_TOOLS,
     ...contractTools,
   ];
@@ -339,7 +353,9 @@ export async function runLLMStream(params: {
     projectId: memoryProjectId,
     sharedAudience: memorySharedAudience,
   });
-  const systemPrompt = memory.systemPrompt;
+  const systemPrompt = regulationLibrary
+    ? `${memory.systemPrompt}\n\n${REGULATION_LIBRARY_SYSTEM_PROMPT}`
+    : memory.systemPrompt;
   const chatMessages: LlmMessage[] = rawMsgs
     .filter((m) => m.role !== "system")
     .map(
