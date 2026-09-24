@@ -1,6 +1,8 @@
 import { pasalConfigured } from "../../../lib/pasal";
+import { kbliAvailable } from "../../../lib/kbli";
 import { COURTLISTENER_SYSTEM_PROMPT } from "./tools/courtlistenerTools";
 import { PASAL_SYSTEM_PROMPT } from "./tools/pasalTools";
+import { KBLI_SYSTEM_PROMPT } from "./tools/kbliTool";
 
 const SYSTEM_PROMPT_BEFORE_RESEARCH = `You are Varda, an AI legal assistant for lawyers and legal professionals. Help analyze documents, answer legal questions, and draft legal documents.
 
@@ -104,15 +106,18 @@ GENERAL GUIDANCE:
  * tools the model actually has, so it is never told about tools it cannot
  * call: CourtListener (US case law) when `includeResearchTools` is true,
  * Pasal.id (Indonesian legislation) when `includePasalTools` is true, which
- * defaults to "the server has a PASAL_MCP_TOKEN".
+ * defaults to "the server has a PASAL_MCP_TOKEN", and the local KBLI lookup
+ * when `includeKbliTool` is true, which defaults to "the dataset is bundled".
  */
 export function buildSystemPrompt(
   includeResearchTools = true,
   includePasalTools = pasalConfigured(),
+  includeKbliTool = kbliAvailable(),
 ): string {
   const research = [
     includeResearchTools ? COURTLISTENER_SYSTEM_PROMPT : null,
     includePasalTools ? PASAL_SYSTEM_PROMPT : null,
+    includeKbliTool ? KBLI_SYSTEM_PROMPT : null,
   ].filter((section): section is string => section !== null);
   return research.length
     ? `${SYSTEM_PROMPT_BEFORE_RESEARCH}\n\n${research.join("\n\n")}\n${SYSTEM_PROMPT_AFTER_RESEARCH}`

@@ -671,6 +671,7 @@ wordChatRouter.post("/", requireAuth, asyncRoute(async (req, res) => {
       // chats. Legal research remains a web-assistant capability.
       includeResearchTools: false,
       includePasalTools: false,
+      includeKbliTool: false,
       includeAskInputs: false,
       ...(clientToolsEnabled
         ? {

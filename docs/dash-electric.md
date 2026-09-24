@@ -53,6 +53,8 @@ Open PRs against **this fork** — `gh pr create -R radityabrahmana/varda --base
 - `backend/src/lib/pasal.ts` + `backend/src/modules/chat/engine/tools/pasalTools.ts` — the Assistant's
   `pasal_*` tools for grounded Indonesian-law lookups (status, articles, Perda/Pergub, MK). Gated on
   `PASAL_MCP_TOKEN`. Not used by the contract review pipeline yet.
+- `backend/src/lib/kbli.ts` + `tools/kbliTool.ts` + `backend/data/kbli/kbli-2025.json` — the Assistant's
+  `lookup_kbli` tool over the bundled KBLI 2025 table (see `docs/kbli.md`). No env needed.
 - `frontend/src/app/components/contracts/`, `components/playbook/`, pages `/contracts`, `/contracts/new`,
   `/contracts/[id]`, `/playbook`.
 - `backend/janus-migrations/*.sql` — SQL for the **Dash-only tables** (reviews, playbook_rules,

@@ -757,6 +757,7 @@ tabularRouter.post("/:reviewId/chat", requireAuth, asyncRoute(async (req, res) =
             extraTools: TABULAR_TOOLS,
             includeResearchTools: false,
             includePasalTools: false,
+            includeKbliTool: false,
             tabularStore,
             buildCitations: (text) =>
                 extractTabularAnnotations(text, tabularStore),

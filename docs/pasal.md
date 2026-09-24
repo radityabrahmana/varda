@@ -53,6 +53,6 @@ result is truncated at 40,000 characters with a hint to narrow the request.
 - Regional rules (Perda, Pergub) are present but topical search only works
   with the `region` and `regulation_types` filters; the prompt instructs this.
 - The KBLI classification annex is one long text readable only by paging. Code
-  lookups need a local KBLI table, which this integration does not provide.
+  lookups use the local table described in `docs/kbli.md` instead.
 - Results carry Pasal.id's own disclaimer; the prompt asks the model to repeat
   it once when an answer relies on Pasal.id.
