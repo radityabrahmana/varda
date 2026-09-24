@@ -151,6 +151,77 @@ export function chunkText(text: string, size = CONTENT_CHUNK_CHARS): string[] {
     return chunks;
 }
 
+type ArticleCandidate = { line: number; key: number; label: string };
+
+/**
+ * Indices of the longest strictly increasing run of keys (patience sorting,
+ * O(n log n)). Chosen over "must exceed the previous heading" because one
+ * stray forward reference wrapped onto its own line ("tanpa mengurangi
+ * ketentuan\nPasal 1341.") would otherwise be taken as an article and cause
+ * every real article up to 1340 to be rejected as out of sequence.
+ */
+export function longestIncreasingRun(keys: number[]): number[] {
+    const tails: number[] = []; // index into keys of the smallest tail per length
+    const prev: number[] = new Array(keys.length).fill(-1);
+    for (let i = 0; i < keys.length; i += 1) {
+        let lo = 0;
+        let hi = tails.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (keys[tails[mid]] < keys[i]) lo = mid + 1;
+            else hi = mid;
+        }
+        if (lo > 0) prev[i] = tails[lo - 1];
+        tails[lo] = i;
+    }
+    const out: number[] = [];
+    for (let k = tails.length ? tails[tails.length - 1] : -1; k >= 0; k = prev[k]) out.push(k);
+    return out.reverse();
+}
+
+type ArticlePlan = {
+    accepted: Set<number>;
+    rejected: ArticleCandidate[];
+    penjelasanStart: number | null;
+    lampiranStart: number | null;
+};
+
+/**
+ * First pass: find the section boundaries (PENJELASAN, LAMPIRAN) and every
+ * line shaped like an article heading, then keep, per section, the longest
+ * increasing run of article numbers. The main pass opens an article only on
+ * an accepted line.
+ */
+function planArticles(lines: string[]): ArticlePlan {
+    const bySection: Record<"body" | "penjelasan", ArticleCandidate[]> = { body: [], penjelasan: [] };
+    let section: "body" | "penjelasan" = "body";
+    let penjelasanStart: number | null = null;
+    let lampiranStart: number | null = null;
+    for (let i = 0; i < lines.length; i += 1) {
+        const t = lines[i].trim();
+        if (LAMPIRAN_RE.test(t) && (bySection.body.length > 0 || section === "penjelasan")) {
+            lampiranStart = i;
+            break;
+        }
+        if (section === "body" && PENJELASAN_RE.test(t) && bySection.body.length > 0) {
+            penjelasanStart = i;
+            section = "penjelasan";
+            continue;
+        }
+        const pm = PASAL_ALONE_RE.exec(t) ?? PASAL_INLINE_RE.exec(t);
+        if (!pm) continue;
+        const suffix = pm[2] ?? "";
+        bySection[section].push({ line: i, key: pasalKey(Number(pm[1]), suffix), label: `Pasal ${pm[1]}${suffix}` });
+    }
+    const accepted = new Set<number>();
+    const rejected: ArticleCandidate[] = [];
+    for (const candidates of Object.values(bySection)) {
+        const keep = new Set(longestIncreasingRun(candidates.map((c) => c.key)));
+        candidates.forEach((c, idx) => (keep.has(idx) ? accepted.add(c.line) : rejected.push(c)));
+    }
+    return { accepted, rejected, penjelasanStart, lampiranStart };
+}
+
 export function parseRegulationText(raw: string): ParsedRegulation {
     const text = cleanExtractedText(raw);
     const lines = text.split("\n");
@@ -173,7 +244,8 @@ export function parseRegulationText(raw: string): ParsedRegulation {
     // MENTERI ... NOMOR ..."), which belong to no section.
     let penjelasanHeader = false;
     let lampiran: string[] = [];
-    let lastPasalKey = 0;
+    const plan = planArticles(lines);
+    for (const r of plan.rejected) warnings.push(`line ${r.line + 1}: "${r.label}" out of sequence, kept as text`);
     let pasalCount = 0;
     let penjelasanCount = 0;
     let structuralCount = 0;
@@ -252,7 +324,7 @@ export function parseRegulationText(raw: string): ParsedRegulation {
             continue;
         }
 
-        if (LAMPIRAN_RE.test(t) && (pasalCount > 0 || section === "penjelasan")) {
+        if (i === plan.lampiranStart) {
             closePasal();
             closePenjelasanUmum();
             section = "lampiran";
@@ -260,10 +332,9 @@ export function parseRegulationText(raw: string): ParsedRegulation {
             continue;
         }
 
-        if (section === "body" && PENJELASAN_RE.test(t) && pasalCount > 0) {
+        if (i === plan.penjelasanStart) {
             closePasal();
             section = "penjelasan";
-            lastPasalKey = 0;
             penjelasanUmumOpen = true;
             penjelasanHeader = true;
             continue;
@@ -317,20 +388,13 @@ export function parseRegulationText(raw: string): ParsedRegulation {
         const alone = PASAL_ALONE_RE.exec(t);
         const inline = alone ? null : PASAL_INLINE_RE.exec(t);
         const pm = alone ?? inline;
-        if (pm) {
-            const num = Number(pm[1]);
-            const suffix = pm[2] ?? "";
-            const key = pasalKey(num, suffix);
-            if (key > lastPasalKey) {
-                closePasal();
-                closePreamble();
-                closePenjelasanUmum();
-                lastPasalKey = key;
-                pasal = { number: `${num}${suffix}`, lines: [], context: contextOf(stack) };
-                if (inline) pasal.lines.push(inline[3]);
-                continue;
-            }
-            warnings.push(`line ${i + 1}: "Pasal ${num}${suffix}" out of sequence, kept as text`);
+        if (pm && plan.accepted.has(i)) {
+            closePasal();
+            closePreamble();
+            closePenjelasanUmum();
+            pasal = { number: `${Number(pm[1])}${pm[2] ?? ""}`, lines: [], context: contextOf(stack) };
+            if (inline) pasal.lines.push(inline[3]);
+            continue;
         }
 
         if (pasal) {
@@ -370,8 +434,21 @@ export function parseRegulationText(raw: string): ParsedRegulation {
         contentChunks = chunks.length;
         structuralCount = 0;
         penjelasanCount = 0;
-    } else if (!preambleClosed) {
-        closePreamble();
+    } else {
+        if (!preambleClosed) closePreamble();
+        // Numbering gaps usually mean a heading missing from the source's text
+        // layer (its article's text then sits in the previous article) or an
+        // article repealed and omitted. Either way a reviewer should know.
+        const numbers = nodes.filter((n) => n.node_type === "pasal").map((n) => Number(/^\d+/.exec(n.number ?? "")?.[0]));
+        const gaps: string[] = [];
+        for (let k = 1; k < numbers.length; k += 1) {
+            if (numbers[k] - numbers[k - 1] > 1) gaps.push(`${numbers[k - 1]}→${numbers[k]}`);
+        }
+        if (gaps.length) {
+            warnings.push(
+                `article numbering skips at ${gaps.slice(0, 20).join(", ")}${gaps.length > 20 ? ` (+${gaps.length - 20} more)` : ""}: headings missing from the source text, or articles omitted`,
+            );
+        }
     }
 
     return {

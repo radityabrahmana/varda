@@ -22,7 +22,9 @@ describe("regulation library tools", () => {
 
     it("searches in the caller's scope and reports through connector frames", async () => {
         const write = vi.fn();
-        const search = vi.fn(async () => ok({ query: "syarat batal", hits: [], library: { count: 0 } }));
+        const search = vi.fn(async () =>
+            ok({ query: "syarat batal", match: "none" as const, regulation_filter: null, hits: [], library: { count: 0 } }),
+        );
         const read = vi.fn();
         const { content, event } = await runRegulationLibraryTool({
             toolName: REGULATION_LIBRARY_TOOL_NAMES.search,
@@ -34,7 +36,7 @@ describe("regulation library tools", () => {
         });
         expect(search).toHaveBeenCalledWith({}, SCOPE, { query: "syarat batal", regulation: undefined, limit: 5 });
         expect(read).not.toHaveBeenCalled();
-        expect(JSON.parse(content)).toEqual({ query: "syarat batal", hits: [], library: { count: 0 } });
+        expect(JSON.parse(content)).toEqual({ query: "syarat batal", match: "none", regulation_filter: null, hits: [], library: { count: 0 } });
         expect(event).toMatchObject({ type: "mcp_tool_call", connector_name: "Regulation Library", tool_name: "search_regulations", status: "ok" });
         expect(sseFrames(write).map((f) => f.type)).toEqual(["mcp_tool_start", "mcp_tool_result"]);
     });
