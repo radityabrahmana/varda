@@ -1,4 +1,6 @@
+import { pasalConfigured } from "../../../lib/pasal";
 import { COURTLISTENER_SYSTEM_PROMPT } from "./tools/courtlistenerTools";
+import { PASAL_SYSTEM_PROMPT } from "./tools/pasalTools";
 
 const SYSTEM_PROMPT_BEFORE_RESEARCH = `You are Varda, an AI legal assistant for lawyers and legal professionals. Help analyze documents, answer legal questions, and draft legal documents.
 
@@ -98,13 +100,21 @@ GENERAL GUIDANCE:
 `;
 
 /**
- * Assemble the chat system prompt. When `includeResearchTools` is true the
- * CourtListener (US case-law) research instructions are spliced in; when
- * false they are omitted entirely so the model is not told about tools it
- * does not have.
+ * Assemble the chat system prompt. Research sections are spliced in only for
+ * tools the model actually has, so it is never told about tools it cannot
+ * call: CourtListener (US case law) when `includeResearchTools` is true,
+ * Pasal.id (Indonesian legislation) when `includePasalTools` is true, which
+ * defaults to "the server has a PASAL_MCP_TOKEN".
  */
-export function buildSystemPrompt(includeResearchTools = true): string {
-  return includeResearchTools
-    ? `${SYSTEM_PROMPT_BEFORE_RESEARCH}\n\n${COURTLISTENER_SYSTEM_PROMPT}\n${SYSTEM_PROMPT_AFTER_RESEARCH}`
+export function buildSystemPrompt(
+  includeResearchTools = true,
+  includePasalTools = pasalConfigured(),
+): string {
+  const research = [
+    includeResearchTools ? COURTLISTENER_SYSTEM_PROMPT : null,
+    includePasalTools ? PASAL_SYSTEM_PROMPT : null,
+  ].filter((section): section is string => section !== null);
+  return research.length
+    ? `${SYSTEM_PROMPT_BEFORE_RESEARCH}\n\n${research.join("\n\n")}\n${SYSTEM_PROMPT_AFTER_RESEARCH}`
     : `${SYSTEM_PROMPT_BEFORE_RESEARCH}\n\n${SYSTEM_PROMPT_AFTER_RESEARCH}`;
 }
