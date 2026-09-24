@@ -10,7 +10,9 @@ import { InvalidApiKeyError } from "../../../lib/llm/apiKeyErrors";
 import type { Db } from "../../../lib/supabase";
 import { buildUserMcpTools, type McpToolEvent } from "../../../lib/mcpConnectors";
 import { pasalConfigured } from "../../../lib/pasal";
+import { kbliAvailable } from "../../../lib/kbli";
 import { PASAL_TOOLS } from "./tools/pasalTools";
+import { KBLI_TOOLS } from "./tools/kbliTool";
 import type { SourceDocument } from "../../../lib/sourceDocuments";
 import {
   COURTLISTENER_TOOLS,
@@ -206,6 +208,8 @@ export async function runLLMStream(params: {
    * has a PASAL_MCP_TOKEN"; narrow surfaces (Word add-in, tabular) pass false.
    */
   includePasalTools?: boolean;
+  /** Local KBLI (business classification) lookup. Defaults to "dataset bundled"; narrow surfaces pass false. */
+  includeKbliTool?: boolean;
   /** Expose ask_inputs only to clients that can render and answer it. */
   includeAskInputs?: boolean;
   /**
@@ -271,6 +275,7 @@ export async function runLLMStream(params: {
     extraTools,
     includeResearchTools = true,
     includePasalTools = pasalConfigured(),
+    includeKbliTool = kbliAvailable(),
     includeAskInputs = true,
     allowDocumentMutation = true,
     workflowStore,
@@ -291,6 +296,7 @@ export async function runLLMStream(params: {
     unsafeWrite(sanitizeAssistantSseChunk(chunk));
   const researchTools = includeResearchTools ? COURTLISTENER_TOOLS : [];
   const pasalTools = includePasalTools ? PASAL_TOOLS : [];
+  const kbliTools = includeKbliTool ? KBLI_TOOLS : [];
   const mcpTools = await buildUserMcpTools(userId, db);
   const conversationTools = includeAskInputs
     ? TOOLS
@@ -302,6 +308,7 @@ export async function runLLMStream(params: {
     ...conversationTools,
     ...researchTools,
     ...pasalTools,
+    ...kbliTools,
     ...WORKFLOW_TOOLS,
     ...contractTools,
   ];

@@ -12,6 +12,7 @@ import {
 } from "./courtlistenerTools";
 import { executeMcpToolCall, type McpToolEvent } from "../../../../lib/mcpConnectors";
 import { isPasalToolName, runPasalTool } from "./pasalTools";
+import { KBLI_TOOL_NAME, runKbliTool } from "./kbliTool";
 import {
   type DocStore,
   type DocIndex,
@@ -452,6 +453,18 @@ export async function runToolCalls(
         args,
         write,
       });
+      toolResults.push({
+        role: "tool",
+        tool_call_id: tc.id,
+        content,
+      });
+      mcpEvents.push(event);
+      continue;
+    }
+
+    // Local KBLI table; same event shape so the UI shows "KBLI 2025: lookup_kbli".
+    if (tc.function.name === KBLI_TOOL_NAME) {
+      const { content, event } = runKbliTool({ args, write });
       toolResults.push({
         role: "tool",
         tool_call_id: tc.id,
