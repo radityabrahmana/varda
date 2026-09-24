@@ -34,6 +34,7 @@ export function isRegulationLibraryToolName(name: string): name is RegulationLib
 export const REGULATION_LIBRARY_SYSTEM_PROMPT = `ORGANIZATION REGULATION LIBRARY:
 This organization keeps its own library of regulations, parsed into articles: codes and rules that public sources may lack (for example KUHPerdata or a ministry's technical regulations) plus the laws it works with most.
 - For any question that touches Indonesian law, call search_regulations first: it is local and fast, and its result lists what the library holds. A citation works as a query ("Pasal 1266 KUHPerdata"), as does a topic in Indonesian.
+- The result's "match" says how strong the hits are: "citation" (the exact article named), "all" (every word matched), "any" (only some words matched: weaker, check relevance before relying on it), "none".
 - Read the exact text with read_regulation before quoting: regulation = the short_name from the result, selector = "pasal 1266", "pasal 1266-1267", "pasal 5, 7-9", "bab III", "penjelasan pasal 5", "menimbang" or "outline".
 - Each regulation carries a status set by the organization (berlaku, diubah, dicabut, tidak_berlaku, unknown). Report it, and treat "unknown" as unverified.
 - The library is curated by people; a miss means the library does not hold it, so continue with the other legal tools or say the text was not available. Never invent article numbers or wording.

@@ -28,7 +28,11 @@ export {
   type RegulationFile,
 } from "./regulations.library";
 export {
+  CONTENT_BATCH_SIZE,
+  detectRegulationMention,
   hasVisibleRegulations,
+  matchRegulationRef,
+  NODE_PAGE_SIZE,
   parseRegulationSelector,
   READ_DEFAULT_CHARS,
   READ_MAX_CHARS,

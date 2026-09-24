@@ -66,7 +66,14 @@ export async function resolveRegulationRef(
 ): Promise<ServiceResult<{ regulation: RegulationRow; candidates: RegulationSummary[] }>> {
   const listed = await listRegulations(db, scope);
   if (!listed.ok) return listed;
-  const rows = listed.data;
+  return matchRegulationRef(listed.data, ref);
+}
+
+/** Pure half of resolveRegulationRef, over an already loaded catalog. */
+export function matchRegulationRef(
+  rows: RegulationRow[],
+  ref: string,
+): ServiceResult<{ regulation: RegulationRow; candidates: RegulationSummary[] }> {
   const wanted = ref.trim();
   const byId = rows.find((r) => r.id === wanted);
   if (byId) return ok({ regulation: byId, candidates: [] });
@@ -103,10 +110,72 @@ export type RegulationSearchHit = {
 
 export type RegulationSearchResult = {
   query: string;
+  /**
+   * How the hits were found: "citation" (an exact article named in the
+   * query), "all" (every word matched), "any" (fallback: some words matched,
+   * weaker evidence), or "none".
+   */
+  match: "citation" | "all" | "any" | "none";
+  /** The regulation the search was narrowed to, when the query named one. */
+  regulation_filter: string | null;
   hits: RegulationSearchHit[];
   /** The catalog, inline when small, so the model knows what the library holds. */
   library: RegulationSummary[] | { count: number };
 };
+
+/**
+ * A regex matching a short name however it is typed: "KUHPerdata",
+ * "KUH Perdata", "kuh-perdata"; "PM 60/2019", "pm 60 2019". Null for names
+ * too short to spot safely inside free text.
+ */
+function shortNamePattern(shortName: string): RegExp | null {
+  const chars = norm(shortName).replace(/\s+/g, "");
+  if (chars.length < 4) return null;
+  const body = chars.split("").map((c) => c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[\\s\\W_]*");
+  return new RegExp(`(?:^|[^a-z0-9])(${body})(?=$|[^a-z0-9])`, "i");
+}
+
+/** The first visible regulation whose short name appears in the query, and the query without it. */
+export function detectRegulationMention(rows: RegulationRow[], query: string): { regulation: RegulationRow; rest: string } | null {
+  // Longest names first, so "PM 60/2019" wins over a hypothetical "PM 60".
+  const sorted = [...rows].sort((a, b) => b.short_name.length - a.short_name.length);
+  for (const row of sorted) {
+    const re = shortNamePattern(row.short_name);
+    const m = re ? re.exec(query) : null;
+    if (m && m.index !== undefined) {
+      const start = m.index + m[0].indexOf(m[1]);
+      return { regulation: row, rest: `${query.slice(0, start)} ${query.slice(start + m[1].length)}`.replace(/\s+/g, " ").trim() };
+    }
+  }
+  return null;
+}
+
+const CITATION_RE = /\bpasal\s+(\d+)\s*([a-z])?\b/i;
+
+function hitFromRow(r: Record<string, unknown>, shortName: string, rest: Partial<RegulationSearchHit["regulation"]> = {}): RegulationSearchHit {
+  return {
+    regulation: {
+      id: String(r.regulation_id),
+      short_name: shortName,
+      title: String(r.title ?? rest.title ?? ""),
+      status: String(r.status ?? rest.status ?? ""),
+      regulation_type: String(r.regulation_type ?? rest.regulation_type ?? ""),
+      issuer: (r.issuer as string | null) ?? rest.issuer ?? null,
+    },
+    node_type: String(r.node_type),
+    number: (r.number as string | null) ?? null,
+    heading: (r.heading as string | null) ?? null,
+    context: (r.context as string | null) ?? null,
+    snippet: String(r.snippet ?? ""),
+    citation: citationFor(shortName, String(r.node_type), (r.number as string | null) ?? null),
+  };
+}
+
+/** Words for the "any word" fallback: websearch syntax joins them with "or". */
+function anyWordQuery(text: string): string | null {
+  const words = Array.from(new Set(norm(text).split(" ").filter((w) => w.length >= 3 && !/^\d+$/.test(w))));
+  return words.length >= 2 ? words.join(" or ") : null;
+}
 
 function citationFor(shortName: string, nodeType: string, number: string | null): string {
   if (nodeType === "pasal" && number) return `Pasal ${number} ${shortName}`;
@@ -123,43 +192,78 @@ export async function searchRegulationLibrary(
 ): Promise<ServiceResult<RegulationSearchResult>> {
   const query = params.query.trim();
   if (!query) return failure("validation", "query wajib diisi.");
-  let regulationId: string | null = null;
+  const listed = await listRegulations(db, scope);
+  if (!listed.ok) return listed;
+  const rows = listed.data;
+  const library = rows.length <= CATALOG_INLINE_MAX ? rows.map(summarizeRegulation) : { count: rows.length };
+
+  // Narrow to one regulation: explicitly, or because the query names it
+  // ("Pasal 1266 KUHPerdata"). The name is then dropped from the text query,
+  // since it never occurs inside the articles themselves.
+  let target: RegulationRow | null = null;
+  let text = query;
   if (params.regulation?.trim()) {
-    const resolved = await resolveRegulationRef(db, scope, params.regulation);
+    const resolved = matchRegulationRef(rows, params.regulation);
     if (!resolved.ok) return resolved;
-    regulationId = resolved.data.regulation.id;
+    target = resolved.data.regulation;
+  } else {
+    const mention = detectRegulationMention(rows, query);
+    if (mention) {
+      target = mention.regulation;
+      text = mention.rest;
+    }
   }
   const limit = Math.min(SEARCH_MAX_LIMIT, Math.max(1, Math.trunc(params.limit ?? SEARCH_DEFAULT_LIMIT) || SEARCH_DEFAULT_LIMIT));
-  const { data, error } = await db.rpc("search_regulation_nodes", {
-    p_org_ids: scope.orgIds,
-    p_query: query,
-    p_regulation_id: regulationId,
-    p_limit: limit,
-  });
-  if (error) return internalFailure(error);
-  const hits: RegulationSearchHit[] = ((data ?? []) as Record<string, unknown>[]).map((r) => ({
-    regulation: {
-      id: String(r.regulation_id),
-      short_name: String(r.short_name ?? ""),
-      title: String(r.title ?? ""),
-      status: String(r.status ?? ""),
-      regulation_type: String(r.regulation_type ?? ""),
-      issuer: (r.issuer as string | null) ?? null,
-    },
-    node_type: String(r.node_type),
-    number: (r.number as string | null) ?? null,
-    heading: (r.heading as string | null) ?? null,
-    context: (r.context as string | null) ?? null,
-    snippet: String(r.snippet ?? ""),
-    citation: citationFor(String(r.short_name ?? ""), String(r.node_type), (r.number as string | null) ?? null),
-  }));
-  const listed = await listRegulations(db, scope);
-  const library = listed.ok
-    ? listed.data.length <= CATALOG_INLINE_MAX
-      ? listed.data.map(summarizeRegulation)
-      : { count: listed.data.length }
-    : { count: 0 };
-  return ok({ query, hits, library });
+  const base = { query, regulation_filter: target?.short_name ?? null, library };
+
+  // An exact citation into a known regulation is answered directly.
+  const cite = CITATION_RE.exec(text);
+  if (cite && target) {
+    const number = `${cite[1]}${(cite[2] ?? "").toUpperCase()}`;
+    const { data, error } = await db
+      .from("regulation_nodes")
+      .select("id, regulation_id, node_type, number, heading, context, content")
+      .eq("regulation_id", target.id)
+      .eq("node_type", "pasal")
+      .eq("number", number)
+      .maybeSingle();
+    if (error) return internalFailure(error);
+    if (data) {
+      const node = data as Record<string, unknown>;
+      const hit = hitFromRow({ ...node, snippet: clipText(String(node.content ?? ""), 400) }, target.short_name, target);
+      return ok({ ...base, match: "citation", hits: [hit] });
+    }
+  }
+
+  const runSearch = async (q: string) =>
+    db.rpc("search_regulation_nodes", {
+      p_org_ids: scope.orgIds,
+      p_query: q,
+      p_regulation_id: target?.id ?? null,
+      p_limit: limit,
+    });
+  const toHits = (data: unknown) =>
+    ((data ?? []) as Record<string, unknown>[]).map((r) => hitFromRow(r, String(r.short_name ?? "")));
+
+  const searchText = text.trim() || query;
+  const all = await runSearch(searchText);
+  if (all.error) return internalFailure(all.error);
+  const allHits = toHits(all.data);
+  if (allHits.length > 0) return ok({ ...base, match: "all", hits: allHits });
+
+  const anyQuery = anyWordQuery(searchText);
+  if (anyQuery) {
+    const any = await runSearch(anyQuery);
+    if (any.error) return internalFailure(any.error);
+    const anyHits = toHits(any.data);
+    if (anyHits.length > 0) return ok({ ...base, match: "any", hits: anyHits });
+  }
+  return ok({ ...base, match: "none", hits: [] });
+}
+
+function clipText(text: string, max: number): string {
+  const flat = text.replace(/\s+/g, " ").trim();
+  return flat.length <= max ? flat : `${flat.slice(0, max).trimEnd()}…`;
 }
 
 // ── Read ───────────────────────────────────────────────────────────────────
@@ -219,26 +323,54 @@ function parsePasalList(s: string): { numbers: string[]; ranges: [number, number
 
 type NodeMeta = Pick<RegulationNodeRow, "id" | "node_type" | "number" | "heading" | "context" | "sort_order">;
 
+/**
+ * PostgREST caps a response at its max-rows setting (1,000 on Supabase), and
+ * a civil code has over 2,000 nodes, so metadata is read page by page.
+ */
+export const NODE_PAGE_SIZE = 1000;
+/** Ids per content request: keeps the `in.(…)` filter well inside URL limits. */
+export const CONTENT_BATCH_SIZE = 150;
+
 async function loadNodeMeta(db: Db, regulationId: string): Promise<ServiceResult<NodeMeta[]>> {
-  const { data, error } = await db
-    .from("regulation_nodes")
-    .select("id, node_type, number, heading, context, sort_order")
-    .eq("regulation_id", regulationId)
-    .order("sort_order", { ascending: true });
-  if (error) return internalFailure(error);
-  return ok((data ?? []) as NodeMeta[]);
+  const out: NodeMeta[] = [];
+  for (let from = 0; ; from += NODE_PAGE_SIZE) {
+    const { data, error } = await db
+      .from("regulation_nodes")
+      .select("id, node_type, number, heading, context, sort_order")
+      .eq("regulation_id", regulationId)
+      .order("sort_order", { ascending: true })
+      .range(from, from + NODE_PAGE_SIZE - 1);
+    if (error) return internalFailure(error);
+    const page = (data ?? []) as NodeMeta[];
+    out.push(...page);
+    if (page.length < NODE_PAGE_SIZE) break;
+  }
+  return ok(out);
 }
 
-async function loadNodeContent(db: Db, ids: number[]): Promise<ServiceResult<RegulationNodeRow[]>> {
-  if (!ids.length) return ok([]);
-  const { data, error } = await db
-    .from("regulation_nodes")
-    .select("id, regulation_id, node_type, number, heading, context, content, sort_order")
-    .in("id", ids)
-    .order("sort_order", { ascending: true });
-  if (error) return internalFailure(error);
-  return ok((data ?? []) as RegulationNodeRow[]);
+/**
+ * Content for the chosen nodes, in order, loading batch by batch and stopping
+ * once `budget` characters are in hand (the caller truncates anyway).
+ */
+async function loadNodeContent(db: Db, ids: number[], budget: number): Promise<ServiceResult<RegulationNodeRow[]>> {
+  const out: RegulationNodeRow[] = [];
+  let chars = 0;
+  for (let i = 0; i < ids.length && chars <= budget; i += CONTENT_BATCH_SIZE) {
+    const { data, error } = await db
+      .from("regulation_nodes")
+      .select("id, regulation_id, node_type, number, heading, context, content, sort_order")
+      .in("id", ids.slice(i, i + CONTENT_BATCH_SIZE))
+      .order("sort_order", { ascending: true });
+    if (error) return internalFailure(error);
+    for (const row of (data ?? []) as RegulationNodeRow[]) {
+      out.push(row);
+      chars += row.content.length;
+    }
+  }
+  return ok(out);
 }
+
+const STRUCTURAL_RANK: Record<string, number> = { buku: 0, bab: 1, bagian: 2, paragraf: 3 };
 
 function pasalNumeric(number: string | null): number {
   const m = /^(\d+)/.exec(number ?? "");
@@ -281,7 +413,10 @@ export async function readRegulation(
     const structural = nodes.filter((n) => STRUCTURAL_TYPES.includes(n.node_type));
     const pasal = nodes.filter((n) => n.node_type === "pasal");
     const outline = structural.map((s, idx) => {
-      const nextStart = structural[idx + 1]?.sort_order ?? Number.POSITIVE_INFINITY;
+      // A heading spans everything up to the next heading of the same or a
+      // higher level: BAB II covers its Bagian and their articles.
+      const next = structural.slice(idx + 1).find((n) => STRUCTURAL_RANK[n.node_type] <= STRUCTURAL_RANK[s.node_type]);
+      const nextStart = next?.sort_order ?? Number.POSITIVE_INFINITY;
       const inside = pasal.filter((p) => p.sort_order > s.sort_order && p.sort_order < nextStart);
       return {
         node_type: s.node_type,
@@ -331,7 +466,7 @@ export async function readRegulation(
     }
   }
 
-  const content = await loadNodeContent(db, chosen.map((n) => n.id));
+  const content = await loadNodeContent(db, chosen.map((n) => n.id), maxChars);
   if (!content.ok) return content;
   const sections: RegulationReadResult["sections"] = [];
   let total = 0;

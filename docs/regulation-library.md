@@ -47,8 +47,11 @@ The parser is `backend/src/lib/regulationParse.ts`. It recognises BUKU / BAB /
 Bagian / Paragraf headings with titles on the same or following lines, `Pasal N`
 headings (own line, or with text after a colon or period), the PENJELASAN part
 with its general section and per-article entries, and LAMPIRAN as text chunks.
-A `Pasal N` line is treated as a heading only when it continues the article
-sequence, which keeps wrapped cross-references inside their article. Documents
+Article headings are chosen as the longest increasing run of `Pasal N`
+lines per section, so a wrapped cross-reference that lands alone on a line
+("Pasal 1341.") stays inside its article instead of displacing the real ones.
+Numbering gaps are reported as a warning: usually a heading missing from the
+PDF's text layer, whose text then sits in the previous article. Documents
 with no article structure are stored as searchable text chunks. Parse warnings
 are kept on the row; review them after uploading.
 
@@ -68,7 +71,11 @@ in `streaming.ts`; the Word add-in and tabular surfaces opt out.
 
 - `search_regulations {query, regulation?, limit?}`: ranked snippets with a
   citation ("Pasal 1266 KUHPerdata"), the regulation's status, and the library
-  catalog so the model knows what is held.
+  catalog so the model knows what is held. A short name in the query narrows
+  the search to that regulation; "Pasal N <short name>" returns the article
+  directly. When no article matches every word, the search retries with any
+  word, and the result's `match` field (`citation`, `all`, `any`, `none`)
+  tells the model how strong the evidence is.
 - `read_regulation {regulation, selector, max_chars?}`: `pasal 1266`,
   `pasal 1266-1267`, `pasal 5, 7-9`, `bab III`, `penjelasan pasal 5`,
   `menimbang`, `outline`. Results carry the heading chain and are capped
@@ -95,6 +102,14 @@ and to treat a miss as "not held here" before moving on to Pasal.id.
 | Routes | `backend/src/modules/regulations/regulations.routes.ts` |
 | Parser | `backend/src/lib/regulationParse.ts` |
 | Assistant tools and prompt | `backend/src/modules/chat/engine/tools/regulationLibraryTools.ts` |
+
+## Loaded content (2026-09-24)
+
+| Regulation | Scope | Articles | Notes |
+| --- | --- | --- | --- |
+| KUHPerdata | platform-wide | 1,988 | Unofficial Indonesian translation from a Kejaksaan site copy, not the Subekti text; articles 488, 1162, 1897–1899 absent in the source |
+| PM 60/2019 | Dash Electric | 89 | Status diubah: article 78 revoked by PM 25/2021 |
+| PM 25/2021 | Dash Electric | 12 | Headings of articles 4, 5 and 9 missing from the PDF text layer |
 
 ## Limits
 

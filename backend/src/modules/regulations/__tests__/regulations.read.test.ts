@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { scriptedDb } from "../../../__tests__/helpers/scriptedDb";
-import { parseRegulationSelector, readRegulation, resolveRegulationRef, searchRegulationLibrary } from "../regulations.service";
+import {
+  detectRegulationMention,
+  NODE_PAGE_SIZE,
+  parseRegulationSelector,
+  readRegulation,
+  resolveRegulationRef,
+  searchRegulationLibrary,
+} from "../regulations.service";
 import type { RegulationRow, RegulationScope } from "../regulations.types";
 
 const USER = "11111111-1111-4111-8111-111111111111";
@@ -80,24 +87,74 @@ describe("resolveRegulationRef", () => {
   });
 });
 
+describe("detectRegulationMention", () => {
+  it("spots a short name however it is typed and strips it from the query", () => {
+    expect(detectRegulationMention(ROWS, "Pasal 1266 KUHPerdata")).toMatchObject({ regulation: { id: KUH }, rest: "Pasal 1266" });
+    expect(detectRegulationMention(ROWS, "wanprestasi menurut kuh perdata")).toMatchObject({ regulation: { id: KUH }, rest: "wanprestasi menurut" });
+    expect(detectRegulationMention(ROWS, "izin angkutan pm 60 2019")).toMatchObject({ regulation: { id: PM60 }, rest: "izin angkutan" });
+    expect(detectRegulationMention(ROWS, "pembatalan perjanjian")).toBeNull();
+    // A name inside a longer token is not a mention.
+    expect(detectRegulationMention(ROWS, "xkuhperdatax")).toBeNull();
+  });
+});
+
+const SEARCH_ROW = { node_id: 1, regulation_id: KUH, node_type: "pasal", number: "1266", heading: "Pasal 1266", context: "BUKU KETIGA › BAB IV", snippet: "Syarat yang <b>membatalkan</b>…", rank: 0.9, short_name: "KUHPerdata", title: "Kitab Undang-Undang Hukum Perdata", status: "berlaku", regulation_type: "KUHPERDATA", issuer: null };
+
 describe("searchRegulationLibrary", () => {
   it("runs the ranked search RPC in the caller's scope and attaches citations and the catalog", async () => {
     const fake = scriptedDb([
-      {
-        rpc: "search_regulation_nodes",
-        data: [
-          { node_id: 1, regulation_id: KUH, node_type: "pasal", number: "1266", heading: "Pasal 1266", context: "BUKU KETIGA › BAB IV", snippet: "Syarat yang <b>membatalkan</b>…", rank: 0.9, short_name: "KUHPerdata", title: "Kitab Undang-Undang Hukum Perdata", status: "berlaku", regulation_type: "KUHPERDATA", issuer: null },
-        ],
-      },
       { table: "regulations", data: ROWS },
+      { rpc: "search_regulation_nodes", data: [SEARCH_ROW] },
     ]);
     const r = await searchRegulationLibrary(fake.db, scope, { query: "syarat batal", limit: 99 });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
+    expect(r.data).toMatchObject({ match: "all", regulation_filter: null });
     expect(r.data.hits[0]).toMatchObject({ citation: "Pasal 1266 KUHPerdata", regulation: { short_name: "KUHPerdata", status: "berlaku" } });
     expect(Array.isArray(r.data.library) && r.data.library.map((l) => l.short_name)).toEqual(["KUHPerdata", "PM 60/2019"]);
     const rpcCall = fake.calls.find((c) => c.op === "rpc");
     expect(rpcCall?.args).toEqual({ p_org_ids: [ORG_A], p_query: "syarat batal", p_regulation_id: null, p_limit: 30 });
+    fake.done();
+  });
+
+  it("answers an exact citation directly from the named regulation", async () => {
+    const fake = scriptedDb([
+      { table: "regulations", data: ROWS },
+      { table: "regulation_nodes", data: { id: 7, regulation_id: KUH, node_type: "pasal", number: "1266", heading: "Pasal 1266", context: "BUKU KETIGA", content: "Syarat batal dianggap selalu dicantumkan." } },
+    ]);
+    const r = await searchRegulationLibrary(fake.db, scope, { query: "Pasal 1266 KUHPerdata" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data).toMatchObject({ match: "citation", regulation_filter: "KUHPerdata" });
+    expect(r.data.hits).toHaveLength(1);
+    expect(r.data.hits[0]).toMatchObject({ citation: "Pasal 1266 KUHPerdata", snippet: "Syarat batal dianggap selalu dicantumkan." });
+    expect(fake.calls[1].filters).toEqual(expect.arrayContaining([["eq", "regulation_id", KUH], ["eq", "number", "1266"]]));
+    fake.done();
+  });
+
+  it("falls back to any-word matching, narrowed to the regulation the query names", async () => {
+    const fake = scriptedDb([
+      { table: "regulations", data: ROWS },
+      { rpc: "search_regulation_nodes", data: [] },
+      { rpc: "search_regulation_nodes", data: [SEARCH_ROW] },
+    ]);
+    const r = await searchRegulationLibrary(fake.db, scope, { query: "pembatalan perjanjian wanprestasi KUHPerdata" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data).toMatchObject({ match: "any", regulation_filter: "KUHPerdata" });
+    const rpcs = fake.calls.filter((c) => c.op === "rpc").map((c) => c.args as { p_query: string; p_regulation_id: string });
+    expect(rpcs[0]).toMatchObject({ p_query: "pembatalan perjanjian wanprestasi", p_regulation_id: KUH });
+    expect(rpcs[1]).toMatchObject({ p_query: "pembatalan or perjanjian or wanprestasi", p_regulation_id: KUH });
+    fake.done();
+  });
+
+  it("reports no match without a second query for a single word", async () => {
+    const fake = scriptedDb([
+      { table: "regulations", data: ROWS },
+      { rpc: "search_regulation_nodes", data: [] },
+    ]);
+    const r = await searchRegulationLibrary(fake.db, scope, { query: "wanprestasi" });
+    expect(r).toMatchObject({ ok: true, data: { match: "none", hits: [] } });
     fake.done();
   });
 
@@ -144,7 +201,7 @@ describe("readRegulation", () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.data.outline).toEqual([
-      { node_type: "buku", number: "KETIGA", heading: "PERIKATAN", context: null, pasal_from: null, pasal_to: null },
+      { node_type: "buku", number: "KETIGA", heading: "PERIKATAN", context: null, pasal_from: "1266", pasal_to: "1268" },
       { node_type: "bab", number: "IV", heading: "HAPUSNYA PERIKATAN", context: "BUKU KETIGA PERIKATAN", pasal_from: "1266", pasal_to: "1268" },
     ]);
     expect(r.data.note).toContain("3 pasal (Pasal 1266 – Pasal 1268)");
@@ -164,6 +221,51 @@ describe("readRegulation", () => {
     expect(r.data.sections[1].content.endsWith("…")).toBe(true);
     expect(r.data.truncated).toBe(true);
     expect(r.data.note).toContain("Dipotong");
+    fake.done();
+  });
+
+  it("pages node metadata past the API row cap", async () => {
+    // Articles 1..1200 in two pages; article 1100 lives on the second page.
+    const all = Array.from({ length: 1200 }, (_, i) => ({ id: 1000 + i, node_type: "pasal", number: String(i + 1), heading: `Pasal ${i + 1}`, context: null, sort_order: i }));
+    const fake = scriptedDb([
+      { table: "regulations", data: ROWS },
+      { table: "regulation_nodes", data: all.slice(0, NODE_PAGE_SIZE) },
+      { table: "regulation_nodes", data: all.slice(NODE_PAGE_SIZE) },
+      { table: "regulation_nodes", data: [{ ...all[1099], regulation_id: KUH, content: "Isi Pasal 1100." }] },
+    ]);
+    const r = await readRegulation(fake.db, scope, { regulation: "KUHPerdata", selector: "pasal 1100" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.missing).toEqual([]);
+    expect(r.data.sections.map((s) => s.citation)).toEqual(["Pasal 1100 KUHPerdata"]);
+    expect(fake.calls[1].filters).toContainEqual(["range", 0, 999]);
+    expect(fake.calls[2].filters).toContainEqual(["range", 1000, 1999]);
+    fake.done();
+  });
+
+  it("gives a chapter the articles of its sections in the outline", async () => {
+    const meta = [
+      { id: 1, node_type: "bab", number: "I", heading: "KETENTUAN UMUM", context: null, sort_order: 0 },
+      { id: 2, node_type: "pasal", number: "1", heading: "Pasal 1", context: null, sort_order: 1 },
+      { id: 3, node_type: "bab", number: "II", heading: "ANGKUTAN BARANG", context: null, sort_order: 2 },
+      { id: 4, node_type: "bagian", number: "Kesatu", heading: "Umum", context: null, sort_order: 3 },
+      { id: 5, node_type: "pasal", number: "2", heading: "Pasal 2", context: null, sort_order: 4 },
+      { id: 6, node_type: "bagian", number: "Kedua", heading: "Khusus", context: null, sort_order: 5 },
+      { id: 7, node_type: "pasal", number: "3", heading: "Pasal 3", context: null, sort_order: 6 },
+    ];
+    const fake = scriptedDb([
+      { table: "regulations", data: ROWS },
+      { table: "regulation_nodes", data: meta },
+    ]);
+    const r = await readRegulation(fake.db, scope, { regulation: "PM 60/2019", selector: "outline" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.outline?.map((o) => `${o.node_type} ${o.number}: ${o.pasal_from}-${o.pasal_to}`)).toEqual([
+      "bab I: 1-1",
+      "bab II: 2-3",
+      "bagian Kesatu: 2-2",
+      "bagian Kedua: 3-3",
+    ]);
     fake.done();
   });
 

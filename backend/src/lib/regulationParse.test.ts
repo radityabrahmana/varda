@@ -133,7 +133,28 @@ Pihak yang terhadapnya perikatan tidak dipenuhi, dapat memilih.`;
         expect(p1266.context).toBe("BUKU KETIGA PERIKATAN › BAB IV HAPUSNYA PERIKATAN");
         expect(p1266.content).toBe("Syarat yang membatalkan dianggap selalu dicantumkan dalam persetujuan yang timbal balik.");
         expect(r.stats.pasal).toBe(4);
-        expect(r.warnings).toEqual([]);
+        expect(r.warnings).toEqual([expect.stringContaining("article numbering skips at 1234→1266")]);
+    });
+
+    it("ignores a wrapped forward reference instead of discarding the articles after it", () => {
+        // "Pasal 1341." alone on a line inside article 1166 used to be taken as
+        // a heading, after which every real article up to 1340 was rejected.
+        const text = `Pasal 1165
+Hipotek adalah hak kebendaan.
+Pasal 1166
+Hipotek tetap membebani bagian debitur, tanpa mengurangi ketentuan
+Pasal 1341.
+Pasal 1167
+Barang bergerak tidak dapat dibebani hipotek.
+Pasal 1168
+Hipotek hanya dapat diletakkan oleh pemilik.
+Pasal 1341
+Kreditur boleh mengajukan tidak berlakunya tindakan debitur.`;
+        const r = parseRegulationText(text);
+        const numbers = r.nodes.filter((n) => n.node_type === "pasal").map((n) => n.number);
+        expect(numbers).toEqual(["1165", "1166", "1167", "1168", "1341"]);
+        expect(r.nodes.find((n) => n.number === "1166")?.content).toContain("tanpa mengurangi ketentuan\nPasal 1341.");
+        expect(r.warnings).toContainEqual('line 5: "Pasal 1341" out of sequence, kept as text');
     });
 
     it("falls back to text chunks when there is no article structure", () => {
