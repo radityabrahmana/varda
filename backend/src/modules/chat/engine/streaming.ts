@@ -9,6 +9,8 @@ import { UserFacingError } from "../../../lib/userFacingError";
 import { InvalidApiKeyError } from "../../../lib/llm/apiKeyErrors";
 import type { Db } from "../../../lib/supabase";
 import { buildUserMcpTools, type McpToolEvent } from "../../../lib/mcpConnectors";
+import { pasalConfigured } from "../../../lib/pasal";
+import { PASAL_TOOLS } from "./tools/pasalTools";
 import type { SourceDocument } from "../../../lib/sourceDocuments";
 import {
   COURTLISTENER_TOOLS,
@@ -199,6 +201,11 @@ export async function runLLMStream(params: {
   write: (s: string) => void;
   extraTools?: unknown[];
   includeResearchTools?: boolean;
+  /**
+   * Pasal.id (Indonesian legislation) tools. Defaults to "whenever the server
+   * has a PASAL_MCP_TOKEN"; narrow surfaces (Word add-in, tabular) pass false.
+   */
+  includePasalTools?: boolean;
   /** Expose ask_inputs only to clients that can render and answer it. */
   includeAskInputs?: boolean;
   /**
@@ -263,6 +270,7 @@ export async function runLLMStream(params: {
     write: unsafeWrite,
     extraTools,
     includeResearchTools = true,
+    includePasalTools = pasalConfigured(),
     includeAskInputs = true,
     allowDocumentMutation = true,
     workflowStore,
@@ -282,6 +290,7 @@ export async function runLLMStream(params: {
   const write = (chunk: string) =>
     unsafeWrite(sanitizeAssistantSseChunk(chunk));
   const researchTools = includeResearchTools ? COURTLISTENER_TOOLS : [];
+  const pasalTools = includePasalTools ? PASAL_TOOLS : [];
   const mcpTools = await buildUserMcpTools(userId, db);
   const conversationTools = includeAskInputs
     ? TOOLS
@@ -292,6 +301,7 @@ export async function runLLMStream(params: {
   const baseTools = [
     ...conversationTools,
     ...researchTools,
+    ...pasalTools,
     ...WORKFLOW_TOOLS,
     ...contractTools,
   ];

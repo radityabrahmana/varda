@@ -11,6 +11,7 @@ import {
   type CourtlistenerToolEvent,
 } from "./courtlistenerTools";
 import { executeMcpToolCall, type McpToolEvent } from "../../../../lib/mcpConnectors";
+import { isPasalToolName, runPasalTool } from "./pasalTools";
 import {
   type DocStore,
   type DocIndex,
@@ -440,6 +441,24 @@ export async function runToolCalls(
       args = JSON.parse(tc.function.arguments || "{}");
     } catch {
       /* ignore */
+    }
+
+    // Pasal.id (Indonesian legislation) is an operator-configured research
+    // source, not a per-user connector, but it reports through the same
+    // mcp_tool_call events so the UI needs nothing new.
+    if (isPasalToolName(tc.function.name)) {
+      const { content, event } = await runPasalTool({
+        toolName: tc.function.name,
+        args,
+        write,
+      });
+      toolResults.push({
+        role: "tool",
+        tool_call_id: tc.id,
+        content,
+      });
+      mcpEvents.push(event);
+      continue;
     }
 
     if (tc.function.name.startsWith("mcp_")) {
