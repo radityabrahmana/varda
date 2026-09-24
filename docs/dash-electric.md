@@ -55,6 +55,10 @@ Open PRs against **this fork** — `gh pr create -R radityabrahmana/varda --base
   `PASAL_MCP_TOKEN`. Not used by the contract review pipeline yet.
 - `backend/src/lib/kbli.ts` + `tools/kbliTool.ts` + `backend/data/kbli/kbli-2025.json` — the Assistant's
   `lookup_kbli` tool over the bundled KBLI 2025 table (see `docs/kbli.md`). No env needed.
+- `backend/src/modules/regulations/` — the per-organization regulation library (`docs/regulation-library.md`):
+  upload KUHPerdata, Permenhub and other rules Pasal.id lacks; the Assistant gets `search_regulations` /
+  `read_regulation`. Generic by design: another tenant loads its own ministry's rules. Tables in
+  `janus-migrations/20260924_01_regulation_library.sql` (apply by hand).
 - `frontend/src/app/components/contracts/`, `components/playbook/`, pages `/contracts`, `/contracts/new`,
   `/contracts/[id]`, `/playbook`.
 - `backend/janus-migrations/*.sql` — SQL for the **Dash-only tables** (reviews, playbook_rules,

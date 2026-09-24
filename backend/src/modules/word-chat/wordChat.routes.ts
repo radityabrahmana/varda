@@ -672,6 +672,7 @@ wordChatRouter.post("/", requireAuth, asyncRoute(async (req, res) => {
       includeResearchTools: false,
       includePasalTools: false,
       includeKbliTool: false,
+      includeRegulationLibrary: false,
       includeAskInputs: false,
       ...(clientToolsEnabled
         ? {
