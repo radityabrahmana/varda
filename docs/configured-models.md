@@ -98,7 +98,7 @@ serves the turn while later entries are its fallback chain:
 {
   "models": [],
   "tiers": {
-    "fast": ["openrouter/google/gemini-3-flash-preview", "openrouter/google/gemini-3.7-flash"],
+    "fast": ["openrouter/google/gemini-3.8-flash", "openrouter/google/gemini-3.7-flash"],
     "deep": ["openrouter/anthropic/claude-sonnet-5", "openrouter/google/gemini-3.1-pro-preview"]
   }
 }
