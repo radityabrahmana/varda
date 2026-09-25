@@ -583,7 +583,7 @@ chatRouter.post("/", requireAuth, asyncRoute(async (req, res) => {
                 : "";
             const titlePromise = shouldGenerateTitle
                 ? generateAssistantChatTitle({
-                      model: titleModelForChat(selectedModel, titleModel),
+                      model: titleModelForChat(selectedModel, titleModel, apiKeys),
                       message: titleMessage,
                       apiKeys,
                   })

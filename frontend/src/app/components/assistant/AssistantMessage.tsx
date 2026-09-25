@@ -175,7 +175,9 @@ export function AssistantMessage({
         event.type !== "error" &&
         event.type !== "ask_inputs_response" &&
         event.type !== "case_citation" &&
-        event.type !== "case_opinions";
+        event.type !== "case_opinions" &&
+        // Metadata about which model answered, not an activity step.
+        event.type !== "model_info";
 
     // Find the last content event so its raw text can be smoothed before
     // citation preprocessing — slicing already-preprocessed text would risk

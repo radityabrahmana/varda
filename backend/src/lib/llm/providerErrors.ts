@@ -59,7 +59,30 @@ export function toProviderStreamError(
   const invalidKey = asInvalidApiKeyError(apiError ?? error, context.label);
   if (invalidKey) return invalidKey;
   const message = apiError && accessFailureMessage(apiError, context);
-  if (message) return new UserFacingError(message);
-  if (error instanceof Error && error.message) return error;
-  return new Error(errorMessage(error, context.label));
+  const converted = message
+    ? new UserFacingError(message)
+    : error instanceof Error && error.message
+      ? error
+      : new Error(errorMessage(error, context.label));
+  if (apiError && isTransientStatus(apiError)) retryable.add(converted);
+  return converted;
+}
+
+// Failures another model can plausibly serve: the provider is overloaded,
+// rate-limited or erroring, not the request or the account. A 429 carrying
+// "limit: 0" is a plan that excludes the model — also worth another model.
+// Recorded here because the status code is gone once the error is converted.
+const retryable = new WeakSet<Error>();
+
+function isTransientStatus({ statusCode }: ApiCallErrorLike): boolean {
+  return statusCode === 408 || statusCode === 429 || statusCode >= 500;
+}
+
+/**
+ * Whether a converted provider error may be retried on a different model.
+ * Used by Assistant modes to walk a tier's fallback chain; a manually chosen
+ * model never falls back, since the person asked for that model by name.
+ */
+export function isRetryableOnAnotherModel(error: unknown): boolean {
+  return error instanceof Error && retryable.has(error);
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { resetModelRegistryCache } from "../llm/registry";
 import {
     getUserRouterModels,
     isRouterModelSelected,
@@ -164,6 +165,29 @@ describe("resolveRequestedModel outside-selection behaviour", () => {
         ).rejects.toThrow(
             "Model vercel/pricy/frontier is not in your saved Vercel AI Gateway models — add it in Settings → Bring Your Own Keys → Routers.",
         );
+    });
+
+    it("accepts a model the operator placed in an Assistant tier", async () => {
+        process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({
+            tiers: { deep: ["openrouter/anthropic/claude-sonnet-5"] },
+        });
+        resetModelRegistryCache();
+        try {
+            const tierDb = db([]);
+            await expect(
+                resolveRequestedModel(
+                    "openrouter/anthropic/claude-sonnet-5",
+                    "",
+                    "user-1",
+                    tierDb as never,
+                    "throw",
+                ),
+            ).resolves.toBe("openrouter/anthropic/claude-sonnet-5");
+            expect(tierDb.from).not.toHaveBeenCalled();
+        } finally {
+            delete process.env.MIKE_MODEL_CONFIG_JSON;
+            resetModelRegistryCache();
+        }
     });
 
     it("still degrades silently for stored preferences", async () => {

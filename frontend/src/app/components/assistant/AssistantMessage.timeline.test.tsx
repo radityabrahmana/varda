@@ -32,6 +32,24 @@ describe("AssistantMessage timeline", () => {
         expect(screen.getByText(/Finally the governing law/)).toBeVisible();
     });
 
+    it("does not treat the answering model's record as a step", () => {
+        render(
+            <AssistantMessage
+                events={[
+                    reasoning("Before the fallback."),
+                    { type: "model_info", model: "claude-sonnet-5", mode: "auto", tier: "deep", reason: "workflow" },
+                    reasoning("After the fallback."),
+                ]}
+            />,
+        );
+
+        // model_info sits between the two, but it is metadata: the reasoning
+        // still folds into one block and nothing else joins the timeline.
+        expect(
+            screen.getAllByRole("button", { name: /Thought process/ }),
+        ).toHaveLength(1);
+    });
+
     it("keeps reasoning separated by other work in its own blocks", () => {
         render(
             <AssistantMessage

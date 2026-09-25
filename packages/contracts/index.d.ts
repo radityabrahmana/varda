@@ -293,6 +293,26 @@ export type AssistantEvent =
       }[];
     }
   | { type: "workflow_applied"; workflow_id: string; title: string }
+  | {
+      /**
+       * The concrete model that answered the turn. Mode fields are present
+       * only when the chat is in an Assistant mode (Auto, Fast or Deep).
+       */
+      type: "model_info";
+      model: string;
+      mode?: "auto" | "fast" | "deep";
+      tier?: "fast" | "deep";
+      reason?:
+        | "mode_fast"
+        | "mode_deep"
+        | "workflow"
+        | "multiple_documents"
+        | "long_prompt"
+        | "deep_intent"
+        | "default";
+      /** Set when the first-choice model failed and a tier fallback answered. */
+      fallback_from?: string;
+    }
   | { type: "contract_review_start"; filename: string }
   | {
       /** Outcome of the review_contract tool; links to the contracts workspace. */

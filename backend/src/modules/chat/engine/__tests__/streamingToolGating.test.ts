@@ -142,7 +142,10 @@ describe("runLLMStream document-mutation gating", () => {
 
     const result = await runLLMStream(baseParams());
 
-    expect(result.events).toEqual([askInputsEvent]);
+    expect(result.events).toEqual([
+      expect.objectContaining({ type: "model_info" }),
+      askInputsEvent,
+    ]);
     expect(result.events).not.toContainEqual(
       expect.objectContaining({ type: "error" }),
     );

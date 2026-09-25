@@ -3,8 +3,11 @@ import {
   resolveModel,
   type LlmMessage,
   type OpenAIToolSchema,
+  type ReasoningLevel,
 } from "../../../lib/llm";
 import { resolveRequestedModel } from "../../../lib/routerModels";
+import { isRetryableOnAnotherModel } from "../../../lib/llm/providerErrors";
+import { planTurnModels, type TurnModelPlan } from "./routing";
 import { UserFacingError } from "../../../lib/userFacingError";
 import { InvalidApiKeyError } from "../../../lib/llm/apiKeyErrors";
 import type { Db } from "../../../lib/supabase";
@@ -368,6 +371,9 @@ export async function runLLMStream(params: {
     // that keeps prose in events) carries nothing for the model, and Anthropic
     // rejects the entire request over one empty text block.
     .filter((m) => m.role === "user" || m.content.trim().length > 0);
+  // Routing reads what the person wrote, so it runs before the memory turn
+  // (app/project memory, not the person) is put in front of the history.
+  const routingMessages = [...chatMessages];
   // Before every real turn: see MemoryTurn for why it goes there.
   if (memory.message) chatMessages.unshift(memory.message);
 
@@ -513,242 +519,292 @@ export async function runLLMStream(params: {
     // "throw" (not silent fallback) because `model` here is what the caller
     // asked for in THIS request. Stored task models are validated by their
     // route before they arrive here, but this guard keeps every caller safe.
-    const requestedModel = resolveModel(model, "");
-    if (!requestedModel) {
-      throw new UserFacingError(
-        model
-          ? `Model "${model}" is not available. Select another model.`
-          : "Select a model before sending a message.",
-      );
-    }
-    const selectedModel = await resolveRequestedModel(
-      requestedModel,
-      "",
-      userId,
-      db,
-      "throw",
-    );
-    await streamChatWithTools({
-      model: selectedModel,
-      systemPrompt,
-      messages: chatMessages,
-      tools: activeTools as OpenAIToolSchema[],
-      // Keep in step with DEFAULT_MAX_ITERATIONS in llm/aiSdk.ts. Deliberately
-      // a literal, not an import: tests mock the "../llm" barrel, and reaching
-      // past it into llm/aiSdk loads the real SDK module into suites that only
-      // ever wanted the mock, which broke unrelated tests at random.
-      maxIterations: params.maxIterations ?? 16,
-      apiKeys,
-      reasoning: params.reasoning ?? "high",
-      abortSignal: signal,
-      conversationId,
-      callbacks: {
-        onContentDelta: (delta) => {
-          iterText += delta;
-          streamVisibleContent(delta);
-        },
-        onReasoningDelta: (delta) => {
-          iterReasoning += delta;
-          write(
-            `data: ${JSON.stringify({ type: "reasoning_delta", text: delta })}\n\n`,
+    //
+    // An Assistant mode (varda/auto, varda/fast, varda/deep) is not a model:
+    // planTurnModels routes the turn to a tier and returns that tier's
+    // serving models in fallback order. A named model is exactly one entry.
+    const plan: TurnModelPlan = await planTurnModels({
+      model,
+      messages: routingMessages,
+      apiKeys: apiKeys ?? {},
+      resolveNamedModel: async (named) => {
+        const requestedModel = resolveModel(named, "");
+        if (!requestedModel) {
+          throw new UserFacingError(
+            named
+              ? `Model "${named}" is not available. Select another model.`
+              : "Select a model before sending a message.",
           );
-        },
-        onReasoningBlockEnd: () => {
-          if (!iterReasoning) return;
-          events.push({ type: "reasoning", text: iterReasoning });
-          write(`data: ${JSON.stringify({ type: "reasoning_block_end" })}\n\n`);
-          iterReasoning = "";
-        },
-        // Fires after Claude's turn ends with stop_reason=tool_use, before
-        // the tool actually runs. Flushes any buffered assistant text so
-        // it's emitted in chronological order, then signals the client so
-        // it can open a fresh PreResponseWrapper (shows "Working…") while
-        // the tool executes — avoids the dead gap between message_stop
-        // and the first tool-specific event.
-        onToolCallStart: (call) => {
-          flushText();
-          write(
-            `data: ${JSON.stringify({
-              type: "tool_call_start",
-              name: call.name,
-            })}\n\n`,
-          );
-        },
-      },
-      runTools: async (calls) => {
-        throwIfAborted(signal);
-        // Emit any text the model produced before this tool turn so the
-        // UI sees it before the tool results stream in.
-        flushText();
-
-        // Client-executed tools (Word add-in) round-trip through the SSE
-        // stream and never enter the server dispatcher. They run before the
-        // server batch and sequentially among themselves: each call mutates
-        // or reads the live document, so order is part of their semantics.
-        const clientResultByCallId = new Map<string, string>();
-        // Enforcement, not just omission: a document-writing call from a
-        // caller who may not write is dropped before dispatch, on the server
-        // side and the client side alike. It falls through to the
-        // "Tool 'x' is not available." answer below, which every tool_use
-        // without a result already gets, so the model is told plainly rather
-        // than left waiting on a call that silently did nothing.
-        const permittedCalls = allowDocumentMutation
-          ? calls
-          : calls.filter((c) => !isDocumentMutatingTool(c.name));
-        const serverCalls = clientTools
-          ? permittedCalls.filter((c) => !clientTools.owns(c.name))
-          : permittedCalls;
-        if (clientTools) {
-          for (const call of permittedCalls) {
-            if (!clientTools.owns(call.name)) continue;
-            const { content, events: clientEvents } =
-              await clientTools.execute(call);
-            clientResultByCallId.set(call.id, content);
-            events.push(...clientEvents);
-            throwIfAborted(signal);
-          }
         }
-
-        const toolCalls: ToolCall[] = serverCalls.map((c) => ({
-          id: c.id,
-          function: {
-            name: c.name,
-            arguments: JSON.stringify(c.input),
-          },
-        }));
-        const {
-          toolResults,
-          docsRead,
-          docsFound,
-          docsCreated,
-          docsReplicated,
-          workflowsApplied,
-          docsEdited,
-          askInputsEvents,
-          courtlistenerEvents,
-          caseCitationEvents,
-          mcpEvents,
-          contractReviews,
-        } = await runToolCalls(
-          toolCalls,
-          docStore,
-          userId,
-          db,
-          write,
-          workflowStore,
-          tabularStore,
-          docIndex,
-          turnEditState,
-          turnReadState,
-          projectId,
-          courtlistenerTurnState,
-          apiKeys,
-          nonce,
-        );
-        throwIfAborted(signal);
-        for (const r of docsRead) {
-          events.push({
-            type: "doc_read",
-            filename: r.filename,
-            document_id: r.document_id,
-            version_id: r.version_id,
-            version_number: r.version_number,
-          });
-        }
-        for (const f of docsFound) {
-          events.push({
-            type: "doc_find",
-            filename: f.filename,
-            document_id: f.document_id,
-            version_id: f.version_id,
-            version_number: f.version_number,
-            query: f.query,
-            total_matches: f.total_matches,
-          });
-        }
-        for (const dl of docsCreated) {
-          events.push({
-            type: "doc_created",
-            filename: dl.filename,
-            download_url: dl.download_url,
-            document_id: dl.document_id,
-            version_id: dl.version_id,
-            version_number: dl.version_number ?? null,
-          });
-        }
-        for (const r of docsReplicated) {
-          events.push({
-            type: "doc_replicated",
-            filename: r.filename,
-            count: r.count,
-            copies: r.copies,
-          });
-        }
-        for (const wf of workflowsApplied) {
-          events.push({
-            type: "workflow_applied",
-            workflow_id: wf.workflow_id,
-            title: wf.title,
-          });
-        }
-        for (const e of docsEdited) {
-          events.push({
-            type: "doc_edited",
-            filename: e.filename,
-            document_id: e.document_id,
-            version_id: e.version_id,
-            version_number: e.version_number,
-            download_url: e.download_url,
-            annotations: e.annotations,
-          });
-        }
-        for (const askInputsEvent of askInputsEvents) {
-          write(`data: ${JSON.stringify(askInputsEvent)}\n\n`);
-          events.push(askInputsEvent);
-        }
-        for (const event of courtlistenerEvents) {
-          events.push(event);
-        }
-        for (const event of mcpEvents) {
-          events.push(event);
-        }
-        for (const event of caseCitationEvents) {
-          events.push(event);
-        }
-        for (const event of contractReviews) {
-          events.push(event);
-        }
-
-        if (askInputsEvents.length > 0) {
-          throw new AssistantStreamAskInputsPause();
-        }
-
-        // Index alignment would break if any tool branch skips its
-        // push (unhandled tool name, disabled store, guard failure).
-        // Each tool_result already carries its tool_call_id, so key off
-        // that directly — and fall back to an error result for any
-        // tool_use that didn't produce one, so Claude's next request
-        // has a tool_result for every tool_use it sent.
-        const resultByCallId = new Map<string, string>(clientResultByCallId);
-        for (const r of toolResults) {
-          const row = r as {
-            tool_call_id: string;
-            content?: unknown;
-          };
-          resultByCallId.set(row.tool_call_id, String(row.content ?? ""));
-        }
-        // Answer every tool_use the model sent — client and server alike —
-        // in the model's original call order.
-        return calls.map((c) => ({
-          tool_use_id: c.id,
-          content:
-            resultByCallId.get(c.id) ??
-            JSON.stringify({
-              error: `Tool '${c.name}' is not available.`,
-            }),
-        }));
+        return resolveRequestedModel(requestedModel, "", userId, db, "throw");
       },
     });
+    // Set by any streamed output; a failed attempt that set it cannot fall
+    // back to another model (see the loop below).
+    let producedOutput = false;
+    const streamTurn = (
+      servingModel: string,
+      reasoning: ReasoningLevel | undefined,
+    ) =>
+      streamChatWithTools({
+        model: servingModel,
+        systemPrompt,
+        messages: chatMessages,
+        tools: activeTools as OpenAIToolSchema[],
+        // Keep in step with DEFAULT_MAX_ITERATIONS in llm/aiSdk.ts. Deliberately
+        // a literal, not an import: tests mock the "../llm" barrel, and reaching
+        // past it into llm/aiSdk loads the real SDK module into suites that only
+        // ever wanted the mock, which broke unrelated tests at random.
+        maxIterations: params.maxIterations ?? 16,
+        apiKeys,
+        reasoning: reasoning ?? params.reasoning ?? "high",
+        abortSignal: signal,
+        conversationId,
+        callbacks: {
+          onContentDelta: (delta) => {
+            producedOutput = true;
+            iterText += delta;
+            streamVisibleContent(delta);
+          },
+          onReasoningDelta: (delta) => {
+            producedOutput = true;
+            iterReasoning += delta;
+            write(
+              `data: ${JSON.stringify({ type: "reasoning_delta", text: delta })}\n\n`,
+            );
+          },
+          onReasoningBlockEnd: () => {
+            if (!iterReasoning) return;
+            events.push({ type: "reasoning", text: iterReasoning });
+            write(`data: ${JSON.stringify({ type: "reasoning_block_end" })}\n\n`);
+            iterReasoning = "";
+          },
+          // Fires after Claude's turn ends with stop_reason=tool_use, before
+          // the tool actually runs. Flushes any buffered assistant text so
+          // it's emitted in chronological order, then signals the client so
+          // it can open a fresh PreResponseWrapper (shows "Working…") while
+          // the tool executes — avoids the dead gap between message_stop
+          // and the first tool-specific event.
+          onToolCallStart: (call) => {
+            producedOutput = true;
+            flushText();
+            write(
+              `data: ${JSON.stringify({
+                type: "tool_call_start",
+                name: call.name,
+              })}\n\n`,
+            );
+          },
+        },
+        runTools: async (calls) => {
+          throwIfAborted(signal);
+          // Emit any text the model produced before this tool turn so the
+          // UI sees it before the tool results stream in.
+          flushText();
+
+          // Client-executed tools (Word add-in) round-trip through the SSE
+          // stream and never enter the server dispatcher. They run before the
+          // server batch and sequentially among themselves: each call mutates
+          // or reads the live document, so order is part of their semantics.
+          const clientResultByCallId = new Map<string, string>();
+          // Enforcement, not just omission: a document-writing call from a
+          // caller who may not write is dropped before dispatch, on the server
+          // side and the client side alike. It falls through to the
+          // "Tool 'x' is not available." answer below, which every tool_use
+          // without a result already gets, so the model is told plainly rather
+          // than left waiting on a call that silently did nothing.
+          const permittedCalls = allowDocumentMutation
+            ? calls
+            : calls.filter((c) => !isDocumentMutatingTool(c.name));
+          const serverCalls = clientTools
+            ? permittedCalls.filter((c) => !clientTools.owns(c.name))
+            : permittedCalls;
+          if (clientTools) {
+            for (const call of permittedCalls) {
+              if (!clientTools.owns(call.name)) continue;
+              const { content, events: clientEvents } =
+                await clientTools.execute(call);
+              clientResultByCallId.set(call.id, content);
+              events.push(...clientEvents);
+              throwIfAborted(signal);
+            }
+          }
+
+          const toolCalls: ToolCall[] = serverCalls.map((c) => ({
+            id: c.id,
+            function: {
+              name: c.name,
+              arguments: JSON.stringify(c.input),
+            },
+          }));
+          const {
+            toolResults,
+            docsRead,
+            docsFound,
+            docsCreated,
+            docsReplicated,
+            workflowsApplied,
+            docsEdited,
+            askInputsEvents,
+            courtlistenerEvents,
+            caseCitationEvents,
+            mcpEvents,
+            contractReviews,
+          } = await runToolCalls(
+            toolCalls,
+            docStore,
+            userId,
+            db,
+            write,
+            workflowStore,
+            tabularStore,
+            docIndex,
+            turnEditState,
+            turnReadState,
+            projectId,
+            courtlistenerTurnState,
+            apiKeys,
+            nonce,
+          );
+          throwIfAborted(signal);
+          for (const r of docsRead) {
+            events.push({
+              type: "doc_read",
+              filename: r.filename,
+              document_id: r.document_id,
+              version_id: r.version_id,
+              version_number: r.version_number,
+            });
+          }
+          for (const f of docsFound) {
+            events.push({
+              type: "doc_find",
+              filename: f.filename,
+              document_id: f.document_id,
+              version_id: f.version_id,
+              version_number: f.version_number,
+              query: f.query,
+              total_matches: f.total_matches,
+            });
+          }
+          for (const dl of docsCreated) {
+            events.push({
+              type: "doc_created",
+              filename: dl.filename,
+              download_url: dl.download_url,
+              document_id: dl.document_id,
+              version_id: dl.version_id,
+              version_number: dl.version_number ?? null,
+            });
+          }
+          for (const r of docsReplicated) {
+            events.push({
+              type: "doc_replicated",
+              filename: r.filename,
+              count: r.count,
+              copies: r.copies,
+            });
+          }
+          for (const wf of workflowsApplied) {
+            events.push({
+              type: "workflow_applied",
+              workflow_id: wf.workflow_id,
+              title: wf.title,
+            });
+          }
+          for (const e of docsEdited) {
+            events.push({
+              type: "doc_edited",
+              filename: e.filename,
+              document_id: e.document_id,
+              version_id: e.version_id,
+              version_number: e.version_number,
+              download_url: e.download_url,
+              annotations: e.annotations,
+            });
+          }
+          for (const askInputsEvent of askInputsEvents) {
+            write(`data: ${JSON.stringify(askInputsEvent)}\n\n`);
+            events.push(askInputsEvent);
+          }
+          for (const event of courtlistenerEvents) {
+            events.push(event);
+          }
+          for (const event of mcpEvents) {
+            events.push(event);
+          }
+          for (const event of caseCitationEvents) {
+            events.push(event);
+          }
+          for (const event of contractReviews) {
+            events.push(event);
+          }
+
+          if (askInputsEvents.length > 0) {
+            throw new AssistantStreamAskInputsPause();
+          }
+
+          // Index alignment would break if any tool branch skips its
+          // push (unhandled tool name, disabled store, guard failure).
+          // Each tool_result already carries its tool_call_id, so key off
+          // that directly — and fall back to an error result for any
+          // tool_use that didn't produce one, so Claude's next request
+          // has a tool_result for every tool_use it sent.
+          const resultByCallId = new Map<string, string>(clientResultByCallId);
+          for (const r of toolResults) {
+            const row = r as {
+              tool_call_id: string;
+              content?: unknown;
+            };
+            resultByCallId.set(row.tool_call_id, String(row.content ?? ""));
+          }
+          // Answer every tool_use the model sent — client and server alike —
+          // in the model's original call order.
+          return calls.map((c) => ({
+            tool_use_id: c.id,
+            content:
+              resultByCallId.get(c.id) ??
+              JSON.stringify({
+                error: `Tool '${c.name}' is not available.`,
+              }),
+          }));
+        },
+      });
+    let attempt = 0;
+    for (;;) {
+      const servingModel = plan.models[attempt];
+      const modelInfo: Extract<AssistantEvent, { type: "model_info" }> = {
+        type: "model_info",
+        model: servingModel,
+        ...(plan.route ?? {}),
+        ...(attempt > 0 ? { fallback_from: plan.models[0] } : {}),
+      };
+      events.push(modelInfo);
+      write(`data: ${JSON.stringify(modelInfo)}\n\n`);
+      producedOutput = false;
+      try {
+        await streamTurn(servingModel, plan.reasoning?.[attempt]);
+        break;
+      } catch (err) {
+        // Another model may take over only while this attempt has shown the
+        // person nothing: once text, reasoning or a tool call has streamed,
+        // a second model would be answering on top of the first one's words.
+        const canFallBack =
+          plan.route !== null &&
+          !producedOutput &&
+          attempt + 1 < plan.models.length &&
+          !signal?.aborted &&
+          isRetryableOnAnotherModel(err);
+        if (!canFallBack) throw err;
+        console.warn("[assistant/route] model failed; trying the next one", {
+          failed: servingModel,
+          next: plan.models[attempt + 1],
+          tier: plan.route?.tier,
+        });
+        events.pop();
+        attempt += 1;
+      }
+    }
   } catch (err) {
     if (isAskInputsPause(err)) {
       // The ask_inputs event has already been emitted and persisted in `events`.
