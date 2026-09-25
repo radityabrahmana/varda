@@ -31,6 +31,7 @@ import {
     workflowSlashCommand,
 } from "./workflowSlashCommands";
 import { ApiKeyMissingPopup } from "../popups/ApiKeyMissingPopup";
+import { AUTO_MODE_ID } from "@/app/lib/assistantModes";
 import {
     ModelToggle,
     type NoModelsReason,
@@ -81,6 +82,14 @@ export interface ChatInputHandle {
         workflow: { id: string; title: string },
         prompt?: string,
         options?: { initialDocumentTab?: DirectoryTab },
+    ) => void;
+    /**
+     * Switch the composer to `model` (saved like a picker change) and send
+     * `message` again with it — "Ask again with Deep".
+     */
+    askAgainWith: (
+        model: string,
+        message: Pick<Message, "content" | "files" | "workflow">,
     ) => void;
 }
 
@@ -174,6 +183,13 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                 : null,
         apiKeys: apiKeysDegraded ? undefined : profile?.apiKeys,
         configuredModelIds,
+        // Members use modes only. Unknown (loading, or the degraded
+        // fallback profile) must not rewrite an admin's saved model to Auto.
+        advancedModels:
+            profile && !apiKeysDegraded
+                ? profile.advancedModels === true
+                : undefined,
+        defaultModel: AUTO_MODE_ID,
     });
     // Degraded profile → key availability is UNKNOWN; undefined here makes
     // every key gate (submit check + model toggle) fail open instead of
@@ -432,6 +448,18 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                 });
             }
             setDocSelectorOpen(true);
+        },
+        askAgainWith: (nextModel, message) => {
+            if (isLoading) return;
+            handleModelChange(nextModel);
+            onSubmit({
+                role: "user",
+                content: message.content,
+                files: message.files,
+                workflow: message.workflow,
+                model: nextModel,
+                reasoning: reasoningLevel,
+            });
         },
     }));
 
@@ -818,6 +846,11 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                                     onNoModelsClick={setNoModelsWarning}
                                     reasoningLevel={reasoningLevel}
                                     onReasoningChange={handleReasoningChange}
+                                    modes
+                                    advancedModels={
+                                        apiKeysDegraded ||
+                                        profile?.advancedModels === true
+                                    }
                                 />
                             )}
                             <button

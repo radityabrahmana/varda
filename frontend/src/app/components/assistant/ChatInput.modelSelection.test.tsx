@@ -77,13 +77,20 @@ function emptyApiKeys() {
     };
 }
 
-function mockProfile(apiKeysDegraded: boolean) {
+function mockProfile(
+    apiKeysDegraded: boolean,
+    {
+        advancedModels = true,
+        lastSelectedChatModel = "gpt-5.6-luna",
+    }: { advancedModels?: boolean; lastSelectedChatModel?: string | null } = {},
+) {
     vi.mocked(useUserProfile).mockReturnValue({
         profile: {
             openRouterModels: [],
             vercelModels: [],
             openCodeGoModels: [],
-            lastSelectedChatModel: "gpt-5.6-luna",
+            advancedModels,
+            lastSelectedChatModel,
             lastSelectedReasoningLevel: "high",
             apiKeys: emptyApiKeys(),
         },
@@ -275,6 +282,102 @@ describe("ChatInput model selection vs. a degraded profile", () => {
         await waitFor(() =>
             expect(onSubmit).toHaveBeenCalledWith(
                 expect.objectContaining({ model: "gpt-5.6-luna" }),
+            ),
+        );
+    });
+
+    it("moves a member's saved named model to Auto", async () => {
+        mockProfile(false, { advancedModels: false });
+        const onSubmit = vi.fn();
+        render(
+            <ChatInput
+                chatKey="chat-1"
+                chatModel="gpt-5.6-sol"
+                chatReasoningLevel="high"
+                onSubmit={onSubmit}
+                onCancel={vi.fn()}
+                isLoading={false}
+            />,
+        );
+
+        fireEvent.change(screen.getByRole("combobox"), {
+            target: { value: "hello" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+        await waitFor(() =>
+            expect(onSubmit).toHaveBeenCalledWith(
+                expect.objectContaining({ model: "varda/auto" }),
+            ),
+        );
+    });
+
+    it("keeps a saved mode for a member", async () => {
+        mockProfile(false, { advancedModels: false });
+        const onSubmit = vi.fn();
+        render(
+            <ChatInput
+                chatKey="chat-1"
+                chatModel="varda/deep"
+                chatReasoningLevel="high"
+                onSubmit={onSubmit}
+                onCancel={vi.fn()}
+                isLoading={false}
+            />,
+        );
+
+        fireEvent.change(screen.getByRole("combobox"), {
+            target: { value: "hello" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+        await waitFor(() =>
+            expect(onSubmit).toHaveBeenCalledWith(
+                expect.objectContaining({ model: "varda/deep" }),
+            ),
+        );
+    });
+
+    it("starts someone with nothing saved on Auto", async () => {
+        mockProfile(false, { lastSelectedChatModel: null });
+        const onSubmit = vi.fn();
+        render(
+            <ChatInput
+                onSubmit={onSubmit}
+                onCancel={vi.fn()}
+                isLoading={false}
+            />,
+        );
+
+        fireEvent.change(screen.getByRole("combobox"), {
+            target: { value: "hello" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+        await waitFor(() =>
+            expect(onSubmit).toHaveBeenCalledWith(
+                expect.objectContaining({ model: "varda/auto" }),
+            ),
+        );
+    });
+
+    it("leaves an admin's model alone while admin status is unknown", async () => {
+        // The degraded fallback profile cannot say who is an admin.
+        mockProfile(true, { advancedModels: false });
+        const onSubmit = vi.fn();
+        render(
+            <ChatInput
+                chatModel="gpt-5.6-sol"
+                onSubmit={onSubmit}
+                onCancel={vi.fn()}
+                isLoading={false}
+            />,
+        );
+
+        fireEvent.change(screen.getByRole("combobox"), {
+            target: { value: "hello" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+        await waitFor(() =>
+            expect(onSubmit).toHaveBeenCalledWith(
+                expect.objectContaining({ model: "gpt-5.6-sol" }),
             ),
         );
     });

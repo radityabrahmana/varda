@@ -8,6 +8,7 @@ import {
 import { getOllamaModels, type ApiKeyStatus } from "../../api/mikeApi";
 import {
   isModelAvailable,
+  MODE_OPTIONS,
   modelDisplayName,
   openCodeGoModelOptions,
   openRouterModelOptions,
@@ -28,6 +29,7 @@ export function ModelToggle({
   onNoModelsClick,
   reasoningLevel,
   onReasoningChange,
+  advancedModels = false,
 }: {
   value: string;
   onChange: (model: string) => void;
@@ -42,6 +44,8 @@ export function ModelToggle({
   onNoModelsClick?: () => void;
   reasoningLevel?: ReasoningLevel;
   onReasoningChange?: (level: ReasoningLevel) => void;
+  /** Named models appear under "Advanced models" only when true. */
+  advancedModels?: boolean;
 }): React.ReactElement {
   const [ollamaModels, setOllamaModels] = useState<ModelOption[]>([]);
 
@@ -58,6 +62,7 @@ export function ModelToggle({
   }, []);
 
   const models = useMemo(() => {
+    if (!advancedModels) return [];
     const openRouterOptions = openRouterModelOptions(openRouterModels);
     const vercelOptions = vercelModelOptions(vercelModels);
     const openCodeGoOptions = openCodeGoModelOptions(openCodeGoModels);
@@ -77,6 +82,7 @@ export function ModelToggle({
         model.group === "Local" || isModelAvailable(model.id, keyStatus),
     );
   }, [
+    advancedModels,
     keyStatus,
     ollamaModels,
     openRouterModels,
@@ -84,10 +90,13 @@ export function ModelToggle({
     openCodeGoModels,
   ]);
   const selected = models.find((model) => model.id === value);
+  const selectedMode = MODE_OPTIONS.find((mode) => mode.id === value);
   const supportedReasoningLevels = reasoningLevelsForModel(value);
-  const normalizedReasoningLevel = reasoningLevel
-    ? nearestReasoningLevelForModel(value, reasoningLevel)
-    : undefined;
+  // A mode's tier sets its reasoning effort; the slider is for named models.
+  const normalizedReasoningLevel =
+    reasoningLevel && !selectedMode
+      ? nearestReasoningLevelForModel(value, reasoningLevel)
+      : undefined;
 
   useEffect(() => {
     if (
@@ -105,13 +114,8 @@ export function ModelToggle({
       value={value}
       onChange={onChange}
       models={models}
-      selectedLabel={
-        keyStatusLoading
-          ? (selected?.label ?? "Select model")
-          : (selected?.label ??
-            (models.length > 0 ? "Select model" : "No Models"))
-      }
-      selectedAvailable={selected !== undefined}
+      selectedLabel={selectedMode?.label ?? selected?.label ?? "Select model"}
+      selectedAvailable={selected !== undefined || selectedMode !== undefined}
       loading={keyStatusLoading}
       compact={compact}
       emptyLabel="No Models"
@@ -119,6 +123,7 @@ export function ModelToggle({
       reasoningLevel={normalizedReasoningLevel}
       onReasoningChange={onReasoningChange}
       reasoningLevels={supportedReasoningLevels}
+      modes={MODE_OPTIONS}
     />
   );
 }

@@ -10,6 +10,7 @@ import { ChatInput } from "./ChatInput";
 import { InitialView } from "./InitialView";
 import { resolveDocumentViewType } from "@/app/lib/documentViewType";
 import type { ChatInputHandle } from "./ChatInput";
+import { DEEP_MODE_ID } from "@/app/lib/assistantModes";
 import { ChatInputPrompt } from "./ChatInputPrompt";
 import {
     AssistantSidePanel,
@@ -659,6 +660,15 @@ export function ChatView({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const latestUserMessageRef = useRef<HTMLDivElement>(null);
     const chatInputRef = useRef<ChatInputHandle | null>(null);
+    // "Ask again with Deep" re-sends the question behind the latest answer.
+    const askAgainDeepFor = (index: number, isLatestAnswer: boolean) => {
+        const question = messages[index - 1];
+        if (!isLatestAnswer || isResponseLoading || question?.role !== "user") {
+            return undefined;
+        }
+        return () =>
+            chatInputRef.current?.askAgainWith(DEEP_MODE_ID, question);
+    };
     const measuredInputRef = useRef<HTMLDivElement>(null);
     // Seed "already in place" when messages exist at mount (a freshly created
     // chat arrives with its first message in hand). Otherwise the skeleton +
@@ -1072,6 +1082,10 @@ export function ChatView({
                                                         resolvedEditStatuses={
                                                             resolvedEditStatuses
                                                         }
+                                                        onAskAgainDeep={askAgainDeepFor(
+                                                            i,
+                                                            i === lastAssistantIndex,
+                                                        )}
                                                     />
                                                 )}
                                             </div>

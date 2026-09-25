@@ -56,3 +56,21 @@ export const LoadingAndEmpty = () => (
         />
     </div>
 );
+
+const modes = [
+    { id: "varda/auto", label: "Auto", description: "Picks Fast or Deep for each question" },
+    { id: "varda/fast", label: "Fast", description: "Quick answers, summaries and translation" },
+    { id: "varda/deep", label: "Deep", description: "Contract review, drafting and legal analysis" },
+];
+
+/** What a member sees: modes only. */
+export const Modes = () => {
+    const [value, setValue] = useState("varda/auto");
+    return <ModelToggleUI value={value} onChange={setValue} models={[]} modes={modes} />;
+};
+
+/** What an admin sees: modes first, named models under Advanced models. */
+export const ModesWithAdvanced = () => {
+    const [value, setValue] = useState("varda/auto");
+    return <ModelToggleUI value={value} onChange={setValue} models={models} modes={modes} />;
+};

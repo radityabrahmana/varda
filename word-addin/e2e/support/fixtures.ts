@@ -308,6 +308,8 @@ export const test = base.extend<{ addin: Addin }>({
           openRouterModels: [],
           vercelModels: [],
           openCodeGoModels: [],
+          // An admin, so specs can pick named models under Advanced models.
+          advancedModels: true,
         }),
       });
     });

@@ -65,9 +65,26 @@ streamed and persisted, so the client can show which model answered.
 Each routed turn logs one `[assistant/route]` line with the mode, tier, rule,
 model and signal sizes. Prompt text is never logged.
 
+## In the clients
+
+- The composer picker (web `ModelToggle` with `modes`, and the Word add-in)
+  leads with Auto, Fast and Deep. A new chat, or someone with nothing saved,
+  starts on Auto.
+- Named models sit under **Advanced models**, shown only when the profile's
+  `advancedModels` is true: an organization admin (`org_members.role = admin`)
+  or a deployment admin (`user_roles.role = admin`), computed in
+  `backend/src/modules/user/user.advancedModels.ts`. For anyone else, a saved
+  named model is set aside for Auto on the next send. The flag shapes the
+  picker; the API still accepts a named model from any caller.
+- While the profile is unknown (loading, or the degraded fallback), a saved
+  named model is left alone, so an outage cannot rewrite an admin's choice.
+- The reasoning slider shows only for a named model; a mode's tier sets it.
+- Under each web answer: "Answered by <model> · <mode>" from `model_info`, and
+  under the latest answer from the fast tier, **Ask again with Deep**. That
+  switches the chat to Deep and re-sends the question.
+
 ## Not yet
 
-- Mode picker, default-to-Auto, the "answered by" line and "Retry with Deep"
-  in the web app and Word add-in; "Advanced models" limited to admins.
+- "Answered by" in the Word add-in.
 - Tuning the rules against the Dash evaluation set.
 - Per-organization tier policy.

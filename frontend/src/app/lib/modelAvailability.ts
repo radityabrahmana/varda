@@ -1,3 +1,4 @@
+import { isModeModelId } from "./assistantModes";
 import {
     SETTINGS_MODELS,
     type ModelOption,
@@ -29,6 +30,9 @@ export function isModelAvailable(
     configuredModelIds: readonly string[] = [],
 ): boolean {
     if (configuredModelIds.includes(modelId)) return true;
+    // A mode is served by whichever tier model the deployment can run; the
+    // server answers with an actionable error when none can.
+    if (isModeModelId(modelId)) return true;
     const provider = getModelProvider(modelId);
     if (!provider) return false;
     return isProviderAvailable(provider, apiKeys);

@@ -410,3 +410,71 @@ describe("ModelToggle provider grouping", () => {
         expect(screen.getByText("OpenRouter")).toBeInTheDocument();
     });
 });
+
+describe("ModelToggle Assistant modes", () => {
+    it("offers only Auto, Fast and Deep to a member", async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+        render(
+            <ModelToggle
+                value="varda/auto"
+                onChange={onChange}
+                apiKeys={keys({ gemini: true })}
+                reasoningLevel="high"
+                onReasoningChange={vi.fn()}
+                modes
+            />,
+        );
+
+        const trigger = screen.getByRole("button", { name: "Choose mode" });
+        expect(trigger).toHaveTextContent("Auto");
+        await user.click(trigger);
+
+        expect(screen.getByRole("menuitem", { name: /^Deep/ })).toBeInTheDocument();
+        expect(screen.queryByText("Advanced models")).not.toBeInTheDocument();
+        expect(screen.queryByText("Google")).not.toBeInTheDocument();
+        // A mode's tier sets its reasoning effort.
+        expect(
+            screen.queryByRole("slider", { name: "Reasoning level" }),
+        ).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole("menuitem", { name: /^Deep/ }));
+        expect(onChange).toHaveBeenCalledWith("varda/deep");
+    });
+
+    it("keeps named models under Advanced models for an admin", async () => {
+        const user = userEvent.setup();
+        render(
+            <ModelToggle
+                value="varda/fast"
+                onChange={vi.fn()}
+                apiKeys={keys({ gemini: true })}
+                modes
+                advancedModels
+            />,
+        );
+
+        await user.click(screen.getByRole("button", { name: "Choose mode" }));
+        const advanced = screen.getByRole("menuitem", { name: /Advanced models/ });
+        expect(advanced).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByText("Google")).not.toBeInTheDocument();
+
+        await user.click(advanced);
+        expect(screen.getByText("Google")).toBeInTheDocument();
+    });
+
+    it("never shows No Models when modes are on", () => {
+        render(
+            <ModelToggle
+                value="varda/auto"
+                onChange={vi.fn()}
+                apiKeys={keys({})}
+                modes
+            />,
+        );
+
+        expect(
+            screen.queryByRole("button", { name: "No models available" }),
+        ).not.toBeInTheDocument();
+    });
+});

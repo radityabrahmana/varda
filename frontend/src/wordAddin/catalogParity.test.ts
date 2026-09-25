@@ -17,6 +17,8 @@ import {
 } from "../app/components/assistant/ModelToggle";
 import {
     STATIC_MODELS,
+    AUTO_MODE_ID as ADDIN_AUTO_MODE_ID,
+    MODE_OPTIONS as ADDIN_MODE_OPTIONS,
     DEFAULT_MODEL_ID as ADDIN_DEFAULT_MODEL_ID,
     LEGACY_MODEL_IDS as ADDIN_LEGACY_MODEL_IDS,
     canonicalModelId as addinCanonicalModelId,
@@ -31,6 +33,7 @@ import type { ApiKeyStatus } from "../../../word-addin/src/taskpane/api/client";
 import { isModelAvailable as webIsModelAvailable } from "../app/lib/modelAvailability";
 import { isAllowedModelId as webIsAllowedModelId } from "../app/hooks/useSelectedModel";
 import type { ApiKeyState } from "../app/lib/mikeApi";
+import { AUTO_MODE_ID, MODE_OPTIONS } from "../app/lib/assistantModes";
 
 describe("word add-in catalog parity", () => {
     it("offers exactly the web app's static models (id, label, group)", () => {
@@ -45,6 +48,16 @@ describe("word add-in catalog parity", () => {
             group,
         }));
         expect(addinModels).toEqual(webModels);
+    });
+
+    it("offers the same Assistant modes and treats them as selectable", () => {
+        expect(ADDIN_MODE_OPTIONS).toEqual(MODE_OPTIONS);
+        expect(ADDIN_AUTO_MODE_ID).toBe(AUTO_MODE_ID);
+        for (const { id } of MODE_OPTIONS) {
+            expect(addinIsAllowedModelId(id)).toBe(true);
+            expect(webIsAllowedModelId(id)).toBe(true);
+            expect(addinIsModelAvailable(id, null)).toBe(true);
+        }
     });
 
     it("shares the web app's default model", () => {

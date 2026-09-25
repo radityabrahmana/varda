@@ -647,6 +647,22 @@ export function useAssistantChat({
               continue;
             }
 
+            if (data.type === "model_info" && typeof data.model === "string") {
+              // Metadata, not a step: it must not finalize streaming text or
+              // replace the "Thinking..." placeholder. A mode turn that fell
+              // back streams a second record; keep only the answering model.
+              eventsRef.current = [
+                ...eventsRef.current.filter((e) => e.type !== "model_info"),
+                data as Extract<AssistantEvent, { type: "model_info" }>,
+              ];
+              const snapshot = [...eventsRef.current];
+              updateLatestAssistantMessage((message) => ({
+                ...message,
+                events: snapshot,
+              }));
+              continue;
+            }
+
             if (data.type === "workflow_applied") {
               pushEvent({
                 type: "workflow_applied",

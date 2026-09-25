@@ -42,6 +42,38 @@ export const STATIC_MODELS: readonly ModelOption[] = [
 for (const model of STATIC_MODELS) model.source = "Direct";
 
 export const DEFAULT_MODEL_ID = "";
+
+/**
+ * Assistant modes: the chat stores the mode and the server picks a model per
+ * turn. Kept in sync with frontend/src/app/lib/assistantModes.ts and the
+ * backend's MODE_MODEL_IDS; the frontend drift guard pins it.
+ */
+export const AUTO_MODE_ID = "varda/auto";
+export const MODE_OPTIONS: readonly {
+  id: string;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: AUTO_MODE_ID,
+    label: "Auto",
+    description: "Picks Fast or Deep for each question",
+  },
+  {
+    id: "varda/fast",
+    label: "Fast",
+    description: "Quick answers, summaries and translation",
+  },
+  {
+    id: "varda/deep",
+    label: "Deep",
+    description: "Contract review, drafting and legal analysis",
+  },
+];
+
+export function isModeModelId(id: string | null | undefined): boolean {
+  return MODE_OPTIONS.some((mode) => mode.id === id);
+}
 export const ALLOWED_MODEL_IDS = new Set(
   STATIC_MODELS.map((model) => model.id),
 );
@@ -181,6 +213,7 @@ export function underlyingProviderGroup(
 export function isAllowedModelId(id: string): boolean {
   return (
     ALLOWED_MODEL_IDS.has(id) ||
+    isModeModelId(id) ||
     id.startsWith("ollama/") ||
     ROUTER_SLUGS.some((slug) => id.startsWith(`${slug}/`))
   );
@@ -191,6 +224,8 @@ export function isModelAvailable(
   status: ApiKeyStatus | null,
 ): boolean {
   if (modelId.startsWith("ollama/")) return true;
+  // The server decides which tier model serves a mode, and says so when none can.
+  if (isModeModelId(modelId)) return true;
   // Unknown status (the key-status preflight failed even after a retry) fails
   // OPEN: the backend authoritatively rejects a model it cannot serve, so
   // blocking sends here on a flaky WKWebView request would brick the composer

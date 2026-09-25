@@ -67,6 +67,8 @@ interface UserProfile {
     darkMode: boolean;
     projectMemoryDefault: boolean;
     apiKeys: ApiKeyState;
+    /** May pick a named model instead of an Assistant mode (org or deployment admin). */
+    advancedModels?: boolean;
 }
 
 interface UserProfileContextType {
@@ -182,6 +184,7 @@ function toProfile(data: ApiUserProfile): UserProfile {
             ? profile.openCodeGoModels
             : [],
         apiKeys,
+        advancedModels: profile.advancedModels === true,
     };
 }
 
@@ -244,6 +247,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
                 darkMode: false,
                 projectMemoryDefault: true,
                 apiKeys: emptyApiKeys(),
+                advancedModels: false,
             });
         } finally {
             setLoading(false);
