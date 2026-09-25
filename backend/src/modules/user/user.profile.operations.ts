@@ -4,6 +4,7 @@ import { findProfileUserByEmail } from "../../lib/userLookup";
 import { replaceUserRouterModels, ROUTER_SLUGS, type RouterSlug } from "../../lib/routerModels";
 import { type Db } from "./user.shared";
 import { ensureProfileRow, loadProfile } from "./user.profile.load";
+import { canUseAdvancedModels } from "./user.advancedModels";
 
 import { PersonalisationUpdate } from "./user.profile.validation";
 
@@ -27,12 +28,12 @@ export async function getUserProfile(
     { ok: true; body: Record<string, unknown> } | { ok: false; error: unknown }
 > {
     const apiKeyStatus = await getUserApiKeyStatus(userId, db);
-    const { data, error } = await loadProfile(db, userId, {
-        repairMissing: true,
-        apiKeyStatus,
-    });
+    const [{ data, error }, advancedModels] = await Promise.all([
+        loadProfile(db, userId, { repairMissing: true, apiKeyStatus }),
+        canUseAdvancedModels(db, userId),
+    ]);
     if (error) return { ok: false, error };
-    return { ok: true, body: { ...data, apiKeyStatus } };
+    return { ok: true, body: { ...data, apiKeyStatus, advancedModels } };
 }
 
 export async function lookupUserByEmail(
@@ -79,9 +80,12 @@ export async function updateUserProfile(
     }
 
     const apiKeyStatus = await getUserApiKeyStatus(userId, db);
-    const { data, error } = await loadProfile(db, userId, { apiKeyStatus });
+    const [{ data, error }, advancedModels] = await Promise.all([
+        loadProfile(db, userId, { apiKeyStatus }),
+        canUseAdvancedModels(db, userId),
+    ]);
     if (error) return { ok: false, error };
-    return { ok: true, body: { ...data, apiKeyStatus } };
+    return { ok: true, body: { ...data, apiKeyStatus, advancedModels } };
 }
 
 // ---------------------------------------------------------------------------

@@ -12,6 +12,7 @@ import { isModelAvailable } from "@/app/lib/modelAvailability";
 import type { ApiKeyState } from "@/app/lib/mikeApi";
 import { useOllamaModels } from "@/app/hooks/useOllamaModels";
 import { useConfiguredModels } from "@/app/hooks/useConfiguredModels";
+import { MODE_OPTIONS } from "@/app/lib/assistantModes";
 
 export type ModelOption = ModelToggleOption;
 export type { ReasoningLevel };
@@ -56,6 +57,14 @@ for (const model of MODELS) model.source = "Direct";
 for (const model of SETTINGS_MODELS) model.source ??= "Direct";
 
 export const DEFAULT_MODEL_ID = "";
+
+/** Display name for a concrete model id, from the catalog when it is there. */
+export function modelLabel(modelId: string): string {
+  return (
+    SETTINGS_MODELS.find((model) => model.id === modelId)?.label ??
+    modelDisplayName(modelId)
+  );
+}
 
 export const ALLOWED_MODEL_IDS = new Set(MODELS.map((m) => m.id));
 
@@ -187,6 +196,12 @@ interface Props {
   onNoModelsClick?: (reason: NoModelsReason) => void;
   reasoningLevel?: ReasoningLevel;
   onReasoningChange?: (level: ReasoningLevel) => void;
+  /**
+   * Offer Auto/Fast/Deep. Named models then appear under "Advanced models"
+   * only when `advancedModels` is true, otherwise not at all.
+   */
+  modes?: boolean;
+  advancedModels?: boolean;
 }
 
 export type NoModelsReason = "api-keys" | "router-models";
@@ -255,6 +270,8 @@ export function ModelToggle({
   onNoModelsClick,
   reasoningLevel,
   onReasoningChange,
+  modes = false,
+  advancedModels = false,
 }: Props) {
   const ollamaModels = useOllamaModels();
   const configuredModels = useConfiguredModels();
@@ -269,7 +286,8 @@ export function ModelToggle({
       source: "Local",
     })),
   ]);
-  const availableModels = models.filter((model) => {
+  const offeredModels = modes && !advancedModels ? [] : models;
+  const availableModels = offeredModels.filter((model) => {
     if (model.source === "Configured") return true;
     if (model.group === "Local") return true;
     if (apiKeysLoading) return false; // nothing offered until known
@@ -277,10 +295,16 @@ export function ModelToggle({
     return isModelAvailable(model.id, apiKeys);
   });
   const selected = availableModels.find((model) => model.id === value);
-  const supportedReasoningLevels = reasoningLevelsForModel(value);
-  const normalizedReasoningLevel = reasoningLevel
-    ? nearestReasoningLevelForModel(value, reasoningLevel)
+  const selectedMode = modes
+    ? MODE_OPTIONS.find((mode) => mode.id === value)
     : undefined;
+  const supportedReasoningLevels = reasoningLevelsForModel(value);
+  // A mode's tier decides its reasoning effort, so the slider is for named
+  // models only.
+  const normalizedReasoningLevel =
+    reasoningLevel && !selectedMode
+      ? nearestReasoningLevelForModel(value, reasoningLevel)
+      : undefined;
   useEffect(() => {
     if (
       reasoningLevel &&
@@ -291,10 +315,12 @@ export function ModelToggle({
       onReasoningChange(normalizedReasoningLevel);
     }
   }, [normalizedReasoningLevel, onReasoningChange, reasoningLevel]);
-  const selectedLabel = apiKeysLoading
-    ? (models.find((model) => model.id === value)?.label ?? "Select model")
-    : (selected?.label ??
-      (availableModels.length > 0 ? "Select model" : "No Models"));
+  const selectedLabel = selectedMode
+    ? selectedMode.label
+    : apiKeysLoading
+      ? (models.find((model) => model.id === value)?.label ?? "Select model")
+      : (selected?.label ??
+        (availableModels.length > 0 || modes ? "Select model" : "No Models"));
   const emptyReason = noModelsReason(apiKeys, {
     openrouter: openRouterModels,
     vercel: vercelModels,
@@ -306,7 +332,7 @@ export function ModelToggle({
       onChange={onChange}
       models={availableModels}
       selectedLabel={selectedLabel}
-      selectedAvailable={selected !== undefined}
+      selectedAvailable={selected !== undefined || selectedMode !== undefined}
       loading={apiKeysLoading}
       compact={compact}
       modalInput={modalInput}
@@ -317,6 +343,7 @@ export function ModelToggle({
       reasoningLevel={normalizedReasoningLevel}
       onReasoningChange={onReasoningChange}
       reasoningLevels={supportedReasoningLevels}
+      modes={modes ? MODE_OPTIONS : undefined}
     />
   );
 }

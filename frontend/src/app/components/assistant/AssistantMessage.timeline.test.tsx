@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AssistantMessage } from "./AssistantMessage";
 import type { AssistantEvent } from "../shared/types";
 
@@ -119,5 +119,40 @@ describe("AssistantMessage timeline", () => {
         expect(
             screen.getByText("The response was interrupted."),
         ).toBeInTheDocument();
+    });
+});
+
+describe("AssistantMessage answering model", () => {
+    const fastAnswer: AssistantEvent[] = [
+        { type: "model_info", model: "openrouter/google/gemini-3.8-flash", mode: "auto", tier: "fast", reason: "default" },
+        { type: "content", text: "Force majeure is an unforeseeable event." },
+    ];
+
+    it("names the model and mode that answered", () => {
+        render(<AssistantMessage events={fastAnswer} />);
+        expect(screen.getByText("Answered by Gemini 3.8 Flash · Auto")).toBeInTheDocument();
+    });
+
+    it("offers Deep under a fast answer when the host allows it", () => {
+        const onAskAgainDeep = vi.fn();
+        render(<AssistantMessage events={fastAnswer} onAskAgainDeep={onAskAgainDeep} />);
+        fireEvent.click(screen.getByRole("button", { name: "Ask again with Deep" }));
+        expect(onAskAgainDeep).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not offer Deep under a deep answer or while streaming", () => {
+        const deepAnswer: AssistantEvent[] = [
+            { type: "model_info", model: "claude-sonnet-5", mode: "auto", tier: "deep", reason: "workflow" },
+            { type: "content", text: "Clause 4 shifts the risk." },
+        ];
+        const { rerender } = render(
+            <AssistantMessage events={deepAnswer} onAskAgainDeep={vi.fn()} />,
+        );
+        expect(screen.getByText("Answered by Claude Sonnet 5 · Auto")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Ask again with Deep" })).not.toBeInTheDocument();
+
+        rerender(<AssistantMessage events={fastAnswer} onAskAgainDeep={vi.fn()} isStreaming />);
+        expect(screen.queryByRole("button", { name: "Ask again with Deep" })).not.toBeInTheDocument();
+        expect(screen.queryByText(/Answered by/)).not.toBeInTheDocument();
     });
 });

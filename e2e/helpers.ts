@@ -19,35 +19,40 @@ export const PDF_FIXTURE = path.join(__dirname, "fixtures/test.pdf");
 export const CLAUDE_MODEL_LABEL = "Claude Sonnet 4.6";
 
 /**
- * Select a Claude model in the chat input's ModelToggle.
+ * Point the chat composer at a Claude model before an LLM spec sends.
  *
  * The specs that call this run only when ANTHROPIC_API_KEY is set in the
  * Playwright environment (test.skip(!hasLlmKey, ...) — e2e/llm.ts). The CI stack
  * exports the same secret to the backend, whose key resolution (modules/user/user.apiKeyStore.ts
  * envApiKey()) falls back to the ANTHROPIC_API_KEY env var, so the "claude"
- * provider reports as configured and ModelToggle shows the Anthropic models as
- * available. The default model, however, is "gemini-3-flash-preview"
- * (ModelToggle.DEFAULT_MODEL_ID), for which no key is configured in CI;
- * ChatInput.handleSubmit then refuses to send. So every LLM spec has to switch
- * the model first.
+ * provider reports as configured.
  *
- * ModelToggle renders a Radix DropdownMenu: the trigger is a button whose title
- * is "Choose model" (current model available) or "API key missing for selected
- * model" (current model not available — the default-Gemini case).
+ * The composer's picker leads with Assistant modes (Auto, Fast, Deep). An
+ * admin also sees "Advanced models", where this picks CLAUDE_MODEL_LABEL. A
+ * member sees modes only, so this picks Auto: with only the Anthropic key
+ * configured, both built-in tiers resolve to Claude models
+ * (backend DEFAULT_TIER_MODELS).
  */
 export async function selectClaudeModel(page: Page) {
     const trigger = page
-        .locator(
-            'button[title="Choose model"], button[title="API key missing for selected model"]',
-        )
+        .getByRole("button", { name: /^Choose (mode|model)$/ })
         .first();
     await expect(trigger).toBeVisible({ timeout: 10_000 });
     await trigger.click();
-    await page.getByRole("menuitem", { name: CLAUDE_MODEL_LABEL }).click();
-    // After selection the trigger label reflects the chosen model.
-    await expect(
-        page.getByRole("button", { name: CLAUDE_MODEL_LABEL }),
-    ).toBeVisible({ timeout: 5_000 });
+    const advanced = page.getByRole("menuitem", { name: /Advanced models/ });
+    if ((await advanced.count()) > 0) {
+        // Opens expanded when the current selection is a named model.
+        if ((await advanced.getAttribute("aria-expanded")) !== "true") {
+            await advanced.click();
+        }
+        await page.getByRole("menuitem", { name: CLAUDE_MODEL_LABEL }).click();
+        await expect(trigger).toContainText(CLAUDE_MODEL_LABEL, {
+            timeout: 5_000,
+        });
+        return;
+    }
+    await page.getByRole("menuitem", { name: /^Auto/ }).click();
+    await expect(trigger).toContainText("Auto", { timeout: 5_000 });
 }
 
 /**

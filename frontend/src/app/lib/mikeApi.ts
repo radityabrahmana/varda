@@ -661,6 +661,8 @@ export interface UserProfile {
     vercelModels: string[];
     openCodeGoModels: string[];
     apiKeyStatus: ApiKeyStatus;
+    /** May pick a named model instead of an Assistant mode (org or deployment admin). */
+    advancedModels?: boolean;
 }
 
 export interface UserLookupResult {

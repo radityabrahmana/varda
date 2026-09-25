@@ -119,6 +119,10 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       string | null
     >(null);
     const [profileLoaded, setProfileLoaded] = useState(false);
+    // Undefined until the profile loads: members then see modes only.
+    const [advancedModels, setAdvancedModels] = useState<boolean | undefined>(
+      undefined,
+    );
     const [model, setModel, modelSettingsResolved] = useSelectedModel({
       sessionKey,
       chatModel,
@@ -127,6 +131,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
         ? { openRouterModels, vercelModels, openCodeGoModels }
         : null,
       apiKeyStatus: keyStatus,
+      advancedModels,
     });
     const [modelError, setModelError] = useState<string | null>(null);
     const [profileLastSelectedReasoningLevel, setProfileLastSelectedReasoningLevel] =
@@ -244,6 +249,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           setOpenRouterModels(profile.openRouterModels ?? []);
           setVercelModels(profile.vercelModels ?? []);
           setOpenCodeGoModels(profile.openCodeGoModels ?? []);
+          setAdvancedModels(profile.advancedModels === true);
           setProfileLastSelectedModel(profile.lastSelectedChatModel ?? null);
           setProfileLastSelectedReasoningLevel(
             profile.lastSelectedReasoningLevel ?? "high",
@@ -619,6 +625,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
                     vercelModels={vercelModels}
                     openCodeGoModels={openCodeGoModels}
                     compact={compactControls}
+                    // Unknown (profile failed) fails open, like key status.
+                    advancedModels={advancedModels !== false}
                     reasoningLevel={resolvedReasoningLevel}
                     onReasoningChange={(next) => {
                       reasoningManuallySelectedRef.current = true;

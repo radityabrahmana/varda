@@ -9,6 +9,8 @@ import type {
     PanelDocument,
 } from "../shared/types";
 import { EditCard } from "./EditCard";
+import { modelLabel } from "./ModelToggle";
+import { modeLabel } from "@/app/lib/assistantModes";
 import { PreResponseWrapper } from "./PreResponseWrapper";
 import { ResponseStatus, type StatusState } from "./message/ResponseStatus";
 import { eventErrorMessage, toolCallLabel } from "./message/eventUtils";
@@ -104,6 +106,11 @@ interface Props {
      * edits flip their per-card UI without per-card clicks.
      */
     resolvedEditStatuses?: Record<string, "accepted" | "rejected">;
+    /**
+     * Offered under an answer the fast tier wrote: re-asks the question in
+     * Deep mode. Hosts pass it for the latest answer only.
+     */
+    onAskAgainDeep?: () => void;
 }
 
 export function AssistantMessage({
@@ -127,6 +134,7 @@ export function AssistantMessage({
     isDocReloading,
     isEditReloading,
     resolvedEditStatuses,
+    onAskAgainDeep,
 }: Props) {
     const contentDivRef = useRef<HTMLDivElement | null>(null);
     const [isCopied, setIsCopied] = useState(false);
@@ -170,6 +178,23 @@ export function AssistantMessage({
         : isStreaming
           ? "active"
           : null;
+
+    // The model that answered; a fallback leaves one record, but read the
+    // last to be safe.
+    const modelInfo = [...(events ?? [])]
+        .reverse()
+        .find(
+            (event): event is Extract<AssistantEvent, { type: "model_info" }> =>
+                event.type === "model_info",
+        );
+    const answeredBy = modelInfo
+        ? [
+              modelLabel(modelInfo.model),
+              modelInfo.mode ? modeLabel(modelInfo.mode) : null,
+          ]
+              .filter(Boolean)
+              .join(" · ")
+        : null;
 
     const isRenderableEvent = (event: AssistantEvent) =>
         event.type !== "error" &&
@@ -1168,6 +1193,22 @@ export function AssistantMessage({
                             )}
                         </button>
                     )}
+                    {!isStreaming && answeredBy && (
+                        <span className="text-xs text-gray-400">
+                            Answered by {answeredBy}
+                        </span>
+                    )}
+                    {!isStreaming &&
+                        onAskAgainDeep &&
+                        modelInfo?.tier === "fast" && (
+                            <button
+                                type="button"
+                                onClick={onAskAgainDeep}
+                                className="rounded px-1.5 py-0.5 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                            >
+                                Ask again with Deep
+                            </button>
+                        )}
                 </div>
             </div>
         </div>

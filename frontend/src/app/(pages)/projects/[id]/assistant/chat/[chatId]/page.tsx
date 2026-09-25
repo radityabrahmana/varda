@@ -53,6 +53,7 @@ import { AssistantMessage } from "@/app/components/assistant/AssistantMessage";
 import { ChatInput } from "@/app/components/assistant/ChatInput";
 import { ChatInputPrompt } from "@/app/components/assistant/ChatInputPrompt";
 import type { ChatInputHandle } from "@/app/components/assistant/ChatInput";
+import { DEEP_MODE_ID } from "@/app/lib/assistantModes";
 import {
     ProjectExplorer,
     type ProjectExplorerHandle,
@@ -2013,6 +2014,17 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                                         onOpenDocument={handleOpenDocument}
                                         onEditError={handleEditError}
                                         onEditResolved={handleEditResolved}
+                                        onAskAgainDeep={
+                                            i === lastAssistantIdx &&
+                                            !isResponseLoading &&
+                                            messages[i - 1]?.role === "user"
+                                                ? () =>
+                                                      chatInputRef.current?.askAgainWith(
+                                                          DEEP_MODE_ID,
+                                                          messages[i - 1],
+                                                      )
+                                                : undefined
+                                        }
                                     />
                                 ),
                             );

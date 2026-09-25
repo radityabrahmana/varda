@@ -9,6 +9,7 @@ import {
     type ReasoningLevel,
 } from "../components/assistant/ModelToggle";
 import { isModelAvailable } from "../lib/modelAvailability";
+import { isModeModelId } from "../lib/assistantModes";
 import type { ApiKeyState } from "../lib/mikeApi";
 
 /**
@@ -22,6 +23,7 @@ export function isAllowedModelId(
 ): boolean {
     return (
         ALLOWED_MODEL_IDS.has(id) ||
+        isModeModelId(id) ||
         configuredModelIds.includes(id) ||
         id.startsWith("ollama/") ||
         ROUTER_SLUGS.some((slug) => id.startsWith(`${slug}/`))
@@ -41,6 +43,13 @@ export interface SelectedModelSources {
     apiKeys?: ApiKeyState;
     /** Authenticated deployment models returned by GET /models/configured. */
     configuredModelIds?: readonly string[];
+    /**
+     * False when the person may use Assistant modes only: a saved named model
+     * is then set aside for the default. Undefined leaves named models usable.
+     */
+    advancedModels?: boolean;
+    /** Chosen when nothing saved is usable. Empty (the default) means "none". */
+    defaultModel?: string;
 }
 
 function usableStoredModel(
@@ -50,6 +59,9 @@ function usableStoredModel(
     if (!value) return null;
     const canonical = canonicalModelId(value);
     if (!isAllowedModelId(canonical, sources.configuredModelIds)) return null;
+    // Availability of a mode is the server's call (see modelAvailability).
+    if (isModeModelId(canonical)) return canonical;
+    if (sources.advancedModels === false) return null;
 
     if (sources.configuredModelIds?.includes(canonical)) return canonical;
 
@@ -72,7 +84,10 @@ function usableStoredModel(
     return canonical;
 }
 
-/** Resolve chat model → profile last-selected model, without a product default. */
+/**
+ * Resolve chat model → profile last-selected model → `defaultModel`. Without
+ * a `defaultModel` there is no product default and the result can be "".
+ */
 export function useSelectedModel(
     sources: SelectedModelSources = {},
 ): [string, (id: string) => void] {
@@ -83,6 +98,8 @@ export function useSelectedModel(
     const vercelModels = sources.routerSelections?.vercelModels;
     const openCodeGoModels = sources.routerSelections?.openCodeGoModels;
     const configuredModelIds = sources.configuredModelIds;
+    const advancedModels = sources.advancedModels;
+    const defaultModel = sources.defaultModel ?? "";
     const hasRouterSelections = sources.routerSelections != null;
     const selectionSources = useMemo<SelectedModelSources>(
         () => ({
@@ -98,6 +115,8 @@ export function useSelectedModel(
                 : null,
             apiKeys: sources.apiKeys,
             configuredModelIds,
+            advancedModels,
+            defaultModel,
         }),
         [
             sources.selectionKey,
@@ -109,6 +128,8 @@ export function useSelectedModel(
             openCodeGoModels,
             sources.apiKeys,
             configuredModelIds,
+            advancedModels,
+            defaultModel,
         ],
     );
 
@@ -134,6 +155,7 @@ export function useSelectedModel(
                 selectionSources.lastSelectedModel,
                 selectionSources,
             ) ??
+            selectionSources.defaultModel ??
             "";
         setModelState(next);
     }, [selectionSources]);

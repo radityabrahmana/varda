@@ -32,6 +32,16 @@ export interface ModelToggleOption {
   source?: string;
 }
 
+/**
+ * A way of answering the person picks instead of a model (Auto, Fast, Deep).
+ * The host decides the ids; the picker lists modes above any named models.
+ */
+export interface ModelToggleMode {
+  id: string;
+  label: string;
+  description: string;
+}
+
 export const REASONING_LEVELS = [
   "none",
   "low",
@@ -124,6 +134,9 @@ export interface ModelToggleUIProps {
   reasoningLevel?: ReasoningLevel;
   onReasoningChange?: (level: ReasoningLevel) => void;
   reasoningLevels?: readonly ReasoningLevel[];
+  /** When set, these lead the menu and `models` move under an Advanced section. */
+  modes?: readonly ModelToggleMode[];
+  advancedLabel?: string;
 }
 
 const itemClassName =
@@ -147,10 +160,15 @@ export function ModelToggleUI({
   reasoningLevel,
   onReasoningChange,
   reasoningLevels = REASONING_LEVELS,
+  modes,
+  advancedLabel = "Advanced models",
 }: ModelToggleUIProps) {
   const [open, setOpen] = React.useState(false);
   const reasoningInputRef = React.useRef<HTMLInputElement>(null);
   const selected = models.find((model) => model.id === value);
+  const hasModes = !!modes && modes.length > 0;
+  const selectedMode = modes?.find((mode) => mode.id === value);
+  const [advancedOpen, setAdvancedOpen] = React.useState(false);
   const [expandedGroup, setExpandedGroup] =
     React.useState<ModelToggleGroup | null>(null);
   const availableGroups = orderedModelGroups(models).flatMap((group) => {
@@ -164,8 +182,9 @@ export function ModelToggleUI({
   }, new Map<string, number>());
   const label =
     selectedLabel ??
+    selectedMode?.label ??
     selected?.label ??
-    (models.length > 0 ? "Select model" : emptyLabel);
+    (models.length > 0 || hasModes ? "Select model" : emptyLabel);
   const reasoningIndex = reasoningLevel
     ? Math.max(0, reasoningLevels.indexOf(reasoningLevel))
     : 0;
@@ -176,10 +195,13 @@ export function ModelToggleUI({
     setOpen(nextOpen);
     if (nextOpen) {
       setExpandedGroup(selected?.group ?? availableGroups[0]?.group ?? null);
+      // Open on the section that holds the current choice.
+      setAdvancedOpen(!selectedMode && !!selected);
     }
   };
 
-  if (!loading && models.length === 0) {
+  // Modes are always offered: the server decides which model can serve one.
+  if (!loading && models.length === 0 && !hasModes) {
     return (
       <button
         type="button"
@@ -203,14 +225,14 @@ export function ModelToggleUI({
       <DropdownTrigger asChild>
         <button
           type="button"
-          aria-label="Choose model"
+          aria-label={hasModes ? "Choose mode" : "Choose model"}
           title={
             loading
               ? "Checking API keys"
               : models.length === 0
                 ? "No API key configured"
-                : selectedAvailable
-                  ? `Choose model — ${label}`
+                : selectedAvailable || selectedMode
+                  ? `${hasModes ? "Choose mode" : "Choose model"} — ${label}`
                   : "API key missing for selected model"
           }
           disabled={loading}
@@ -223,7 +245,7 @@ export function ModelToggleUI({
           {compact ? (
             loading ? (
               <LoaderCircle className="h-4 w-4 shrink-0 animate-spin" />
-            ) : selectedAvailable ? (
+            ) : selectedAvailable || selectedMode ? (
               <Settings2 className="h-4 w-4 shrink-0" />
             ) : (
               <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
@@ -246,10 +268,47 @@ export function ModelToggleUI({
         side={modalInput ? "bottom" : "top"}
         align={modalInput ? "start" : "end"}
         sideOffset={modalInput ? 4 : 8}
-        className={`flex max-h-[min(320px,60vh)] flex-col overflow-hidden rounded-2xl text-gray-700 ${modalInput ? "w-[var(--radix-dropdown-menu-trigger-width)]" : "w-56"}`}
+        className={`flex max-h-[min(320px,60vh)] flex-col overflow-hidden rounded-2xl text-gray-700 ${modalInput ? "w-[var(--radix-dropdown-menu-trigger-width)]" : hasModes ? "w-64" : "w-56"}`}
       >
         <div className="-mr-1.5 min-h-0 flex-1 space-y-1 overflow-y-auto pr-1.5">
-          {availableGroups.map(({ group, items }) => {
+          {modes?.map((mode) => (
+            <DropdownItem
+              key={mode.id}
+              selected={mode.id === value}
+              className={`${itemClassName} items-start py-2 ${mode.id === value ? "text-gray-900" : ""}`}
+              onSelect={() => onChange(mode.id)}
+            >
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="font-medium">{mode.label}</span>
+                <span className="text-[11px] leading-4 text-gray-500">
+                  {mode.description}
+                </span>
+              </span>
+              {mode.id === value && (
+                <Check className="ml-1 mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-600" />
+              )}
+            </DropdownItem>
+          ))}
+          {hasModes && availableGroups.length > 0 && (
+            <>
+              <DropdownSeparator />
+              <DropdownItem
+                aria-expanded={advancedOpen}
+                className={`${itemClassName} py-2 font-medium`}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  setAdvancedOpen((current) => !current);
+                }}
+              >
+                <span className="flex-1">{advancedLabel}</span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-200 ${advancedOpen ? "rotate-180" : ""}`}
+                />
+              </DropdownItem>
+            </>
+          )}
+          {(!hasModes || advancedOpen) &&
+            availableGroups.map(({ group, items }) => {
             const expanded = expandedGroup === group;
             return (
               <React.Fragment key={group}>

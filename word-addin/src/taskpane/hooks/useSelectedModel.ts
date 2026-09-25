@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ApiKeyStatus } from "../api/client";
 import {
+  AUTO_MODE_ID,
   ROUTER_SLUGS,
   canonicalModelId,
   isAllowedModelId,
+  isModeModelId,
   isModelAvailable,
 } from "../lib/modelCatalog";
 
@@ -18,6 +20,11 @@ interface SelectedModelSources {
   } | null;
   /** Null means the key-status request failed and availability fails open. */
   apiKeyStatus: ApiKeyStatus | null;
+  /**
+   * False when the person may use Assistant modes only: a saved named model
+   * is set aside for Auto. Undefined (profile unknown) leaves it usable.
+   */
+  advancedModels?: boolean;
 }
 
 function usableStoredModel(
@@ -27,6 +34,8 @@ function usableStoredModel(
   if (!value) return null;
   const model = canonicalModelId(value);
   if (!isAllowedModelId(model)) return null;
+  if (isModeModelId(model)) return model;
+  if (sources.advancedModels === false) return null;
   const router = ROUTER_SLUGS.find((slug) => model.startsWith(`${slug}/`));
   if (router && sources.routerSelections) {
     const selections = {
@@ -41,7 +50,7 @@ function usableStoredModel(
   return isModelAvailable(model, sources.apiKeyStatus) ? model : null;
 }
 
-/** Resolve the saved chat model first, then the profile's shared last-selected. */
+/** Resolve the saved chat model, then the profile's shared last-selected, then Auto. */
 export function useSelectedModel(
   sources: SelectedModelSources,
 ): [string, (model: string) => void, boolean] {
@@ -71,7 +80,7 @@ export function useSelectedModel(
     const next =
       usableStoredModel(sources.chatModel, sources) ??
       usableStoredModel(sources.lastSelectedModel, sources) ??
-      "";
+      AUTO_MODE_ID;
     setModelState(next);
     setSettingsResolved(true);
   }, [
@@ -79,6 +88,7 @@ export function useSelectedModel(
     sources.chatModel,
     sources.lastSelectedModel,
     sources.apiKeyStatus,
+    sources.advancedModels,
     openRouterModels,
     vercelModels,
     openCodeGoModels,

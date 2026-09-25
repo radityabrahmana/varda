@@ -1467,7 +1467,12 @@ test("model toggle sends the selected frontend model", async ({
   await addin.gotoTaskpane({ documentText: "Current Word document" });
   await addin.expectAuthedShell();
 
-  await page.getByRole("button", { name: "Choose model" }).click();
+  await page.getByRole("button", { name: "Choose mode" }).click();
+  // Opens expanded when the current selection is a named model.
+  const advanced = page.getByRole("menuitem", { name: /Advanced models/ });
+  if ((await advanced.getAttribute("aria-expanded")) !== "true") {
+    await advanced.click();
+  }
   await page.getByRole("menuitem", { name: "OpenAI", exact: true }).click();
   await page.getByRole("menuitem", { name: "GPT-5.4", exact: true }).click();
   await page.getByPlaceholder("How can I help?").fill("Hello");
@@ -1475,6 +1480,42 @@ test("model toggle sends the selected frontend model", async ({
   await page.getByRole("button", { name: "Send" }).click();
   const body = (await requestPromise).postDataJSON();
   expect(body.model).toBe("gpt-5.4");
+});
+
+test("a member's composer sends Auto instead of a saved named model", async ({
+  addin,
+  page,
+}) => {
+  await addin.mockChatStream(["Answered in Auto."]);
+  await page.route("**/user/profile", (route, request) => {
+    if (request.method() !== "GET") return route.fallback();
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        displayName: "Member",
+        lastSelectedChatModel: "gpt-5.4",
+        lastSelectedReasoningLevel: "high",
+        openRouterModels: [],
+        vercelModels: [],
+        openCodeGoModels: [],
+        advancedModels: false,
+      }),
+    });
+  });
+  await addin.gotoTaskpane({ documentText: "Current Word document" });
+  await addin.expectAuthedShell();
+
+  await page.getByRole("button", { name: "Choose mode" }).click();
+  await expect(
+    page.getByRole("menuitem", { name: /Advanced models/ }),
+  ).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await page.getByPlaceholder("How can I help?").fill("Hello");
+  const requestPromise = page.waitForRequest("**/word-chat");
+  await page.getByRole("button", { name: "Send" }).click();
+  const body = (await requestPromise).postDataJSON();
+  expect(body.model).toBe("varda/auto");
 });
 
 test("composer controls fit a narrow Word task pane", async ({
@@ -1494,7 +1535,7 @@ test("composer controls fit a narrow Word task pane", async ({
   ).toBeVisible();
   await expect(page.getByTestId("edit-apply-toggle")).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Choose model" }),
+    page.getByRole("button", { name: "Choose mode" }),
   ).toBeVisible();
   const sendButton = page.getByRole("button", { name: "Send" });
   await expect(sendButton).toHaveClass(/rounded-\[11px\]/);
@@ -1514,7 +1555,7 @@ test("composer controls fit a narrow Word task pane", async ({
     .getByTestId("edit-apply-toggle")
     .boundingBox();
   const modelBounds = await page
-    .getByRole("button", { name: "Choose model" })
+    .getByRole("button", { name: "Choose mode" })
     .boundingBox();
   expect(placeholderBounds).not.toBeNull();
   expect(plusBounds).not.toBeNull();
