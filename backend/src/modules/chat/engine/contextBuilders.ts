@@ -18,6 +18,12 @@ import { ACTIVE_WORD_DOCUMENT_LIVE_FILENAME } from "./wordPrompt";
 import { parseCitations, createCitation } from "./citations";
 import type { AssistantEvent } from "./streaming";
 import { catalogWorkflowId, ensureDefaultWorkflows } from "../../../lib/workflowCatalog";
+import {
+  ATTACHMENT_MARKER_CLOSE,
+  ATTACHMENT_MARKER_OPEN,
+  WORKFLOW_MARKER_CLOSE,
+  WORKFLOW_MARKER_OPEN,
+} from "./messageMarkers";
 
 // ---------------------------------------------------------------------------
 // Prompt-injection spotlighting helpers
@@ -394,7 +400,7 @@ export function buildMessages(
       const title = nonce
         ? spotlight(msg.workflow.title, nonce)
         : msg.workflow.title;
-      content = `[Workflow: ${title} (id: ${msg.workflow.id})]\n\n${content}`;
+      content = `${WORKFLOW_MARKER_OPEN}${title} (id: ${msg.workflow.id}${WORKFLOW_MARKER_CLOSE}${content}`;
     }
     if (msg.role === "user" && msg.files?.length) {
       const lines = msg.files.map((f) => {
@@ -405,7 +411,7 @@ export function buildMessages(
         const fname = spotlightFilename(f.filename, nonce);
         return slug ? `- ${slug}: ${fname}` : `- ${fname}`;
       });
-      content = `[The user attached the following document(s) to this message:\n${lines.join("\n")}]\n\n${content}`;
+      content = `${ATTACHMENT_MARKER_OPEN}${lines.join("\n")}${ATTACHMENT_MARKER_CLOSE}${content}`;
     }
     formatted.push({ role: msg.role, content });
   }

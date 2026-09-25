@@ -87,6 +87,30 @@ configured model:
 }
 ```
 
+## Assistant tiers
+
+The Assistant's modes (Auto, Fast, Deep; see `docs/assistant-modes.md`) are
+served from two model tiers. Declare them with a `tiers` object alongside
+`models`; each list is ordered, and the first model the requesting user can run
+serves the turn while later entries are its fallback chain:
+
+```json
+{
+  "models": [],
+  "tiers": {
+    "fast": ["openrouter/google/gemini-3-flash-preview", "openrouter/google/gemini-3.7-flash"],
+    "deep": ["openrouter/anthropic/claude-sonnet-5", "openrouter/google/gemini-3.1-pro-preview"]
+  }
+}
+```
+
+An entry can be any model id Mike accepts: a static catalog id, a configured
+model's `id`, or a router-prefixed id. A router-prefixed tier entry runs on the
+deployment's gateway key without each person adding it to their saved router
+models, because the operator has sanctioned it. Entries that do not resolve are
+skipped. A tier that is missing or empty uses the built-in list in
+`backend/src/lib/llm/models.ts` (`DEFAULT_TIER_MODELS`).
+
 ## Tool-call tolerance
 
 Self-hosted builds of Qwen, DeepSeek and GLM often describe tool calls in

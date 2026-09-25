@@ -1,17 +1,23 @@
 import {
     CLAUDE_LOW_MODELS,
+    DEFAULT_TIER_MODELS,
     GEMINI_LOW_MODELS,
+    isModeModelId,
+    modeForModelId,
     OPENAI_LOW_MODELS,
     providerForModel,
     normalizeReasoningLevelForModel,
     resolveModel,
     type UserApiKeys,
     REASONING_LEVELS,
+    type AssistantMode,
+    type ModelTier,
     type ReasoningLevel,
 } from "./llm";
 import {
     apiKeyForConfiguredModel,
     configuredModelRequiresApiKey,
+    configuredTierModels,
     getConfiguredModel,
 } from "./llm/registry";
 import {
@@ -80,6 +86,14 @@ export function hasApiKeyForModel(
     model: string,
     apiKeys: UserApiKeys,
 ): boolean {
+    if (isModeModelId(model)) {
+        const mode = modeForModelId(model);
+        // Auto borrows across tiers, so either one having a model is enough.
+        return (
+            servingModelsForMode(mode, mode === "deep" ? "deep" : "fast", apiKeys)
+                .models.length > 0
+        );
+    }
     const provider = providerForModel(model);
     if (provider === "ollama") return true;
     if (provider === "openai-compatible") {
@@ -91,6 +105,67 @@ export function hasApiKeyForModel(
         );
     }
     return !!apiKeys[provider]?.trim();
+}
+
+// ---------------------------------------------------------------------------
+// Assistant modes
+// ---------------------------------------------------------------------------
+
+/** The tier's ordered model list: the deployment's, else the built-in one. */
+export function tierModels(tier: ModelTier): readonly string[] {
+    return configuredTierModels(tier) ?? DEFAULT_TIER_MODELS[tier];
+}
+
+/** The tier's models this user can run right now, in fallback order. */
+export function availableTierModels(
+    tier: ModelTier,
+    apiKeys: UserApiKeys,
+): string[] {
+    return tierModels(tier).filter((model) => {
+        // A tier entry is operator configuration, but a typo or a retired id
+        // must cost one skipped entry, not every routed turn.
+        if (resolveModel(model, "") !== model || isModeModelId(model)) {
+            return false;
+        }
+        return hasApiKeyForModel(model, apiKeys);
+    });
+}
+
+/**
+ * The models that may serve a turn routed to `tier`, first choice first.
+ *
+ * Auto may borrow the other tier when this one has nothing the user can run:
+ * a slower or lighter answer beats no answer, and the turn's model_info event
+ * says which model actually replied. Fast and Deep never borrow, because the
+ * person asked for that tier by name.
+ */
+export function servingModelsForMode(
+    mode: AssistantMode,
+    tier: ModelTier,
+    apiKeys: UserApiKeys,
+): { tier: ModelTier; models: string[] } {
+    const primary = availableTierModels(tier, apiKeys);
+    if (primary.length > 0 || mode !== "auto") return { tier, models: primary };
+    const other: ModelTier = tier === "fast" ? "deep" : "fast";
+    return { tier: other, models: availableTierModels(other, apiKeys) };
+}
+
+/**
+ * The concrete model a chat's background work (title, memory curation) uses.
+ * Those jobs have no turn to route, so a mode chat uses its first serving
+ * model on the fast tier, or on the deep tier for a chat pinned to Deep.
+ * Returns the model unchanged when it is already concrete.
+ */
+export function concreteModelForChat(
+    model: string,
+    apiKeys: UserApiKeys,
+): string | null {
+    if (!isModeModelId(model)) return model;
+    const mode = modeForModelId(model);
+    return (
+        servingModelsForMode(mode, mode === "deep" ? "deep" : "fast", apiKeys)
+            .models[0] ?? null
+    );
 }
 
 type EffectiveChatModelResult =
@@ -120,6 +195,17 @@ export async function resolveEffectiveChatModel(args: {
     db: Db;
 }): Promise<EffectiveChatModelResult> {
     const requestedText = args.requested?.trim() ?? "";
+    if (requestedText && isModeModelId(requestedText)) {
+        if (!hasApiKeyForModel(requestedText, args.apiKeys)) {
+            return {
+                ok: false,
+                status: 422,
+                code: "missing_api_key",
+                detail: "No Assistant model is available with the current API keys. Add a key or ask an administrator to configure one.",
+            };
+        }
+        return { ok: true, model: requestedText, source: "request" };
+    }
     if (requestedText) {
         const requested = resolveModel(requestedText, "");
         if (!requested) {
@@ -165,6 +251,16 @@ export async function resolveEffectiveChatModel(args: {
         { value: args.lastSelectedModel, source: "last_selected" as const },
     ];
     for (const candidate of storedCandidates) {
+        if (isModeModelId(candidate.value)) {
+            if (hasApiKeyForModel(candidate.value, args.apiKeys)) {
+                return {
+                    ok: true,
+                    model: candidate.value,
+                    source: candidate.source,
+                };
+            }
+            continue;
+        }
         const resolved = resolveModel(candidate.value, "");
         if (!resolved) continue;
         const selected = await resolveRequestedModel(
@@ -198,11 +294,14 @@ export async function resolveEffectiveChatModel(args: {
 export function titleModelForChat(
     chatModel: string,
     titleOverride?: string | null,
+    /** Needed to pick a concrete model for a chat that is in a mode. */
+    apiKeys: UserApiKeys = {},
 ): string {
     const override = resolveModel(titleOverride, "");
     if (override) return override;
 
-    const resolvedChatModel = resolveModel(chatModel, "");
+    const concreteChatModel = concreteModelForChat(chatModel, apiKeys) ?? "";
+    const resolvedChatModel = resolveModel(concreteChatModel, "");
     if (!resolvedChatModel) {
         throw new Error("A supported chat model is required for title generation");
     }

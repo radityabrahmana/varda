@@ -704,6 +704,7 @@ export async function prepareTabularChat(
             titleModel: titleModelForChat(
                 selectedChatModel,
                 modelSettings.title_model,
+                modelSettings.api_keys,
             ),
             apiKeys: modelSettings.api_keys,
             apiMessages,

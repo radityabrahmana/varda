@@ -23,6 +23,12 @@ export const REASONING_LEVELS = [
 
 export type ReasoningLevel = (typeof REASONING_LEVELS)[number];
 
+/** The mode a person picks for a chat; see MODE_MODEL_IDS in models.ts. */
+export type AssistantMode = "auto" | "fast" | "deep";
+
+/** The two model tiers an Assistant mode is served from. */
+export type ModelTier = "fast" | "deep";
+
 export type OpenAIToolSchema = {
     type: "function";
     function: {

@@ -2,7 +2,11 @@ import { randomUUID } from "node:crypto";
 import { checkProjectAccess, ensureChatAccess, ensureReviewAccess, projectHasSharedAudience } from "../../lib/access";
 import { hasDirectContentGrants } from "../../lib/contentAccess";
 import { streamChatWithTools, type OpenAIToolSchema, type UserApiKeys } from "../../lib/llm";
-import { hasApiKeyForModel, resolveEffectiveChatModel } from "../../lib/modelSelection";
+import {
+  concreteModelForChat,
+  hasApiKeyForModel,
+  resolveEffectiveChatModel,
+} from "../../lib/modelSelection";
 import { resolveModel } from "../../lib/llm/models";
 import { can } from "../../lib/permissions";
 // The user module's facade is the one door to per-user model settings. A
@@ -1256,8 +1260,12 @@ export async function handleMemoryConsolidation(
     db,
   });
   if (!resolved.ok) throw new Error("Memory curator has no available model");
+  // A chat in an Assistant mode has no single model; curation is background
+  // work, so it runs on the mode's first serving model.
+  const curatorChatModel = concreteModelForChat(resolved.model, settings.api_keys);
+  if (!curatorChatModel) throw new Error("Memory curator has no available model");
   const model = memoryCuratorModelForChat({
-    chatModel: resolved.model,
+    chatModel: curatorChatModel,
     memoryCuratorModel: settings.memory_curator_model,
     environmentOverride: process.env.MEMORY_CURATOR_MODEL,
     apiKeys: settings.api_keys,

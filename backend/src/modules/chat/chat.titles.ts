@@ -80,7 +80,11 @@ export async function generateChatTitle(
             };
         }
         const title = await generateAssistantChatTitle({
-            model: titleModelForChat(resolution.model, settings.title_model),
+            model: titleModelForChat(
+                resolution.model,
+                settings.title_model,
+                settings.api_keys,
+            ),
             message: args.message,
             apiKeys: settings.api_keys,
         });

@@ -6,7 +6,9 @@ import {
     configuredModelRequiresApiKey,
     configuredModelIds,
     configuredModelSummaries,
+    configuredTierModels,
     getConfiguredModel,
+    isConfiguredTierModel,
     loadModelRegistry,
     resetModelRegistryCache,
     tolerateTextToolCalls,
@@ -55,7 +57,11 @@ describe("loadModelRegistry", () => {
     it("returns an empty registry when nothing is configured", () => {
         delete process.env.MIKE_MODEL_CONFIG_JSON;
         resetModelRegistryCache();
-        expect(loadModelRegistry()).toEqual({ models: [], committees: [] });
+        expect(loadModelRegistry()).toEqual({
+            models: [],
+            committees: [],
+            tiers: {},
+        });
     });
 
     it("rejects invalid JSON with an actionable message", () => {
@@ -258,5 +264,33 @@ describe("model resolution", () => {
         expect(resolveModel("retired-model", "gemini-3-flash-preview")).toBe(
             "gemini-3-flash-preview",
         );
+    });
+});
+
+describe("configured Assistant tiers", () => {
+    afterEach(() => {
+        delete process.env.MIKE_MODEL_CONFIG_JSON;
+        resetModelRegistryCache();
+    });
+
+    it("reads ordered, de-duplicated tier lists and drops malformed entries", () => {
+        process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({
+            tiers: {
+                fast: ["openrouter/google/gemini-3-flash", " ", 42, "openrouter/google/gemini-3-flash"],
+                deep: ["openrouter/anthropic/claude-sonnet-5", "has space"],
+                bogus: ["ignored"],
+            },
+        });
+        resetModelRegistryCache();
+        expect(configuredTierModels("fast")).toEqual(["openrouter/google/gemini-3-flash"]);
+        expect(configuredTierModels("deep")).toEqual(["openrouter/anthropic/claude-sonnet-5"]);
+        expect(isConfiguredTierModel("openrouter/anthropic/claude-sonnet-5")).toBe(true);
+        expect(isConfiguredTierModel("openrouter/openai/gpt-5.4")).toBe(false);
+    });
+
+    it("treats an empty tier list as undeclared", () => {
+        process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({ tiers: { fast: [] } });
+        resetModelRegistryCache();
+        expect(configuredTierModels("fast")).toBeNull();
     });
 });

@@ -1,5 +1,11 @@
 import { getConfiguredModel } from "./registry";
-import { REASONING_LEVELS, type Provider, type ReasoningLevel } from "./types";
+import {
+    REASONING_LEVELS,
+    type AssistantMode,
+    type ModelTier,
+    type Provider,
+    type ReasoningLevel,
+} from "./types";
 
 // ---------------------------------------------------------------------------
 // Canonical model IDs
@@ -51,6 +57,41 @@ export const GEMINI_LOW_MODELS = [
     "gemini-3.1-flash-lite",
 ] as const;
 export const OPENAI_LOW_MODELS = ["gpt-5.6-luna", "gpt-5.4-mini"] as const;
+
+// ---------------------------------------------------------------------------
+// Assistant modes
+// ---------------------------------------------------------------------------
+// A mode is a virtual chat model: the chat stores the mode the person chose,
+// and each turn is served by a concrete model from one of two tiers. Auto
+// picks the tier from the conversation (see router.ts); Fast and Deep pin it.
+// The ids are namespaced so they can never collide with a catalog id, and
+// resolveModel deliberately does NOT accept them: only the chat surfaces that
+// route a turn (modelSelection.ts, the chat engine) know what they mean.
+export const MODE_MODEL_IDS = ["varda/auto", "varda/fast", "varda/deep"] as const;
+export type ModeModelId = (typeof MODE_MODEL_IDS)[number];
+
+export function isModeModelId(model: string | null | undefined): model is ModeModelId {
+    return (MODE_MODEL_IDS as readonly string[]).includes(model ?? "");
+}
+
+export function modeForModelId(model: ModeModelId): AssistantMode {
+    return model.slice("varda/".length) as AssistantMode;
+}
+
+// Tier lists used when the deployment declares none (MIKE_MODEL_CONFIG_JSON
+// `tiers`, see registry.ts). Ordered: the first model the requesting user has
+// a key for serves the turn, and later entries are the fallback chain.
+export const DEFAULT_TIER_MODELS: Record<ModelTier, readonly string[]> = {
+    fast: ["gemini-3-flash-preview", "gemini-3.7-flash", "gpt-5.6-terra", "claude-haiku-4-5"],
+    deep: ["claude-sonnet-5", "gemini-3.1-pro-preview", "gpt-5.6-sol"],
+};
+
+// Reasoning effort each tier runs at. Modes hide the reasoning control, so
+// the tier decides it rather than a stale per-chat level.
+export const TIER_REASONING_LEVEL: Record<ModelTier, ReasoningLevel> = {
+    fast: "low",
+    deep: "high",
+};
 
 export const DEFAULT_MAIN_MODEL = "gemini-3-flash-preview";
 export const DEFAULT_TITLE_MODEL = "gemini-3.5-flash-lite";

@@ -13,7 +13,7 @@ before touching deployment, data or the Dash-specific modules.
 | Backend | Railway service `janusid-dd78a9ba` (Express, LibreOffice in the image), reached through the frontend's `/api` proxy |
 | Railway project | `beautiful-solace`, environment `production` (account: dashelectric.co) |
 | Database + auth + storage | Supabase project `tmnlpfpzoxmujwilhbpw` (Varda's own; bucket `mike`, S3 protocol, region ap-southeast-1) |
-| Models | OpenRouter via `OPENROUTER_API_KEY`; Assistant models come from `MIKE_MODEL_CONFIG_JSON` (Gemini 3 Flash / 2.5 Pro over OpenRouter); contract review uses `google/gemini-2.5-pro` → `gemini-2.5-flash` fallback (`CONTRACTS_AI_MODEL`, `CONTRACTS_AI_FALLBACK_MODEL`, `CONTRACTS_AI_MAX_TOKENS`) |
+| Models | OpenRouter via `OPENROUTER_API_KEY`; Assistant models come from `MIKE_MODEL_CONFIG_JSON` (Gemini 3 Flash / 2.5 Pro over OpenRouter), plus a `tiers` block for the Auto/Fast/Deep modes (Fast = `openrouter/google/gemini-3-flash-preview`, Deep = `openrouter/anthropic/claude-sonnet-5`; `docs/assistant-modes.md`); contract review uses `google/gemini-2.5-pro` → `gemini-2.5-flash` fallback (`CONTRACTS_AI_MODEL`, `CONTRACTS_AI_FALLBACK_MODEL`, `CONTRACTS_AI_MAX_TOKENS`) |
 | Legal research | Pasal.id (Indonesian legislation) via `PASAL_MCP_TOKEN` on the backend service; see `docs/pasal.md`. CourtListener (US) is not configured. |
 | Sign-up | `SIGNUP_ALLOWED_DOMAINS=dashelectric.co` + `auth.users` trigger; Google login enabled in Supabase |
 | Organization | "Dash Electric" (`55d6b8f4-…`); every `@dashelectric.co` account joins via an `auth.users` trigger |

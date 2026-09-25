@@ -1,6 +1,7 @@
 import type {
   CommitteeModel,
   ConfiguredModel,
+  ModelTier,
   Provider,
   UserApiKeys,
 } from "./types";
@@ -14,9 +15,15 @@ import type {
 type ModelRegistryConfig = {
   models: ConfiguredModel[];
   committees: CommitteeModel[];
+  /** Ordered model ids per Assistant tier; a missing tier uses the built-in list. */
+  tiers: Partial<Record<ModelTier, string[]>>;
 };
 
-const EMPTY_CONFIG: ModelRegistryConfig = { models: [], committees: [] };
+const EMPTY_CONFIG: ModelRegistryConfig = {
+  models: [],
+  committees: [],
+  tiers: {},
+};
 
 let cached: ModelRegistryConfig | undefined;
 
@@ -54,6 +61,7 @@ export function loadModelRegistry(): ModelRegistryConfig {
     committees: Array.isArray(record.committees)
       ? record.committees.filter(isCommitteeModel)
       : [],
+    tiers: parseTiers(record.tiers),
   };
   return cached;
 }
@@ -65,6 +73,27 @@ export function resetModelRegistryCache(): void {
 
 export function getConfiguredModel(id: string): ConfiguredModel | null {
   return loadModelRegistry().models.find((model) => model.id === id) ?? null;
+}
+
+/**
+ * The deployment's ordered model list for an Assistant tier, or null when it
+ * declares none. Ids are not checked against the catalog here: an entry may
+ * name a configured model declared later in the same JSON, and the caller
+ * skips any entry it cannot serve.
+ */
+export function configuredTierModels(tier: ModelTier): string[] | null {
+  return loadModelRegistry().tiers[tier] ?? null;
+}
+
+/**
+ * Whether the operator named this model in a tier. Tier entries are
+ * deployment configuration, so a router-prefixed entry runs on the
+ * deployment's gateway key without each person adding it to their saved
+ * router models (see resolveRequestedModel).
+ */
+export function isConfiguredTierModel(model: string): boolean {
+  const { tiers } = loadModelRegistry();
+  return Object.values(tiers).some((models) => models?.includes(model));
 }
 
 export function getCommitteeModel(
@@ -258,6 +287,27 @@ function parseConfiguredModel(value: unknown): ConfiguredModel | null {
       : {}),
     ...(maxTokensField ? { maxTokensField } : {}),
   };
+}
+
+const TIER_NAMES: readonly ModelTier[] = ["fast", "deep"];
+
+function parseTiers(value: unknown): Partial<Record<ModelTier, string[]>> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const record = value as Record<string, unknown>;
+  const tiers: Partial<Record<ModelTier, string[]>> = {};
+  for (const tier of TIER_NAMES) {
+    const entries = record[tier];
+    if (!Array.isArray(entries)) continue;
+    const ids = entries.flatMap((entry) =>
+      typeof entry === "string" && entry.trim() && !/\s/.test(entry.trim())
+        ? [entry.trim()]
+        : [],
+    );
+    // An empty list would silently disable the tier; treat it as undeclared
+    // so the built-in list still serves it.
+    if (ids.length > 0) tiers[tier] = [...new Set(ids)];
+  }
+  return tiers;
 }
 
 function isCommitteeModel(value: unknown): value is CommitteeModel {

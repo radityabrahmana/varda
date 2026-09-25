@@ -2,6 +2,7 @@ import { createServerSupabase } from "./supabase";
 import { UserFacingError } from "./userFacingError";
 import type { Db } from "./supabase";
 import { resolveModel } from "./llm/models";
+import { isConfiguredTierModel } from "./llm/registry";
 
 export type RouterSlug = "openrouter" | "vercel" | "opencode-go";
 
@@ -51,7 +52,7 @@ const ROUTER_LABELS: Record<RouterSlug, string> = {
  * authenticated user hand-craft a request that runs an arbitrary, arbitrarily
  * expensive gateway model on the operator's env key. This choke point
  * additionally requires a router model to be in the requesting user's saved
- * selection.
+ * selection, or in one of the deployment's Assistant tiers.
  *
  * `onOutsideSelection` picks what "not in the selection" means to the caller:
  * - "throw" (the request path): the user named this model in THIS request, so
@@ -71,6 +72,9 @@ export async function resolveRequestedModel(
     const resolved = resolveModel(requested, fallback);
     const router = routerForModelId(resolved);
     if (!router) return resolved;
+    // The operator put this model in an Assistant tier, which is the same
+    // sanction a person's saved selection gives: it is not hand-crafted.
+    if (isConfiguredTierModel(resolved)) return resolved;
     const selection = await getUserRouterModels(userId, router, db);
     if (selection.includes(resolved.slice(router.length + 1))) {
         return resolved;

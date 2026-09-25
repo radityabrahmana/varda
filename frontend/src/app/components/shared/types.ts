@@ -344,7 +344,8 @@ export type AssistantEvent =
   | (Omit<WireActivity<"case_opinions">, "document"> & {
       document?: PanelDocument;
     })
-  | (Omit<WireActivity<"content">, "isStreaming"> & { isStreaming?: boolean });
+  | (Omit<WireActivity<"content">, "isStreaming"> & { isStreaming?: boolean })
+  | WireActivity<"model_info">;
 
 export type CaseCitationQuote = {
   opinionId: number | null;
