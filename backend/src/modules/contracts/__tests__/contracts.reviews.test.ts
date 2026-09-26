@@ -61,7 +61,63 @@ describe("extractContract", () => {
     const r = await extractContract({ buffer: Buffer.from("not a zip"), filename: "c.docx" });
     expect(r.ok).toBe(false);
   });
+
+  it("extracts contract_text with Word's automatic clause numbers and contract_html from mammoth", async () => {
+    const r = await extractContract({ buffer: await minimalNumberedDocx(), filename: "pks.docx" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.contract_text).toBe("1. Liability\n1.1. Dash shall only be liable for claims.\nSigned by the Parties.");
+    expect(r.data.contract_html).toContain("Dash shall only be liable for claims.");
+    expect(r.data.filename).toBe("pks.docx");
+  });
 });
+
+const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+
+async function minimalNumberedDocx(): Promise<Buffer> {
+  const JSZip = (await import("jszip")).default;
+  const zip = new JSZip();
+  zip.file(
+    "[Content_Types].xml",
+    `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
+      `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
+      `<Default Extension="xml" ContentType="application/xml"/>` +
+      `<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
+      `<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>` +
+      `</Types>`,
+  );
+  zip.file(
+    "_rels/.rels",
+    `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+      `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
+      `</Relationships>`,
+  );
+  zip.file(
+    "word/_rels/document.xml.rels",
+    `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+      `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>` +
+      `</Relationships>`,
+  );
+  zip.file(
+    "word/numbering.xml",
+    `<?xml version="1.0" encoding="UTF-8"?><w:numbering ${W_NS}>` +
+      `<w:abstractNum w:abstractNumId="0">` +
+      `<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl>` +
+      `<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1.%2."/></w:lvl>` +
+      `</w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`,
+  );
+  const numbered = (text: string, ilvl: number) =>
+    `<w:p><w:pPr><w:numPr><w:ilvl w:val="${ilvl}"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t>${text}</w:t></w:r></w:p>`;
+  zip.file(
+    "word/document.xml",
+    `<?xml version="1.0" encoding="UTF-8"?><w:document ${W_NS}><w:body>` +
+      numbered("Liability", 0) +
+      numbered("Dash shall only be liable for claims.", 1) +
+      `<w:p><w:r><w:t>Signed by the Parties.</w:t></w:r></w:p>` +
+      `</w:body></w:document>`,
+  );
+  return zip.generateAsync({ type: "nodebuffer" });
+}
 
 describe("getReviewStatus", () => {
   it("maps a missing row to not_found", async () => {

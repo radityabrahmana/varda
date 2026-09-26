@@ -375,3 +375,136 @@ describe("extractTrackedChangeIds", () => {
         await expect(extractTrackedChangeIds(bytes)).resolves.toEqual([]);
     });
 });
+
+describe("tabs and line breaks", () => {
+    it("reads w:tab / w:br as characters and writes them back as elements through an edit", async () => {
+        const bytes = await makeDocx(
+            `<w:p><w:r><w:t>NAME / NAMA</w:t><w:tab/><w:t>: Robert Mulianto</w:t><w:br/><w:t>TITLE</w:t></w:r></w:p>`,
+        );
+        await expect(extractDocxBodyText(bytes)).resolves.toBe("NAME / NAMA\t: Robert Mulianto\nTITLE");
+
+        const result = await applyTrackedEdits(bytes, [
+            { find: "NAME / NAMA\t: Robert Mulianto", replace: "NAME / NAMA\t: Budi Santosa", context_before: "", context_after: "" },
+        ]);
+        expect(result.errors).toEqual([]);
+        expect(result.changes[0]).toMatchObject({ deletedText: "Robert Mulianto", insertedText: "Budi Santosa" });
+        const xml = await readDocumentXml(result.bytes);
+        expect(xml).toMatch(/<w:tab(\/>|><\/w:tab>)/);
+        expect(xml).toMatch(/<w:br(\/>|><\/w:br>)/);
+        expect(xml).not.toMatch(/<w:t[^>]*>[^<]*\t/);
+        await expect(extractDocxBodyText(result.bytes)).resolves.toBe("NAME / NAMA\t: Budi Santosa\nTITLE");
+    });
+
+    it("keeps a page break out of the text stream", async () => {
+        const bytes = await makeDocx(`<w:p><w:r><w:t>Before</w:t><w:br w:type="page"/><w:t>After</w:t></w:r></w:p>`);
+        await expect(extractDocxBodyText(bytes)).resolves.toBe("BeforeAfter");
+    });
+});
+
+describe("anchor fallbacks", () => {
+    const CLAUSE =
+        "Tanggung jawab Dash pada Konsumen untuk kehilangan dan/atau kerusakan Produk dalam hubungannya dengan Layanan Pengiriman akan sesuai dengan peraturan yang berlaku, dan dalam hal ketiadaan peraturan yang berlaku, maka tanggung jawab Dash akan terbatas Rp. 5,000,- per kilogram dengan total tanggung jawab per tahun sebesar Rp. 20,000,000,-;";
+
+    it("strips a leading clause label the model copied from the numbered extraction", async () => {
+        const bytes = await makeDocx(para("Intro.") + para(CLAUSE) + para("Outro."));
+        const result = await applyTrackedEdits(bytes, [
+            {
+                find: `5.2.1. ${CLAUSE}`,
+                replace: "5.2.1. Tanggung jawab Dash kepada Pelanggan terbatas pada Rp 1.000.000,- per kejadian.",
+                context_before: "",
+                context_after: "",
+            },
+        ]);
+        expect(result.errors).toEqual([]);
+        // collapseDiff keeps the shared "Tanggung jawab Dash " prefix; the label never enters the change.
+        expect(result.changes[0].deletedText).toContain("pada Konsumen untuk kehilangan");
+        expect(result.changes[0].deletedText).not.toContain("5.2.1.");
+        expect(result.changes[0].insertedText).not.toContain("5.2.1.");
+        await expect(extractDocxBodyText(result.bytes)).resolves.toContain(
+            "Tanggung jawab Dash kepada Pelanggan terbatas pada Rp 1.000.000,- per kejadian.",
+        );
+    });
+
+    it("does not strip a bare number that is part of the text when the verbatim needle matches", async () => {
+        const bytes = await makeDocx(para("Pembayaran dalam waktu 5 (lima) hari kerja."));
+        const result = await applyTrackedEdits(bytes, [
+            { find: "5 (lima) hari kerja", replace: "7 (tujuh) hari kalender", context_before: "", context_after: "" },
+        ]);
+        expect(result.errors).toEqual([]);
+        expect(result.changes[0]).toMatchObject({ deletedText: "5 (lima) hari kerja", insertedText: "7 (tujuh) hari kalender" });
+    });
+
+    it("tolerates a closing full stop the paragraph does not have, on both sides of the edit", async () => {
+        const bytes = await makeDocx(
+            para("In the event of any inconsistency between the Indonesian and English versions, the English version shall prevail"),
+        );
+        const result = await applyTrackedEdits(bytes, [
+            {
+                find: "In the event of any inconsistency between the Indonesian and English versions, the English version shall prevail.",
+                replace: "In the event of any inconsistency between the Indonesian and English versions, the Indonesian version shall prevail.",
+                context_before: "",
+                context_after: "",
+            },
+        ]);
+        expect(result.errors).toEqual([]);
+        expect(result.changes[0]).toMatchObject({ deletedText: "English", insertedText: "Indonesian" });
+        await expect(extractDocxBodyText(result.bytes)).resolves.toBe(
+            "In the event of any inconsistency between the Indonesian and English versions, the Indonesian version shall prevail",
+        );
+    });
+
+    it("matches when the model dropped or added whitespace around a tab", async () => {
+        const bytes = await makeDocx(`<w:p><w:r><w:t>Rp 5.000,-</w:t><w:tab/><w:t>per kilogram</w:t></w:r></w:p>`);
+        const result = await applyTrackedEdits(bytes, [
+            { find: "Rp 5.000,-per kilogram", replace: "Rp 1.000.000,-per kejadian", context_before: "", context_after: "" },
+        ]);
+        expect(result.errors).toEqual([]);
+        // The replacement is the model's text, so the tab it left out is gone too.
+        expect(result.changes[0].deletedText).toBe("5.000,-\tper kilogram");
+        await expect(extractDocxBodyText(result.bytes)).resolves.toBe("Rp 1.000.000,-per kejadian");
+    });
+
+    it("anchors a paraphrased quote on the paragraph span it mostly covers", async () => {
+        const sibling =
+            "Tanggung jawab Dash dalam kasus lainnya atau dalam kondisi lainnya akan dibatasi pada jumlah agregat maksimum sebesar Rp. 20,000,000,- per tahun;";
+        const bytes = await makeDocx(para("5.2. Batasan.") + para(CLAUSE) + para(sibling));
+        const result = await applyTrackedEdits(bytes, [
+            {
+                find: "Tanggung jawab Dash pada Konsumen untuk kehilangan dan/atau kerusakan Produk dalam hubungannya dengan Layanan Pengiriman akan sesuai dengan peraturan yang berlaku, dan dalam hal ketiadaan peraturan yang berlaku, maka tanggung jawab Dash akan terbatas Rp. 5,000,- per kilogram, subject to an aggregate maximum of Rp. 20,000,000,- per annum;",
+                replace: "Tanggung jawab Dash kepada Pelanggan akan terbatas pada Rp 1.000.000,- per kejadian.",
+                context_before: "",
+                context_after: "",
+            },
+        ]);
+        expect(result.errors).toEqual([]);
+        expect(result.changes[0].deletedText).toBe(
+            "pada Konsumen untuk kehilangan dan/atau kerusakan Produk dalam hubungannya dengan Layanan Pengiriman akan sesuai dengan peraturan yang berlaku, dan dalam hal ketiadaan peraturan yang berlaku, maka tanggung jawab Dash akan terbatas Rp. 5,000,- per kilogram dengan total tanggung jawab per tahun sebesar Rp. 20,000,000,-;",
+        );
+        const text = await extractDocxBodyText(result.bytes);
+        expect(text.split("\n")[1]).toBe("Tanggung jawab Dash kepada Pelanggan akan terbatas pada Rp 1.000.000,- per kejadian.");
+        expect(text).toContain(sibling);
+    });
+
+    it("refuses a fuzzy match that two paragraphs fit equally well, and a short or unrelated quote", async () => {
+        const a = "Dash tidak akan bertanggung jawab untuk kehilangan laba, kehilangan penjualan, kehilangan pasar, kehilangan nama baik atau reputasi;";
+        const b = "Dash tidak akan bertanggung jawab untuk kehilangan laba, kehilangan penjualan, kehilangan pasar, kehilangan nama baik atau goodwill;";
+        const twin = await makeDocx(para(a) + para(b));
+        const ambiguous = await applyTrackedEdits(twin, [
+            {
+                find: "Dash tidak akan bertanggung jawab untuk kehilangan laba, kehilangan penjualan, kehilangan pasar, kehilangan nama baik atau citra;",
+                replace: "x",
+                context_before: "",
+                context_after: "",
+            },
+        ]);
+        expect(ambiguous.errors).toEqual([{ index: 0, reason: expect.stringContaining("Ambiguous match") }]);
+
+        const single = await makeDocx(para(a));
+        const unrelated = await applyTrackedEdits(single, [
+            { find: "Customer shall pay all invoices within seven calendar days of the invoice date without set-off.", replace: "x", context_before: "", context_after: "" },
+            { find: "kehilangan laba tanpa batas", replace: "x", context_before: "", context_after: "" },
+        ]);
+        expect(unrelated.errors.map((e) => e.index)).toEqual([0, 1]);
+        expect(unrelated.errors[0].reason).toContain("Could not locate");
+    });
+});
