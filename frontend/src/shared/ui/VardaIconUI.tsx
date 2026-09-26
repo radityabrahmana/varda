@@ -1,67 +1,25 @@
 "use client";
 
-import React, { useId, useSyncExternalStore } from "react";
+import React, { useSyncExternalStore } from "react";
 
-const DEGREES = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
-const STOP_TRANSITION = "stop-color 220ms ease, stop-opacity 220ms ease";
+// The Varda mark: a four-point star whose upper-right quadrant is squared off.
+// Drawn in the 480px artboard it was designed on; the viewBox crops to it.
+export const VARDA_MARK_PATH =
+    "M 233 94 L 247 94 L 247 232 L 385 232 L 385 247 C 290 252 252 290 247 385 L 233 385 C 228 290 190 252 95 247 L 94 247 L 94 233 C 190 228 228 190 233 94 Z";
+export const VARDA_MARK_VIEWBOX = "94 94 292 292";
 
-type IconPalette = {
-    fillStops: [string, string, string, string];
-    fillOpacities: [number, number, number, number];
-    specularStops: [number, number, number, number];
-    borderStops: [string, string, string];
-    borderOpacities: [number, number, number];
-    innerStops: [string, string, string, string];
-    innerOpacities: [number, number, number, number];
-};
+export const VARDA_BRAND_COLOR = "#6000ff";
+// #6000ff is under 3:1 against the dark surfaces, so dark mode lightens it.
+const DARK_THEME_COLOR = "#8b5cff";
+const DONE_COLOR = "#4ade80";
+const ERROR_COLOR = "#f87171";
 
-const DEFAULT_PALETTE: IconPalette = {
-    fillStops: ["#0a0a0a", "#151515", "#080808", "#111111"],
-    fillOpacities: [0.9, 0.8, 0.85, 0.9],
-    specularStops: [0.5, 0.2, 0, 0],
-    borderStops: ["#ffffff", "#666666", "#ffffff"],
-    borderOpacities: [0.3, 0.1, 0.2],
-    innerStops: ["#ffffff", "#777777", "#222222", "#ffffff"],
-    innerOpacities: [0, 0.08, 0.05, 0],
-};
-
-const DONE_PALETTE: IconPalette = {
-    fillStops: ["#4ade80", "#86efac", "#22c55e", "#bbf7d0"],
-    fillOpacities: [0.95, 0.88, 0.9, 0.94],
-    specularStops: [0.68, 0.32, 0.03, 0],
-    borderStops: ["#f0fdf4", "#86efac", "#dcfce7"],
-    borderOpacities: [0.42, 0.24, 0.3],
-    innerStops: ["#ffffff", "#dcfce7", "#4ade80", "#ffffff"],
-    innerOpacities: [0, 0.16, 0.08, 0],
-};
-
-const ERROR_PALETTE: IconPalette = {
-    fillStops: ["#f87171", "#fca5a5", "#ef4444", "#fecaca"],
-    fillOpacities: [0.95, 0.88, 0.9, 0.94],
-    specularStops: [0.68, 0.32, 0.03, 0],
-    borderStops: ["#fef2f2", "#fca5a5", "#fee2e2"],
-    borderOpacities: [0.42, 0.24, 0.3],
-    innerStops: ["#ffffff", "#fee2e2", "#f87171", "#ffffff"],
-    innerOpacities: [0, 0.16, 0.08, 0],
-};
-
-// The dark mark, inverted for dark surfaces: white glass blades, with the
-// depth cues (inner shading, hairline border) darkened instead of lightened
-// so overlapping blades stay readable against a dark background.
-const WHITE_PALETTE: IconPalette = {
-    fillStops: ["#ffffff", "#eef2f7", "#f8fafc", "#ffffff"],
-    fillOpacities: [0.95, 0.85, 0.9, 0.95],
-    specularStops: [0.7, 0.3, 0, 0],
-    borderStops: ["#0f172a", "#475569", "#0f172a"],
-    borderOpacities: [0.28, 0.12, 0.18],
-    innerStops: ["#0f172a", "#334155", "#e2e8f0", "#0f172a"],
-    innerOpacities: [0, 0.1, 0.06, 0],
-};
+const FILL_TRANSITION = "fill 220ms ease";
 
 // The mark is inline SVG, so the neutral-palette dark remapping in
 // globals.css cannot reach it; it watches the document theme class itself.
 // One observer serves every icon on the page. Targets that never set the
-// class (the Word add-in) always read false and keep the dark mark.
+// class (the Word add-in) always read false and keep the brand color.
 const themeListeners = new Set<() => void>();
 let themeObserver: MutationObserver | null = null;
 
@@ -105,36 +63,6 @@ function useDarkTheme(): boolean {
     );
 }
 
-function Blades({ ids }: { ids: Record<string, string> }) {
-    return (
-        <g transform="translate(250, 250)">
-            {DEGREES.map((deg) => (
-                <g key={deg} transform={`rotate(${deg})`}>
-                    <use
-                        href={`#${ids.blade}`}
-                        fill={`url(#${ids.glassFill})`}
-                    />
-                    <use
-                        href={`#${ids.blade}`}
-                        fill={`url(#${ids.innerLight})`}
-                    />
-                    <use
-                        href={`#${ids.blade}`}
-                        fill={`url(#${ids.specular})`}
-                        clipPath={`url(#${ids.topClip})`}
-                    />
-                    <use
-                        href={`#${ids.blade}`}
-                        fill="none"
-                        stroke={`url(#${ids.glassBorder})`}
-                        strokeWidth="0.8"
-                    />
-                </g>
-            ))}
-        </g>
-    );
-}
-
 export function VardaIcon({
     spin = false,
     done = false,
@@ -151,23 +79,14 @@ export function VardaIcon({
     style?: React.CSSProperties;
 }) {
     void varda;
-    const id = useId().replace(/:/g, "");
     const darkTheme = useDarkTheme();
-    const palette = error
-        ? ERROR_PALETTE
+    const fill = error
+        ? ERROR_COLOR
         : done
-          ? DONE_PALETTE
+          ? DONE_COLOR
           : darkTheme
-            ? WHITE_PALETTE
-            : DEFAULT_PALETTE;
-    const m = {
-        glassFill: `${id}-m-glassFill`,
-        specular: `${id}-m-specular`,
-        glassBorder: `${id}-m-glassBorder`,
-        innerLight: `${id}-m-innerLight`,
-        topClip: `${id}-m-topClip`,
-        blade: `${id}-m-blade`,
-    };
+            ? DARK_THEME_COLOR
+            : VARDA_BRAND_COLOR;
 
     return (
         <span
@@ -179,174 +98,16 @@ export function VardaIcon({
         >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
-                viewBox="100 100 300 300"
+                viewBox={VARDA_MARK_VIEWBOX}
                 width={size}
                 height={size}
                 style={{ display: "block" }}
+                aria-hidden="true"
             >
-                <defs>
-                    <linearGradient
-                        id={m.glassFill}
-                        x1="0%"
-                        y1="0%"
-                        x2="100%"
-                        y2="100%"
-                    >
-                        <stop
-                            offset="0%"
-                            style={{
-                                stopColor: palette.fillStops[0],
-                                stopOpacity: palette.fillOpacities[0],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="30%"
-                            style={{
-                                stopColor: palette.fillStops[1],
-                                stopOpacity: palette.fillOpacities[1],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="70%"
-                            style={{
-                                stopColor: palette.fillStops[2],
-                                stopOpacity: palette.fillOpacities[2],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="100%"
-                            style={{
-                                stopColor: palette.fillStops[3],
-                                stopOpacity: palette.fillOpacities[3],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                    </linearGradient>
-                    <linearGradient
-                        id={m.specular}
-                        x1="0%"
-                        y1="0%"
-                        x2="0%"
-                        y2="100%"
-                    >
-                        <stop
-                            offset="0%"
-                            style={{
-                                stopColor: "#ffffff",
-                                stopOpacity: palette.specularStops[0],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="15%"
-                            style={{
-                                stopColor: "#ffffff",
-                                stopOpacity: palette.specularStops[1],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="35%"
-                            style={{
-                                stopColor: "#ffffff",
-                                stopOpacity: palette.specularStops[2],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="100%"
-                            style={{
-                                stopColor: "#ffffff",
-                                stopOpacity: palette.specularStops[3],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                    </linearGradient>
-                    <linearGradient
-                        id={m.glassBorder}
-                        x1="0%"
-                        y1="0%"
-                        x2="0%"
-                        y2="100%"
-                    >
-                        <stop
-                            offset="0%"
-                            style={{
-                                stopColor: palette.borderStops[0],
-                                stopOpacity: palette.borderOpacities[0],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="50%"
-                            style={{
-                                stopColor: palette.borderStops[1],
-                                stopOpacity: palette.borderOpacities[1],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="100%"
-                            style={{
-                                stopColor: palette.borderStops[2],
-                                stopOpacity: palette.borderOpacities[2],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                    </linearGradient>
-                    <linearGradient
-                        id={m.innerLight}
-                        x1="100%"
-                        y1="0%"
-                        x2="0%"
-                        y2="100%"
-                    >
-                        <stop
-                            offset="0%"
-                            style={{
-                                stopColor: palette.innerStops[0],
-                                stopOpacity: palette.innerOpacities[0],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="40%"
-                            style={{
-                                stopColor: palette.innerStops[1],
-                                stopOpacity: palette.innerOpacities[1],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="60%"
-                            style={{
-                                stopColor: palette.innerStops[2],
-                                stopOpacity: palette.innerOpacities[2],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                        <stop
-                            offset="100%"
-                            style={{
-                                stopColor: palette.innerStops[3],
-                                stopOpacity: palette.innerOpacities[3],
-                                transition: STOP_TRANSITION,
-                            }}
-                        />
-                    </linearGradient>
-                    <clipPath id={m.topClip}>
-                        <rect x="30" y="-25" width="130" height="23" />
-                    </clipPath>
-                    <path
-                        id={m.blade}
-                        d="M 40,0 A 4,4 0 0 1 43,-3 Q 95,-22 147,-3 A 4,4 0 0 1 150,0 A 4,4 0 0 1 147,3 Q 95,22 43,3 A 4,4 0 0 1 40,0 Z"
-                    />
-                </defs>
-
-                <Blades ids={m} />
+                <path
+                    d={VARDA_MARK_PATH}
+                    style={{ fill, transition: FILL_TRANSITION }}
+                />
             </svg>
         </span>
     );
