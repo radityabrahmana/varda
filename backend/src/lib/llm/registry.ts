@@ -30,11 +30,7 @@ let cached: ModelRegistryConfig | undefined;
 export function loadModelRegistry(): ModelRegistryConfig {
   if (cached) return cached;
 
-  // MIKE_MODEL_CONFIG_JSON is the pre-rename name; existing deployments may
-  // still set it until they move to VARDA_MODEL_CONFIG_JSON.
-  const raw = (
-    process.env.VARDA_MODEL_CONFIG_JSON ?? process.env.MIKE_MODEL_CONFIG_JSON
-  )?.trim();
+  const raw = process.env.VARDA_MODEL_CONFIG_JSON?.trim();
   if (!raw) {
     cached = EMPTY_CONFIG;
     return cached;
