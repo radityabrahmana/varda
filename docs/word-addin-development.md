@@ -1,17 +1,17 @@
 # Word add-in development and deployment
 
 This guide contains the detailed setup, deployment, testing, and troubleshooting
-reference for the [Mike Word add-in](../word-addin/README.md).
+reference for the [Varda Word add-in](../word-addin/README.md).
 
 ## Architecture
 
-The add-in uses the same backend-managed session and Mike API as the web app:
+The add-in uses the same backend-managed session and Varda API as the web app:
 
-- Password, Google, refresh, and logout operations go through the Mike backend.
-- Chat, workflows, uploads, profiles, and model discovery use the Mike API.
+- Password, Google, refresh, and logout operations go through the Varda backend.
+- Chat, workflows, uploads, profiles, and model discovery use the Varda API.
 - Word conversations use dedicated `word_*` tables and do not appear in the
   web assistant's normal chat history.
-- The task pane requires HTTPS, so local development proxies `/api` to Mike
+- The task pane requires HTTPS, so local development proxies `/api` to Varda
   through `https://localhost:3200`.
 
 Password and Google sign-in both produce the same HttpOnly cookie session.
@@ -47,10 +47,10 @@ steps manually:
 
    ```env
    REACT_APP_API_BASE_URL=https://localhost:3200/api
-   REACT_APP_WEB_APP_URL=https://app.mikeoss.com
+   REACT_APP_WEB_APP_URL=https://varda.dashelectric.co
    API_PROXY_TARGET=http://localhost:3001
    OBJECT_STORAGE_PROXY_TARGET=http://localhost:9000
-   OBJECT_STORAGE_BUCKET_NAME=mike
+   OBJECT_STORAGE_BUCKET_NAME=varda
    ```
 
    The browser-facing API URL remains on the HTTPS dev server; the proxy target
@@ -71,7 +71,7 @@ steps manually:
 
    Fully quit and reopen Word after installing it.
 
-4. Start the Mike backend:
+4. Start the Varda backend:
 
    ```bash
    (cd ../backend && npm run dev)
@@ -93,7 +93,7 @@ steps manually:
 
    `WORD_ADDIN_SIDELOAD` applies only to `npm start` and the setup helper.
 
-The task pane appears under **Home → Mike Legal AI → Mike**. `npm run
+The task pane appears under **Home → Varda Legal AI → Varda**. `npm run
 dev:server` is retained as an internal alias for the direct webpack command.
 
 ## Manual sideloading
@@ -105,7 +105,7 @@ mkdir -p ~/Library/Containers/com.microsoft.Word/Data/Documents/wef
 cp manifest.xml ~/Library/Containers/com.microsoft.Word/Data/Documents/wef/
 ```
 
-Restart Word, then choose **Insert → Add-ins → My Add-ins → Mike**.
+Restart Word, then choose **Insert → Add-ins → My Add-ins → Varda**.
 
 ### Word on the web
 
@@ -138,7 +138,7 @@ npm run build
 The build writes task-pane assets and a URL-rewritten manifest to `dist/`.
 The checked-in `manifest.xml` remains configured for localhost.
 
-The add-in host must reverse-proxy `https://word.example.com/api/*` to the Mike
+The add-in host must reverse-proxy `https://word.example.com/api/*` to the Varda
 backend while preserving `Cookie`, `Origin`, response `Set-Cookie` headers, and
 streaming bodies. Keeping `/api` on the task-pane origin avoids third-party
 cookie restrictions across Word desktop and Word on the web.
@@ -184,13 +184,13 @@ does not copy or delete conversations.
 
 Cloud history is associated with an identifier in the Word document's Office
 settings. That identifier travels with copied files, although server access is
-still scoped to the signed-in Mike account. A same-account **Save As** copy can
+still scoped to the signed-in Varda account. A same-account **Save As** copy can
 therefore initially share the source document's chat history.
 
 ## Automated tests
 
 The Playwright suite uses a mocked Office.js host and stubbed backend, so it
-does not require Word, Supabase, or a live Mike API:
+does not require Word, Supabase, or a live Varda API:
 
 ```bash
 cd word-addin
@@ -227,7 +227,7 @@ compare:
   counterparts, retaining narrow-pane adaptations.
 
 Files with no add-in-specific behavior are not vendored at all: they are
-aliased straight at the web source (`@mike/*` in `webpack.config.js` and
+aliased straight at the web source (`@varda/*` in `webpack.config.js` and
 `tsconfig.json`), so there is nothing to keep in sync.
 
 ## Troubleshooting
@@ -285,6 +285,6 @@ Confirm the Word host supports `WordApi 1.6`.
 
 ### Uploads or workflows fail
 
-Confirm the Mike API is reachable at the configured URL, the object-storage
+Confirm the Varda API is reachable at the configured URL, the object-storage
 bucket exists, and the database contains at least one workflow. Check backend
 logs for the underlying request error.

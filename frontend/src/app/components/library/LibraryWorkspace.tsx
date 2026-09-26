@@ -44,7 +44,7 @@ import {
     uploadLibraryDocument,
     uploadLibraryDocuments,
     type LibraryKind,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { Document } from "@/app/components/shared/types";
 import { useDebouncedValue } from "@/app/hooks/useDebouncedValue";
 

@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({
     useParams: () => ({ id: "chat-1" }),
     useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     getChat: (...args: unknown[]) => getChat(...args),
 }));
 vi.mock("@/app/contexts/ChatHistoryContext", () => ({

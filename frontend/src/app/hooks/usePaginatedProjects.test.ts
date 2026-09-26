@@ -7,10 +7,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Project } from "@/app/components/shared/types";
-import { listProjectIds, listProjectsPage } from "@/app/lib/mikeApi";
+import { listProjectIds, listProjectsPage } from "@/app/lib/vardaApi";
 import { usePaginatedProjects } from "./usePaginatedProjects";
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     listProjectsPage: vi.fn(),
     listProjectIds: vi.fn(),
 }));

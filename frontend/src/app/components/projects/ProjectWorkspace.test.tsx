@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { getProject } from "@/app/lib/mikeApi";
+import { getProject } from "@/app/lib/vardaApi";
 import {
     ProjectWorkspaceProvider,
     useProjectWorkspace,
@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({
     useSelectedLayoutSegments: () => [],
 }));
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     createTabularReview: vi.fn(),
     deleteProject: vi.fn(),
     getProject: vi.fn(() => new Promise(() => {})),

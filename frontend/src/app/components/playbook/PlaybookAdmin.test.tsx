@@ -13,8 +13,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/app/contexts/AuthContext", () => ({
     useAuth: () => ({ user: { id: "u1" }, isAuthenticated: true, authLoading: false }),
 }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     listPlaybookRules: mocks.listPlaybookRules,
     getMe: mocks.getMe,
     createPlaybookRule: mocks.createPlaybookRule,

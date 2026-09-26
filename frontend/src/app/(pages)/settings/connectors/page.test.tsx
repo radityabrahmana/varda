@@ -2,20 +2,20 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ConnectorsPage from "./page";
 import {
-    MikeApiError,
+    VardaApiError,
     type McpConnectorSummary,
     createMcpConnector,
     getMcpConnector,
     listMcpConnectors,
     refreshMcpConnectorTools,
     startMcpConnectorOAuth,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { needsMfaVerification } from "@/app/components/popups/MfaVerificationPopup";
 
 // Replace only the network functions the OAuth popup flow drives; keep the real
-// MikeApiError / isMfaRequiredError so `instanceof` checks in the page behave.
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@/app/lib/mikeApi")>();
+// VardaApiError / isMfaRequiredError so `instanceof` checks in the page behave.
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/app/lib/vardaApi")>();
     return {
         ...actual,
         listMcpConnectors: vi.fn(),
@@ -105,7 +105,7 @@ describe("ConnectorsPage OAuth poll cancellation", () => {
         vi.mocked(createMcpConnector).mockResolvedValue(makeSummary());
         // Forces the OAuth popup branch of handleCreate.
         vi.mocked(refreshMcpConnectorTools).mockRejectedValue(
-            new MikeApiError({
+            new VardaApiError({
                 message: "oauth required",
                 status: 409,
                 code: "oauth_required",
@@ -270,7 +270,7 @@ describe("ConnectorsPage operator setup guidance", () => {
         vi.mocked(createMcpConnector).mockResolvedValue(makeSummary());
         vi.mocked(getMcpConnector).mockResolvedValue(makeSummary());
         vi.mocked(refreshMcpConnectorTools).mockRejectedValue(
-            new MikeApiError({
+            new VardaApiError({
                 message: "oauth required",
                 status: 409,
                 code: "oauth_required",
@@ -279,7 +279,7 @@ describe("ConnectorsPage operator setup guidance", () => {
         const instructions =
             "Slack's MCP server needs a pre-configured OAuth client — add http://localhost:3000/api/user/mcp-connectors/oauth/callback as a redirect URL and set SLACK_MCP_OAUTH_CLIENT_ID.";
         vi.mocked(startMcpConnectorOAuth).mockRejectedValue(
-            new MikeApiError({
+            new VardaApiError({
                 message: instructions,
                 status: 400,
                 code: "connector_setup_required",

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import MikeLayout from "./layout";
+import VardaLayout from "./layout";
 
 const navigation = vi.hoisted(() => ({
     pathname: "/assistant/chat/chat-1",
@@ -45,9 +45,9 @@ beforeEach(() => {
 describe("mobile page header", () => {
     it("floats transparently over chat pages", () => {
         render(
-            <MikeLayout>
+            <VardaLayout>
                 <div>Chat</div>
-            </MikeLayout>,
+            </VardaLayout>,
         );
 
         const header = document.querySelector('[data-slot="mobile-header"]');
@@ -62,9 +62,9 @@ describe("mobile page header", () => {
     it("floats transparently over project chat workspaces", () => {
         navigation.pathname = "/projects/project-1/assistant/chat/chat-1";
         render(
-            <MikeLayout>
+            <VardaLayout>
                 <div>Project chat</div>
-            </MikeLayout>,
+            </VardaLayout>,
         );
 
         const header = document.querySelector('[data-slot="mobile-header"]');
@@ -78,9 +78,9 @@ describe("mobile page header", () => {
 
     it("uses the header-button styling for the sidebar toggle", () => {
         render(
-            <MikeLayout>
+            <VardaLayout>
                 <div>Page</div>
-            </MikeLayout>,
+            </VardaLayout>,
         );
 
         const toggle = screen.getByRole("button", { name: "Open sidebar" });
@@ -94,9 +94,9 @@ describe("mobile page header", () => {
     it("keeps the mobile header in normal flow on non-chat pages", () => {
         navigation.pathname = "/projects";
         render(
-            <MikeLayout>
+            <VardaLayout>
                 <div>Projects</div>
-            </MikeLayout>,
+            </VardaLayout>,
         );
 
         const header = document.querySelector('[data-slot="mobile-header"]');
@@ -119,9 +119,9 @@ describe("desktop sidebar persistence", () => {
         localStorage.setItem("sidebarOpen", "false");
 
         render(
-            <MikeLayout>
+            <VardaLayout>
                 <div>Page</div>
-            </MikeLayout>,
+            </VardaLayout>,
         );
 
         expect(sidebarState.isOpen).toBe(true);
@@ -131,17 +131,17 @@ describe("desktop sidebar persistence", () => {
     it("collapses on the first toggle click after a remount", async () => {
         localStorage.setItem("sidebarOpen", "false");
         const first = render(
-            <MikeLayout>
+            <VardaLayout>
                 <div>Page</div>
-            </MikeLayout>,
+            </VardaLayout>,
         );
         first.unmount();
 
         // A reload re-reads the key written by the previous session.
         render(
-            <MikeLayout>
+            <VardaLayout>
                 <div>Page</div>
-            </MikeLayout>,
+            </VardaLayout>,
         );
         expect(sidebarState.isOpen).toBe(true);
 

@@ -6,7 +6,7 @@ import {
     type AccessAssignmentRole,
     type OrgMember,
     type UserLookupResult,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { ProjectRole } from "@/app/lib/permissions";
 import {
     OrganizationAccessEditor,

@@ -36,7 +36,7 @@ Run the test workflow.
 
 async function archive(options: { duplicate?: boolean } = {}) {
   const zip = new JSZip();
-  const root = "mike-workflows-test/";
+  const root = "varda-workflows-test/";
   for (const [key, title] of [
     ["compare-documents", "Compare Documents"],
     ["extract-key-terms", "Extract Key Terms"],

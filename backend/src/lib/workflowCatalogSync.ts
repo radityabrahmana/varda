@@ -55,7 +55,7 @@ export async function syncWorkflowCatalog(
       for (const asset of workflow.assets) {
         if (storageEnabled) {
           const storagePath =
-            `mike-workflows/${workflow.workflow_key}/` +
+            `varda-workflows/${workflow.workflow_key}/` +
             `${asset.content_hash}/${asset.filename}`;
           const bytes = await readFile(asset.temporary_path);
           await uploadFile(

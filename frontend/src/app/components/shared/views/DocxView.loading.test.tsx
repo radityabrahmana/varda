@@ -5,7 +5,7 @@ import { authenticatedFetch } from "@/app/lib/authEvents";
 import { DocxView } from "./DocxView";
 
 vi.mock("@/app/lib/authEvents", () => ({ authenticatedFetch: vi.fn() }));
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     API_BASE: "/api",
     getDocumentFileUrl: () => "/api/document/file",
 }));

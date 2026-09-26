@@ -61,7 +61,7 @@ describe("SSO PKCE session", () => {
     const verifier = cookies.find((cookie) =>
       cookie.includes("-code-verifier="),
     );
-    expect(verifier).toContain("__Host-mike-session");
+    expect(verifier).toContain("__Host-varda-session");
     expect(verifier).toContain("HttpOnly");
     expect(verifier).toContain("Secure");
     expect(verifier).toContain("SameSite=Lax");

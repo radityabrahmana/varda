@@ -11,7 +11,7 @@ import Link from "next/link";
 import { CalendarDays, Download, Loader2 } from "lucide-react";
 import { DayPicker, type Matcher } from "@daypicker/react";
 import dayPickerStyles from "@daypicker/react/style.module.css";
-import { getAuditHistory, type AuditEvent } from "@/app/lib/mikeApi";
+import { getAuditHistory, type AuditEvent } from "@/app/lib/vardaApi";
 import { runUserExport } from "@/app/lib/asyncExport";
 import { PageHeader } from "@/app/components/shared/PageHeader";
 import {

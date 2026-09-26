@@ -8,14 +8,14 @@ import {
     renameTabularChat,
     streamTabularChat,
     type TRChat,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { TRChatPanel } from "./TRChatPanel";
 
 vi.mock("next/navigation", () => ({
     useRouter: () => ({ push: vi.fn() }),
 }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     getTabularChats: vi.fn(),
     getTabularChatMessages: vi.fn(),
     deleteTabularChat: vi.fn(),

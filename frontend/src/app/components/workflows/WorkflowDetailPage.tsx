@@ -29,7 +29,7 @@ import {
   shareWorkflow,
   updateWorkflow,
   type ProjectPeople,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { can, roleFromLoaded } from "@/app/lib/permissions";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { UseWorkflowModal } from "@/app/components/workflows/UseWorkflowModal";

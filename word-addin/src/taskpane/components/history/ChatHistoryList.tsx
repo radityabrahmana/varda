@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import type { Message } from "../../types";
 import { Spinner } from "../../../shared/ui/spinner";
-import { getCloudWordChat } from "../../api/mikeApi";
+import { getCloudWordChat } from "../../api/vardaApi";
 import { getLocalWordChat } from "../../lib/localWordChats";
 import type { WordChatStorageMode } from "../../lib/wordChatSettings";
 import {

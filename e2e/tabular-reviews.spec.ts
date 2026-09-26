@@ -6,7 +6,7 @@
  *   4. Add a document — upload via AddDocumentsModal, row appears in table
  *
  * Prerequisite: auth.setup.ts has already saved the session to e2e/.auth/user.json
- * Test user: e2e@mike.local / E2eTestPass1! (storageState inherited from playwright.config.ts)
+ * Test user: e2e@varda.local / E2eTestPass1! (storageState inherited from playwright.config.ts)
  */
 import { test, expect } from "@playwright/test";
 import { PDF_FIXTURE } from "./helpers";

@@ -95,7 +95,7 @@ test("uses a floating icon header with no logo, tabs, or visible sign-out button
   await addin.expectAuthedShell();
 
   await expect(page.getByRole("tab")).toHaveCount(0);
-  await expect(page.getByText("Mike", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Varda", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(0);
 
   const header = page.getByTestId("floating-header");
@@ -275,7 +275,7 @@ test("does not send without the required Word document context", async ({
   await page.getByRole("button", { name: "Send" }).click();
 
   await expect(page.getByRole("alert")).toHaveText(
-    "Mike couldn't read the current Word document. Please try again.",
+    "Varda couldn't read the current Word document. Please try again.",
   );
   await expect(composer).toHaveValue("Review this document");
   await expect(page.locator("[data-message-id]")).toHaveCount(0);
@@ -1024,14 +1024,14 @@ test("the composer swaps Send for a Stop control while streaming, then restores"
     .locator("[data-assistant-message-id]")
     .last()
     .getByTestId("assistant-response-status");
-  const mikeLoader = responseStatus.locator('svg[viewBox="100 100 300 300"]');
+  const vardaLoader = responseStatus.locator('svg[viewBox="100 100 300 300"]');
 
   // While streaming: the textarea remains available for composing the next
   // turn, while Send is replaced by a reachable Stop control.
   await expect(input).toBeEnabled();
   await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Send" })).toHaveCount(0);
-  await expect(mikeLoader).toBeVisible();
+  await expect(vardaLoader).toBeVisible();
   await expect(
     page
       .locator("[data-assistant-message-id]")
@@ -1046,7 +1046,7 @@ test("the composer swaps Send for a Stop control while streaming, then restores"
   ).toHaveCount(0);
   await expect
     .poll(() =>
-      mikeLoader.evaluate(
+      vardaLoader.evaluate(
         (icon) => (icon.parentElement as HTMLElement).style.animationPlayState,
       ),
     )
@@ -1058,7 +1058,7 @@ test("the composer swaps Send for a Stop control while streaming, then restores"
   await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
   await expect
     .poll(() =>
-      mikeLoader.evaluate(
+      vardaLoader.evaluate(
         (icon) => (icon.parentElement as HTMLElement).style.animationPlayState,
       ),
     )
@@ -2359,7 +2359,7 @@ test("does not broaden one edit across repeated exact passages", async ({
 
   await expect(
     page.getByText(
-      "Skipped — this text appears 2 times in the document. Tell Mike which one to change.",
+      "Skipped — this text appears 2 times in the document. Tell Varda which one to change.",
     ),
   ).toBeVisible();
   await expect(

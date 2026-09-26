@@ -104,7 +104,7 @@ const devLog = (...args: Parameters<typeof console.log>) => {
     if (isDev) console.log(...args);
 };
 
-export class MikeApiError extends Error {
+export class VardaApiError extends Error {
     status: number;
     code: string | null;
     requestId: string | null;
@@ -116,7 +116,7 @@ export class MikeApiError extends Error {
         requestId?: string | null;
     }) {
         super(args.message);
-        this.name = "MikeApiError";
+        this.name = "VardaApiError";
         this.status = args.status;
         this.code = args.code ?? null;
         this.requestId = args.requestId ?? null;
@@ -129,7 +129,7 @@ export const MALFORMED_ERROR_RESPONSE_MESSAGE =
 
 export function isMfaRequiredError(error: unknown) {
     return (
-        error instanceof MikeApiError &&
+        error instanceof VardaApiError &&
         error.status === 403 &&
         error.code === "mfa_verification_required"
     );
@@ -184,7 +184,7 @@ export async function uploadFilesWithSession<T>(args: {
             fetchStorage: (...fetchArgs) => fetch(...fetchArgs),
             shouldRetryControlRequest: createControlRequestRetryPolicy(
                 (error) =>
-                    error instanceof MikeApiError
+                    error instanceof VardaApiError
                         ? { status: error.status, code: error.code }
                         : null,
             ),
@@ -227,13 +227,13 @@ async function toApiError(response: Response, path: string) {
             typeof parsed.request_id === "string"
                 ? parsed.request_id
                 : response.headers.get("x-request-id");
-        devLog("[mike-api] non-ok response", {
+        devLog("[varda-api] non-ok response", {
             path,
             status: response.status,
             code: parsed.code,
             requestId,
         });
-        return new MikeApiError({
+        return new VardaApiError({
             status: response.status,
             code: typeof parsed.code === "string" ? parsed.code : null,
             requestId,
@@ -253,12 +253,12 @@ async function toApiError(response: Response, path: string) {
                       : MALFORMED_ERROR_RESPONSE_MESSAGE,
         });
     } catch {
-        devLog("[mike-api] non-ok non-json response", {
+        devLog("[varda-api] non-ok non-json response", {
             path,
             status: response.status,
             requestId: response.headers.get("x-request-id"),
         });
-        return new MikeApiError({
+        return new VardaApiError({
             status: response.status,
             requestId: response.headers.get("x-request-id"),
             message:
@@ -1033,9 +1033,9 @@ export async function setMcpToolEnabled(
  */
 export const CONNECTOR_SETUP_REQUIRED_CODE = "connector_setup_required";
 
-export function isConnectorSetupError(error: unknown): error is MikeApiError {
+export function isConnectorSetupError(error: unknown): error is VardaApiError {
     return (
-        error instanceof MikeApiError &&
+        error instanceof VardaApiError &&
         error.code === CONNECTOR_SETUP_REQUIRED_CODE
     );
 }

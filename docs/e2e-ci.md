@@ -33,7 +33,7 @@ job:
 7. runs `npx playwright test` and uploads the HTML report + traces as an artifact
    (`playwright-report`) on pass, fail, or timeout.
 
-`e2e/auth.setup.ts` bootstraps the shared test user (`e2e@mike.local`) against
+`e2e/auth.setup.ts` bootstraps the shared test user (`e2e@varda.local`) against
 the local Supabase admin API, so no login secret is needed — the credentials
 baked into that file are the single source of truth.
 
@@ -70,7 +70,7 @@ screenshots, and step-by-step traces of what the browser did.
 
 The suite is green **without** any secret — the LLM specs skip themselves via
 `test.skip(!process.env.ANTHROPIC_API_KEY, …)`, which keeps keyless runs (local,
-and fork PRs with no secret access) green and fast. Mike supports keyless local
+and fork PRs with no secret access) green and fast. Varda supports keyless local
 models through Ollama, but this CI job does not provision an Ollama server or
 pull a model. Without the Anthropic secret, the four live-response tests
 therefore have no model available in the CI environment and must skip. The
@@ -94,7 +94,7 @@ UI path:
 CLI equivalent (repo admin):
 
 ```bash
-gh secret set ANTHROPIC_API_KEY --repo Open-Legal-Products/mike
+gh secret set ANTHROPIC_API_KEY --repo radityabrahmana/varda
 # paste the key at the prompt (or pipe it: --body "$ANTHROPIC_API_KEY")
 ```
 

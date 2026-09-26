@@ -7,7 +7,7 @@ import {
   getLibraryFolderChildren,
   listProjectSummaries,
   type LibraryKind,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { Document, LibraryFolder, Project } from "./types";
 
 export type DirectoryTab = "files" | "templates" | "projects";

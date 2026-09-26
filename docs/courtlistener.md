@@ -1,6 +1,6 @@
 # CourtListener integration
 
-Mike can use CourtListener for US case-law citation verification, case fetching,
+Varda can use CourtListener for US case-law citation verification, case fetching,
 targeted opinion search, and case-law panels in assistant responses.
 
 ## Enable live access
@@ -17,7 +17,7 @@ Live requests remain subject to CourtListener's API limits.
 
 ## Optional bulk data
 
-Set `COURTLISTENER_BULK_DATA_ENABLED=true` to make Mike try local Supabase and
+Set `COURTLISTENER_BULK_DATA_ENABLED=true` to make Varda try local Supabase and
 R2 data before falling back to CourtListener's API:
 
 - Citation metadata is read from `public.courtlistener_citation_index`.
@@ -42,5 +42,5 @@ If bulk lookup does not return local results, confirm that:
 - both CourtListener index tables contain data; and
 - opinion JSON exists beneath `courtlistener/opinions/by-cluster/` in R2.
 
-Mike falls back to the live API when local bulk data is unavailable and a token
+Varda falls back to the live API when local bulk data is unavailable and a token
 is configured.

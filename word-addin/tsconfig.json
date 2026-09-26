@@ -6,7 +6,7 @@
     "moduleResolution": "bundler",
     "types": ["node", "office-js", "office-runtime", "react", "react-dom"],
     "paths": {
-      "@mike/contracts": ["../packages/contracts/index.d.ts"],
+      "@varda/contracts": ["../packages/contracts/index.d.ts"],
       "react": [
         "./node_modules/@types/react/index.d.ts"
       ],
@@ -28,64 +28,64 @@
       "@radix-ui/react-dropdown-menu": [
         "./node_modules/@radix-ui/react-dropdown-menu"
       ],
-      "@mike/edit-card-ui": [
+      "@varda/edit-card-ui": [
         "../frontend/src/shared/ui/EditCardUI.tsx"
       ],
-      "@mike/edit-cards-section-ui": [
+      "@varda/edit-cards-section-ui": [
         "../frontend/src/shared/ui/EditCardsSectionUI.tsx"
       ],
-      "@mike/pre-response-wrapper-ui": [
+      "@varda/pre-response-wrapper-ui": [
         "../frontend/src/shared/ui/PreResponseWrapperUI.tsx"
       ],
-      "@mike/document-event-blocks-ui": [
+      "@varda/document-event-blocks-ui": [
         "../frontend/src/shared/ui/DocumentEventBlocksUI.tsx"
       ],
-      "@mike/glass-card-ui": [
+      "@varda/glass-card-ui": [
         "../frontend/src/shared/ui/GlassCardUI.tsx"
       ],
-      "@mike/modal-ui": [
+      "@varda/modal-ui": [
         "../frontend/src/shared/ui/ModalUI.tsx"
       ],
-      "@mike/header-buttons-ui": [
+      "@varda/header-buttons-ui": [
         "../frontend/src/shared/ui/HeaderButtonsUI.tsx"
       ],
-      "@mike/pill-button-ui": [
+      "@varda/pill-button-ui": [
         "../frontend/src/shared/ui/PillButtonUI.tsx"
       ],
-      "@mike/tab-pill-button-ui": [
+      "@varda/tab-pill-button-ui": [
         "../frontend/src/shared/ui/TabPillButtonUI.tsx"
       ],
-      "@mike/toggle-switch-ui": [
+      "@varda/toggle-switch-ui": [
         "../frontend/src/shared/ui/ToggleSwitchUI.tsx"
       ],
-      "@mike/dropdown-ui": [
+      "@varda/dropdown-ui": [
         "../frontend/src/shared/ui/DropdownUI.tsx"
       ],
-      "@mike/citation-pill-ui": [
+      "@varda/citation-pill-ui": [
         "../frontend/src/shared/ui/CitationPillUI.tsx"
       ],
-      "@mike/model-toggle-ui": [
+      "@varda/model-toggle-ui": [
         "../frontend/src/shared/ui/ModelToggleUI.tsx"
       ],
-      "@mike/mike-icon-ui": [
-        "../frontend/src/shared/ui/MikeIconUI.tsx"
+      "@varda/brand-icon-ui": [
+        "../frontend/src/shared/ui/VardaIconUI.tsx"
       ],
-      "@mike/google-icon-ui": [
+      "@varda/google-icon-ui": [
         "../frontend/src/shared/ui/GoogleIconUI.tsx"
       ],
-      "@mike/auth-styles-ui": [
+      "@varda/auth-styles-ui": [
         "../frontend/src/shared/ui/AuthStylesUI.ts"
       ],
-      "@mike/auth-divider-ui": [
+      "@varda/auth-divider-ui": [
         "../frontend/src/shared/ui/AuthDividerUI.tsx"
       ],
-      "@mike/workflow-slash-command-ui": [
+      "@varda/workflow-slash-command-ui": [
         "../frontend/src/shared/ui/WorkflowSlashCommandUI.tsx"
       ],
-      "@mike/upload-session-client": [
+      "@varda/upload-session-client": [
         "../frontend/src/shared/api/uploadSessionClient.ts"
       ],
-      "@mike/secure-uuid": [
+      "@varda/secure-uuid": [
         "../frontend/src/shared/lib/secureUuid.ts"
       ]
     },

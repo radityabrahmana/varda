@@ -5,11 +5,11 @@ import { syncWorkflowCatalog } from "../lib/workflowCatalogSync";
 async function main() {
   const result = await syncWorkflowCatalog(createServerSupabase());
   console.log(
-    `Synced ${result.workflows} Mike workflows and ${result.assets} assets from ${result.sourceCommit}`,
+    `Synced ${result.workflows} Varda workflows and ${result.assets} assets from ${result.sourceCommit}`,
   );
 }
 
 void main().catch((error) => {
-  console.error("Mike workflow sync failed", error);
+  console.error("Varda workflow sync failed", error);
   process.exit(1);
 });

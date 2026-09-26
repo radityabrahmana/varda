@@ -168,7 +168,7 @@ describe("resolveRequestedModel outside-selection behaviour", () => {
     });
 
     it("accepts a model the operator placed in an Assistant tier", async () => {
-        process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({
+        process.env.VARDA_MODEL_CONFIG_JSON = JSON.stringify({
             tiers: { deep: ["openrouter/anthropic/claude-sonnet-5"] },
         });
         resetModelRegistryCache();
@@ -185,7 +185,7 @@ describe("resolveRequestedModel outside-selection behaviour", () => {
             ).resolves.toBe("openrouter/anthropic/claude-sonnet-5");
             expect(tierDb.from).not.toHaveBeenCalled();
         } finally {
-            delete process.env.MIKE_MODEL_CONFIG_JSON;
+            delete process.env.VARDA_MODEL_CONFIG_JSON;
             resetModelRegistryCache();
         }
     });

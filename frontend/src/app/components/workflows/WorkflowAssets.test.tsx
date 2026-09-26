@@ -10,8 +10,8 @@ const { copyDocumentsToWorkflowAssets, listWorkflowAssets } = vi.hoisted(() => (
     listWorkflowAssets: vi.fn(),
 }));
 
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@/app/lib/mikeApi")>();
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/app/lib/vardaApi")>();
     return {
         ...actual,
         copyDocumentsToWorkflowAssets,

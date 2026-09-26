@@ -20,7 +20,7 @@ const CATALOG_ROW: WorkflowCatalogRow = {
   columns_config: null,
   contributors: [
     {
-      name: "Mike",
+      name: "Varda",
       organisation: null,
       role: null,
       linkedin: null,

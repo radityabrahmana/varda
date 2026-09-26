@@ -1,4 +1,4 @@
-# MikeOSS — full local stack, one `docker compose up`. No external accounts.
+# Varda — full local stack, one `docker compose up`. No external accounts.
 # Supabase is embedded (db + auth + rest + gateway); storage is RustFS.
 # The only thing you must supply is one model API key in backend/.env.
 #
@@ -70,8 +70,8 @@ services:
       GOTRUE_SMTP_PORT: "1025"
       # No SMTP_USER/PASS: Mailpit needs no auth, and GoTrue refuses to send
       # credentials over a plaintext (non-TLS) connection ("unencrypted connection").
-      GOTRUE_SMTP_ADMIN_EMAIL: admin@mike.local
-      GOTRUE_SMTP_SENDER_NAME: Mike
+      GOTRUE_SMTP_ADMIN_EMAIL: admin@varda.local
+      GOTRUE_SMTP_SENDER_NAME: Varda
       # Confirmation/recovery links resolve to the gateway, which strips /auth/v1.
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
@@ -241,8 +241,8 @@ services:
     entrypoint: /bin/sh
     command: >
       -c "until aws --endpoint-url http://storage:9000 s3 ls; do echo 'waiting for storage'; sleep 2; done;
-          aws --endpoint-url http://storage:9000 s3 mb s3://mike || true;
-          aws --endpoint-url http://storage:9000 s3api put-bucket-cors --bucket mike --cors-configuration file:///storage-cors.json"
+          aws --endpoint-url http://storage:9000 s3 mb s3://varda || true;
+          aws --endpoint-url http://storage:9000 s3api put-bucket-cors --bucket varda --cors-configuration file:///storage-cors.json"
     restart: "no"
 
   # --- Redis: backs the BullMQ job queues (conversion, extraction, fast
@@ -267,12 +267,12 @@ services:
       retries: 20
     restart: unless-stopped
 
-  # --- One-shot: download, validate, and transactionally import mike-workflows.
+  # --- One-shot: download, validate, and transactionally import varda-workflows.
   workflow-sync:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    image: mike-backend:local
+    image: varda-backend:local
     env_file:
       - path: ./backend/.env
         required: false
@@ -284,7 +284,7 @@ services:
       - R2_ENDPOINT_URL=http://storage:9000
       - R2_ACCESS_KEY_ID=rustfsadmin
       - R2_SECRET_ACCESS_KEY=rustfsadmin
-      - R2_BUCKET_NAME=mike
+      - R2_BUCKET_NAME=varda
     command: ["npm", "run", "sync:workflows"]
     depends_on:
       db-init:
@@ -298,7 +298,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    image: mike-backend:local
+    image: varda-backend:local
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     # ponytail: both optional — local dev keeps secrets in backend/.env, hosted
@@ -325,7 +325,7 @@ services:
       - R2_PUBLIC_ENDPOINT_URL=${R2_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
       - R2_ACCESS_KEY_ID=rustfsadmin
       - R2_SECRET_ACCESS_KEY=rustfsadmin
-      - R2_BUCKET_NAME=mike
+      - R2_BUCKET_NAME=varda
       # Local Ollama running on the host. Override OLLAMA_MODEL to change the tag.
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       # Durable job queues: fresh compose installs run BullMQ-on-Redis for
@@ -377,7 +377,7 @@ services:
   #     - R2_ENDPOINT_URL=http://storage:9000
   #     - R2_ACCESS_KEY_ID=rustfsadmin
   #     - R2_SECRET_ACCESS_KEY=rustfsadmin
-  #     - R2_BUCKET_NAME=mike
+  #     - R2_BUCKET_NAME=varda
   #     - REDIS_URL=${REDIS_URL:-redis://redis:6379}
   #     - ASYNC_DOCUMENT_CONVERSION=${ASYNC_DOCUMENT_CONVERSION:-true}
   #     - ASYNC_TABULAR_EXTRACTION=${ASYNC_TABULAR_EXTRACTION:-true}

@@ -22,7 +22,7 @@ import { GlassIconButtonUI } from "@/shared/ui/GlassIconButtonUI";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { WarningPopup } from "@/app/components/popups/WarningPopup";
 import type { Document } from "@/app/components/shared/types";
-import type { DocumentVersion } from "@/app/lib/mikeApi";
+import type { DocumentVersion } from "@/app/lib/vardaApi";
 import { cn } from "@/app/lib/utils";
 import { resolveDocumentViewType } from "@/app/lib/documentViewType";
 import {

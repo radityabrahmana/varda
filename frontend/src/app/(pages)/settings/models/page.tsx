@@ -13,7 +13,7 @@ import {
   LiquidDropdownItem,
 } from "@/app/components/ui/liquid-dropdown";
 import { useUserProfile } from "@/app/contexts/UserProfileContext";
-import { type ApiKeyState } from "@/app/lib/mikeApi";
+import { type ApiKeyState } from "@/app/lib/vardaApi";
 import {
   MODELS,
   SETTINGS_MODELS,

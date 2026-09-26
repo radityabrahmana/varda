@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
     getConfiguredModels,
     type ConfiguredModelOption,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 
 // Deployment configuration is shared by every picker. Keep one request and
 // notify all mounted consumers when it resolves, just like Ollama discovery.

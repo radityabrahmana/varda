@@ -8,7 +8,7 @@ import {
     getUserExportStatus,
     startUserExport,
     type UserExportType,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 
 // Tests drive the loop with fake-fast polling; 2s is the interactive rate.
 const POLL_MS = process.env.NODE_ENV === "test" ? 10 : 2000;

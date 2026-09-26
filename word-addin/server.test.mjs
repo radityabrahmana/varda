@@ -29,10 +29,10 @@ function close(server) {
 }
 
 before(async () => {
-  staticRoot = await mkdtemp(path.join(os.tmpdir(), "mike-word-host-"));
+  staticRoot = await mkdtemp(path.join(os.tmpdir(), "varda-word-host-"));
   await writeFile(
     path.join(staticRoot, "taskpane.html"),
-    "<!doctype html><title>Mike Word</title>",
+    "<!doctype html><title>Varda Word</title>",
   );
 
   backend = http.createServer((req, res) => {
@@ -45,8 +45,8 @@ before(async () => {
     res.writeHead(200, {
       "content-type": "text/event-stream",
       "set-cookie": [
-        "__Host-mike-session=one; Path=/; Secure; HttpOnly",
-        "__Host-mike-session.1=two; Path=/; Secure; HttpOnly",
+        "__Host-varda-session=one; Path=/; Secure; HttpOnly",
+        "__Host-varda-session.1=two; Path=/; Secure; HttpOnly",
       ],
     });
     res.write("data: first\n\n");
@@ -71,13 +71,13 @@ test("serves health and the task pane", async () => {
 
   const taskpane = await fetch(`${addinOrigin}/`);
   assert.equal(taskpane.status, 200);
-  assert.match(await taskpane.text(), /Mike Word/);
+  assert.match(await taskpane.text(), /Varda Word/);
 });
 
 test("streams the API while preserving auth headers and cookies", async () => {
   const response = await fetch(`${addinOrigin}/api/chat?mode=word`, {
     headers: {
-      cookie: "__Host-mike-session=incoming",
+      cookie: "__Host-varda-session=incoming",
       origin: "https://word.example.test",
     },
   });
@@ -85,13 +85,13 @@ test("streams the API while preserving auth headers and cookies", async () => {
   assert.equal(await response.text(), "data: first\n\ndata: second\n\n");
   assert.deepEqual(observedRequest, {
     url: "/chat?mode=word",
-    cookie: "__Host-mike-session=incoming",
+    cookie: "__Host-varda-session=incoming",
     origin: "https://word.example.test",
     forwardedHost: new URL(addinOrigin).host,
   });
   assert.deepEqual(response.headers.getSetCookie(), [
-    "__Host-mike-session=one; Path=/; Secure; HttpOnly",
-    "__Host-mike-session.1=two; Path=/; Secure; HttpOnly",
+    "__Host-varda-session=one; Path=/; Secure; HttpOnly",
+    "__Host-varda-session.1=two; Path=/; Secure; HttpOnly",
   ]);
 });
 

@@ -7,7 +7,7 @@
  * be routed to Word. Legacy <cite> markers remain readable in old histories.
  */
 
-export const CITATION_HREF_PREFIX = "#mike-cite:";
+export const CITATION_HREF_PREFIX = "#varda-cite:";
 
 const CITE_OPEN = "<cite>";
 const CITE_CLOSE = "</cite>";

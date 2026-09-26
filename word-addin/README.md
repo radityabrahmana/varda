@@ -1,9 +1,9 @@
-# Mike Word Add-in
+# Varda Word Add-in
 
-The Mike Word add-in brings document-aware chat, workflows, quick actions, and
+The Varda Word add-in brings document-aware chat, workflows, quick actions, and
 tracked-edit review into a Word task pane.
 
-It uses the same backend-managed HttpOnly cookie session, Mike API, model
+It uses the same backend-managed HttpOnly cookie session, Varda API, model
 providers, and workflow library as the web app. Word conversations are stored
 separately from the web assistant's chat history.
 
@@ -11,9 +11,9 @@ separately from the web assistant's chat history.
 
 - Node.js 22 or newer
 - Microsoft Word desktop or Word on the web
-- A running Mike backend and Supabase environment configured according to the
+- A running Varda backend and Supabase environment configured according to the
   [local development guide](../docs/local-development.md)
-- A Mike account
+- A Varda account
 - A model-provider API key or an Ollama model reachable by the backend
 
 ## Quick start
@@ -25,7 +25,7 @@ bash word-addin/scripts/dev.sh
 ```
 
 The script installs dependencies, creates `word-addin/.env`, installs the local
-HTTPS certificate, verifies Mike, and launches the add-in in Word
+HTTPS certificate, verifies Varda, and launches the add-in in Word
 unless automatic sideloading is disabled. It is safe to run repeatedly.
 
 The first certificate installation may request your keychain or administrator
@@ -57,12 +57,12 @@ Use `npm start` when you explicitly want automatic sideloading. The
 ## What it supports
 
 - Chat about the open Word document with streamed responses
-- Attach Mike library documents and assistant workflows
+- Attach Varda library documents and assistant workflows
 - Choose from the same supported model providers as the web app
 - Apply suggested revisions as tracked changes, then accept or reject them
 - Run configurable quick actions such as Proofread and Compare documents
 - Create and edit assistant workflows
-- Store chat history in Mike Cloud or on the current device only
+- Store chat history in Varda Cloud or on the current device only
 
 The add-in requires `WordApi 1.6` for tracked-change review.
 
@@ -89,7 +89,7 @@ sideloading fails:
 
 - **Word desktop on macOS:** copy `manifest.xml` into
   `~/Library/Containers/com.microsoft.Word/Data/Documents/wef/`, restart Word,
-  then open **Insert → Add-ins → My Add-ins → Mike**.
+  then open **Insert → Add-ins → My Add-ins → Varda**.
 - **Word on the web:** open **Insert → Add-ins → Upload My Add-in** and select
   `manifest.xml`. Browser local-network protections can block localhost panes;
   use the included `e2e-live/manual-session.mjs` launcher when needed.

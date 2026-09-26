@@ -63,7 +63,7 @@ import {
     uploadProjectDocuments,
     uploadStandaloneDocuments,
     type UploadProgress,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import {
     formatUnsupportedDocumentWarning,
     partitionSupportedDocumentFiles,

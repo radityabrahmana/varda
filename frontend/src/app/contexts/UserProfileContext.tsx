@@ -30,7 +30,7 @@ import {
     updateTabularChatReasoningLevel,
     updateLastSelectedChatSettings,
     parseTabularChatSelectionKey,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { Message } from "@/app/components/shared/types";
 import { applyDarkMode } from "@/app/lib/theme";
 import { publishTabularChatSettingsUpdate } from "@/app/lib/tabularChatSettingsEvents";

@@ -1,20 +1,20 @@
-export type { SourceDocumentType } from "@mike/contracts";
-import type { SourceDocumentType } from "@mike/contracts";
+export type { SourceDocumentType } from "@varda/contracts";
+import type { SourceDocumentType } from "@varda/contracts";
 
-export type { SourceDocumentMetadata } from "@mike/contracts";
-import type { SourceDocumentMetadata } from "@mike/contracts";
+export type { SourceDocumentMetadata } from "@varda/contracts";
+import type { SourceDocumentMetadata } from "@varda/contracts";
 
-export type { SourceDocumentAction } from "@mike/contracts";
-import type { SourceDocumentAction } from "@mike/contracts";
+export type { SourceDocumentAction } from "@varda/contracts";
+import type { SourceDocumentAction } from "@varda/contracts";
 
-export type { SourceDocumentQuote } from "@mike/contracts";
-import type { SourceDocumentQuote } from "@mike/contracts";
+export type { SourceDocumentQuote } from "@varda/contracts";
+import type { SourceDocumentQuote } from "@varda/contracts";
 
-export type { SourceSubdocument } from "@mike/contracts";
-import type { SourceSubdocument } from "@mike/contracts";
+export type { SourceSubdocument } from "@varda/contracts";
+import type { SourceSubdocument } from "@varda/contracts";
 
-export type { SourceDocument } from "@mike/contracts";
-import type { SourceDocument } from "@mike/contracts";
+export type { SourceDocument } from "@varda/contracts";
+import type { SourceDocument } from "@varda/contracts";
 
 type UnknownRecord = Record<string, unknown>;
 

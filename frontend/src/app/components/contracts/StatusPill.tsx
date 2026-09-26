@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, Check, ChevronDown, Clock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
-import { patchContract, type ContractPatch } from "@/app/lib/mikeApi";
+import { patchContract, type ContractPatch } from "@/app/lib/vardaApi";
 import { cn } from "@/app/lib/utils";
 import { differenceInDays } from "./reviewHelpers";
 import { useReviewAccess } from "./reviewAccess";

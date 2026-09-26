@@ -11,7 +11,7 @@ import {
     listSystemWorkflows,
     listWorkflowIds,
     listWorkflowsPage,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { appendUniqueRows, paginationError, splitOverfetchedPage } from "@/app/lib/paginatedRows";
 
 export type WorkflowSortKey = "name" | "type" | "created";

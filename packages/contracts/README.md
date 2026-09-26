@@ -1,6 +1,6 @@
 # Shared contracts
 
-`@mike/contracts` contains authored TypeScript declarations shared by the API,
+`@varda/contracts` contains authored TypeScript declarations shared by the API,
 web app, and Word add-in. It has no runtime dependencies or build output.
 Each application's TypeScript paths resolve the same `index.d.ts`.
 

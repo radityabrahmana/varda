@@ -7,7 +7,7 @@ const { listWorkflowsMock } = vi.hoisted(() => ({
     listWorkflowsMock: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     listWorkflows: listWorkflowsMock,
 }));
 

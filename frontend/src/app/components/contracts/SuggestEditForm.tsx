@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { postContractSuggestion } from "@/app/lib/mikeApi";
+import { postContractSuggestion } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { replacementFor, type SuggestMode } from "./docxSelection";

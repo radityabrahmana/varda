@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SETTINGS_MODELS } from "../components/assistant/ModelToggle";
-import type { ApiKeyState } from "./mikeApi";
+import type { ApiKeyState } from "./vardaApi";
 import {
     getModelProvider,
     isModelAvailable,

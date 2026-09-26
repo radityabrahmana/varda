@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MikeApiError } from "./mikeApi";
+import { VardaApiError } from "./vardaApi";
 import {
     errorCode,
     knownErrorCodeMessage,
@@ -8,7 +8,7 @@ import {
 
 describe("userFacingApiError", () => {
     it("allows intentional client-error details", () => {
-        const error = new MikeApiError({
+        const error = new VardaApiError({
             status: 400,
             message: "The filename is required.",
         });
@@ -21,7 +21,7 @@ describe("userFacingApiError", () => {
     it("does not expose server or plain exception messages", () => {
         expect(
             userFacingApiError(
-                new MikeApiError({
+                new VardaApiError({
                     status: 500,
                     message: "relation user_profiles does not exist",
                 }),
@@ -39,13 +39,13 @@ describe("userFacingApiError", () => {
     it("rejects non-client statuses and empty client-error messages", () => {
         expect(
             userFacingApiError(
-                new MikeApiError({ status: 399, message: "Unexpected" }),
+                new VardaApiError({ status: 399, message: "Unexpected" }),
                 "Fallback",
             ),
         ).toBe("Fallback");
         expect(
             userFacingApiError(
-                new MikeApiError({ status: 400, message: "" }),
+                new VardaApiError({ status: 400, message: "" }),
                 "Fallback",
             ),
         ).toBe("Fallback");

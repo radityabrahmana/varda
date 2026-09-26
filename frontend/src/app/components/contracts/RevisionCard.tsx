@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Edit3, FileDiff, Save, X } from "lucide-react";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
-import { resolveContractRevision } from "@/app/lib/mikeApi";
+import { resolveContractRevision } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import type { ReviewFeedbackRow, Revision, RevisionEditRow } from "./reviewTypes";
 import { FeedbackRecorded, FeedbackWidget } from "./FeedbackWidget";

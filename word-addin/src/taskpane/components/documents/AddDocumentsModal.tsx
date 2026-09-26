@@ -9,14 +9,14 @@ import {
   listProjects,
   uploadStandaloneDocuments,
   type UploadProgress,
-} from "../../api/mikeApi";
+} from "../../api/vardaApi";
 import {
   partitionSupportedDocumentFiles,
   SUPPORTED_DOCUMENT_ACCEPT,
 } from "../../lib/documentUpload";
 import { Modal } from "../primitives/Modal";
 import { Spinner } from "../../../shared/ui/spinner";
-import { TabPillButtonUI } from "@mike/tab-pill-button-ui";
+import { TabPillButtonUI } from "@varda/tab-pill-button-ui";
 import {
   FileTypeIcon,
   ProjectSvgIcon,

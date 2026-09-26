@@ -6,7 +6,7 @@ import {
   listWorkflowAssets,
   uploadWorkflowAssets,
   uploadWorkflowAssetVersion,
-} from "../../api/mikeApi";
+} from "../../api/vardaApi";
 
 /**
  * Open a URL in the system browser. Office's openBrowserWindow is the

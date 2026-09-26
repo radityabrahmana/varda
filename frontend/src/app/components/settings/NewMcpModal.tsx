@@ -7,7 +7,7 @@ import {
     SettingsTextInput,
 } from "@/app/components/settings/SettingsTextInput";
 import { Modal } from "@/app/components/modals/Modal";
-import type { McpConnectorSummary } from "@/app/lib/mikeApi";
+import type { McpConnectorSummary } from "@/app/lib/vardaApi";
 import {
     settingsGlassIconButtonClassName,
 } from "@/app/(pages)/settings/settingsStyles";

@@ -78,11 +78,11 @@ async function ensureUser(email: string, password: string) {
  */
 setup("authenticate", async ({ page }) => {
     // Default to the credentials the spec files use (the specs log in with
-    // e2e@mike.local / E2eTestPass1!), so the suite runs out-of-the-box against
+    // e2e@varda.local / E2eTestPass1!), so the suite runs out-of-the-box against
     // a local stack with no env juggling. The bootstrapped user MUST match the
     // password the specs type, or the valid-login tests fail; keeping the
     // default here is the single source of truth. Override via env in CI.
-    const email = process.env.E2E_EMAIL ?? "e2e@mike.local";
+    const email = process.env.E2E_EMAIL ?? "e2e@varda.local";
     const password = process.env.E2E_PASSWORD ?? "E2eTestPass1!";
 
     /* Bootstrap the shared user plus a dedicated user for destructive auth
@@ -90,7 +90,7 @@ setup("authenticate", async ({ page }) => {
        shared cookie session keeps parallel workers stable. */
     await ensureUser(email, password);
     await ensureUser(
-        process.env.E2E_LOGOUT_EMAIL ?? "e2e-logout@mike.local",
+        process.env.E2E_LOGOUT_EMAIL ?? "e2e-logout@varda.local",
         process.env.E2E_LOGOUT_PASSWORD ?? "E2eLogoutPass1!",
     );
 

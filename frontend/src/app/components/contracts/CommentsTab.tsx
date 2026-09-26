@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { MessageSquare, Quote, User } from "lucide-react";
-import { postContractComment } from "@/app/lib/mikeApi";
+import { postContractComment } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { COMMENT_TYPE_LABEL, groupReplies, locateQuote } from "./findingAnnotations";

@@ -185,7 +185,7 @@ describe("workflow add-on catalog routes", () => {
           {
             filename: "Precedent.docx",
             file_type: "docx",
-            storage_path: "mike-workflows/c0a7a1e1-0000-4000-8000-000000000001/precedent.docx",
+            storage_path: "varda-workflows/c0a7a1e1-0000-4000-8000-000000000001/precedent.docx",
             size_bytes: 9,
           },
         ]);
@@ -216,7 +216,7 @@ describe("workflow add-on catalog routes", () => {
 
     expect(response.status, JSON.stringify(response.body)).toBe(201);
     expect(downloadFile).toHaveBeenCalledWith(
-      "mike-workflows/c0a7a1e1-0000-4000-8000-000000000001/precedent.docx",
+      "varda-workflows/c0a7a1e1-0000-4000-8000-000000000001/precedent.docx",
     );
     expect(uploadFile).toHaveBeenCalledTimes(2);
     expect(insertedDocuments).toEqual([
@@ -252,7 +252,7 @@ describe("workflow add-on catalog routes", () => {
           id: "reference-1",
           filename: "Deck.pptx",
           file_type: "pptx",
-          storage_path: "mike-workflows/c0a7a1e1-0000-4000-8000-000000000001/deck.pptx",
+          storage_path: "varda-workflows/c0a7a1e1-0000-4000-8000-000000000001/deck.pptx",
         });
       }
       throw new Error(`Unexpected table ${table}`);
@@ -264,7 +264,7 @@ describe("workflow add-on catalog routes", () => {
 
     expect(response.status).toBe(200);
     expect(downloadFile).toHaveBeenCalledWith(
-      "mike-workflows/c0a7a1e1-0000-4000-8000-000000000001/deck.pptx",
+      "varda-workflows/c0a7a1e1-0000-4000-8000-000000000001/deck.pptx",
     );
     expect(docxToPdf).toHaveBeenCalledTimes(1);
     expect(response.headers["content-type"]).toMatch(/^application\/pdf/);

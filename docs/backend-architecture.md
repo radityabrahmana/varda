@@ -172,7 +172,7 @@ PR snapshot (`54d067d3`), so their assertions characterize existing behavior.
 
 `packages/contracts` is the common declaration package for serialized assistant
 activity, input requests/responses, source documents, and normalized Word edits.
-All three applications resolve `@mike/contracts` to the same authored declarations.
+All three applications resolve `@varda/contracts` to the same authored declarations.
 Client event models add their rendering state locally. No client imports a backend
 implementation to obtain these types. See [the package guide](../packages/contracts/README.md).
 

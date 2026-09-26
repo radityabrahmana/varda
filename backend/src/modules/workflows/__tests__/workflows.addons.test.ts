@@ -219,7 +219,7 @@ describe("loadWorkflowAddonAssetDisplay", () => {
             id: "asset-1",
             filename: "Deck.pptx",
             file_type: "pptx",
-            storage_path: "mike-workflows/a1/deck.pptx",
+            storage_path: "varda-workflows/a1/deck.pptx",
           },
           error: null,
         },
@@ -235,7 +235,7 @@ describe("loadWorkflowAddonAssetDisplay", () => {
     expect(loadDocumentDisplay).toHaveBeenCalledWith({
       filename: "Deck.pptx",
       fileType: "pptx",
-      storagePath: "mike-workflows/a1/deck.pptx",
+      storagePath: "varda-workflows/a1/deck.pptx",
     });
     // The asset lookup is scoped to the add-on, so a foreign asset id 404s.
     expect(filtersOf(calls, "mike_workflow_assets")).toContainEqual([
@@ -425,7 +425,7 @@ describe("importWorkflowAddon", () => {
             {
               filename: "Precedent.docx",
               file_type: "docx",
-              storage_path: "mike-workflows/a1/precedent.docx",
+              storage_path: "varda-workflows/a1/precedent.docx",
               size_bytes: 9,
             },
           ],
@@ -442,7 +442,7 @@ describe("importWorkflowAddon", () => {
     // GET /workflows/:id shape is workflowAddons.routes.ts's job, through the
     // facade's withDatabaseWorkflow.
     expect(result).toEqual({ ok: true, data: workflowRow });
-    expect(downloadFile).toHaveBeenCalledWith("mike-workflows/a1/precedent.docx");
+    expect(downloadFile).toHaveBeenCalledWith("varda-workflows/a1/precedent.docx");
     // Source bytes plus the converted PDF rendition for a Word file.
     expect(uploadFile).toHaveBeenCalledTimes(2);
     const documentInsert = calls.find(
@@ -484,7 +484,7 @@ describe("importWorkflowAddon", () => {
             {
               filename: "Precedent.docx",
               file_type: "docx",
-              storage_path: "mike-workflows/a1/precedent.docx",
+              storage_path: "varda-workflows/a1/precedent.docx",
               size_bytes: 9,
             },
           ],

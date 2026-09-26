@@ -29,7 +29,7 @@ import {
 } from "@/app/components/popups/MfaVerificationPopup";
 import {
   type McpConnectorSummary,
-  MikeApiError,
+  VardaApiError,
   isConnectorSetupError,
   createMcpConnector,
   deleteMcpConnector,
@@ -40,7 +40,7 @@ import {
   setMcpToolEnabled,
   startMcpConnectorOAuth,
   updateMcpConnector,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import {
   SettingsDescription,
@@ -357,7 +357,7 @@ export default function ConnectorsPage() {
   ): Promise<McpConnectorSummary | null> => {
     const popup = window.open(
       "about:blank",
-      "mike_mcp_oauth",
+      "varda_mcp_oauth",
       "popup,width=560,height=720,menubar=no,toolbar=no,location=no,status=no",
     );
     let started: Awaited<ReturnType<typeof startMcpConnectorOAuth>>;
@@ -528,7 +528,7 @@ export default function ConnectorsPage() {
         try {
           refreshed = await refreshMcpConnectorTools(connector.id);
         } catch (err) {
-          if (err instanceof MikeApiError && err.code === "oauth_required") {
+          if (err instanceof VardaApiError && err.code === "oauth_required") {
             replaceConnector(connector);
             setAddAuthMessage(
               "Complete authorization in the popup to finish connecting this MCP server.",
@@ -670,7 +670,7 @@ export default function ConnectorsPage() {
         try {
           replaceConnector(await refreshMcpConnectorTools(connectorId));
         } catch (err) {
-          if (err instanceof MikeApiError && err.code === "oauth_required") {
+          if (err instanceof VardaApiError && err.code === "oauth_required") {
             // COOP-strict providers make the consent popup's fate
             // unobservable, so without an explicit escape hatch a
             // closed popup would leave the Refresh button stuck

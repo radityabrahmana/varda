@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { AddCommentPopover } from "./AddCommentPopover";
 
 const mocks = vi.hoisted(() => ({ postContractComment: vi.fn(), postContractMissedClause: vi.fn() }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     postContractComment: mocks.postContractComment,
     postContractMissedClause: mocks.postContractMissedClause,
 }));

@@ -2,11 +2,11 @@ import { createRef } from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { listWorkflows } from "@/app/lib/mikeApi";
+import { listWorkflows } from "@/app/lib/vardaApi";
 import type { Document, Workflow } from "../shared/types";
 import { ChatInput, type ChatInputHandle } from "./ChatInput";
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     listWorkflows: vi.fn(),
     uploadProjectDocument: vi.fn(),
     uploadStandaloneDocument: vi.fn(),

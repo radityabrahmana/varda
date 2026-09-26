@@ -7,7 +7,7 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
     testDir: "./e2e",
     /* These E2E tests run against a single shared backend and a single shared
-       test user (e2e@mike.local). Running them concurrently causes data races
+       test user (e2e@varda.local). Running them concurrently causes data races
        on shared list views (projects/chats/workflows) and on the user's
        session, producing flaky pass/fail that can't be trusted for regression
        detection. So we run strictly one test at a time. */

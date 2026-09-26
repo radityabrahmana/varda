@@ -72,7 +72,7 @@ export type OpenSourceSubmissionSummary = Pick<
 };
 
 export const DEFAULT_WORKFLOW_CONTRIBUTOR: WorkflowContributor = {
-  name: "Mike",
+  name: "Varda",
   organisation: null,
   role: null,
   linkedin: null,

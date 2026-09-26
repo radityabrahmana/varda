@@ -1,9 +1,9 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getPanelDocument } from "@/app/lib/mikeApi";
+import { getPanelDocument } from "@/app/lib/vardaApi";
 import { useResolvedPanelDocument } from "./useResolvedPanelDocument";
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     getPanelDocument: vi.fn(),
 }));
 

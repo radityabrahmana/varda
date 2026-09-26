@@ -18,7 +18,7 @@ Named models (the full catalog) remain available and behave exactly as before.
   (`DEFAULT_TIER_MODELS`) and each tier's reasoning effort (fast `low`, deep
   `high`).
 - `backend/src/lib/llm/registry.ts` — the deployment's `tiers` block in
-  `MIKE_MODEL_CONFIG_JSON` (see `docs/configured-models.md`).
+  `VARDA_MODEL_CONFIG_JSON` (see `docs/configured-models.md`).
 - `backend/src/lib/llm/router.ts` — the rule table, pure and synchronous.
 - `backend/src/lib/modelSelection.ts` — tier availability for a user's keys,
   mode-aware `resolveEffectiveChatModel`, and the concrete model background work

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, Pencil, Plus, Power, Shield } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { createPlaybookRule, getMe, listPlaybookRules, updatePlaybookRule } from "@/app/lib/mikeApi";
+import { createPlaybookRule, getMe, listPlaybookRules, updatePlaybookRule } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { Modal } from "@/app/components/modals/Modal";
 import { EMPTY_RULE_FORM, RuleForm, type RuleFormValue } from "./RuleForm";

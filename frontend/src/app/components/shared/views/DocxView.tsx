@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { useFetchDocxBytes } from "@/app/hooks/useFetchDocxBytes";
-import { API_BASE } from "@/app/lib/mikeApi";
+import { API_BASE } from "@/app/lib/vardaApi";
 import { authenticatedFetch } from "@/app/lib/authEvents";
 import {
     clearDocxQuoteHighlights,

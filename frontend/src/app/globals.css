@@ -174,7 +174,7 @@
     border: 1px solid var(--table-grid-border);
 }
 
-/* Most of Mike predates semantic color tokens and uses Tailwind's neutral
+/* Most of Varda predates semantic color tokens and uses Tailwind's neutral
    palette directly. These mappings make those existing surfaces participate
    in the user-selected dark theme without requiring page-by-page forks. */
 .dark .bg-white,

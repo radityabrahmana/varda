@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Document, Workflow } from "../shared/types";
-import { createTabularReview, listWorkflows } from "@/app/lib/mikeApi";
+import { createTabularReview, listWorkflows } from "@/app/lib/vardaApi";
 import { useRouter } from "next/navigation";
 import { useDirectoryData } from "../shared/useDirectoryData";
 import { FileDirectory } from "../shared/FileDirectory";

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Mike. Please keep contributions small, focused, and easy to review.
+Thanks for helping improve Varda. Please keep contributions small, focused, and easy to review.
 
 ## Guidelines
 
@@ -39,10 +39,10 @@ tokens, the primitive inventory, and the full baseline.
     - why
     - testing
 
-## Mike Workflows
+## Varda Workflows
 
 System workflows live in the sibling
-[`Open-Legal-Products/mike-workflows`](https://github.com/Open-Legal-Products/mike-workflows)
+[`radityabrahmana/varda-workflows`](https://github.com/radityabrahmana/varda-workflows)
 repository under `assistant-workflows/` and `tabular-review-workflows/`. Put
 structured metadata in the YAML frontmatter at the top of `SKILL.md`, put
 workflow instructions in the body of `SKILL.md`, and use `table-columns.yaml`
@@ -76,7 +76,7 @@ npm run build
 npm run sync:workflows
 ```
 
-The job resolves the configured `mike-workflows` ref to an immutable commit,
+The job resolves the configured `varda-workflows` ref to an immutable commit,
 downloads and validates its archive, writes a temporary local JSON document,
 uploads reference assets to object storage, and transactionally replaces the
 active rows in `mike_workflows`. Its temporary files are deleted before the job
@@ -89,7 +89,7 @@ it does not produce backend runtime data.
 
 ## Security
 
-Do not open a public issue for security vulnerabilities. Use [GitHub's private vulnerability reporting](https://github.com/Open-Legal-Products/mike/security/advisories/new) instead.
+Do not open a public issue for security vulnerabilities. Use [GitHub's private vulnerability reporting](https://github.com/radityabrahmana/varda/security/advisories/new) instead.
 
 We will aim to respond promptly and coordinate a disclosure timeline with you.
 

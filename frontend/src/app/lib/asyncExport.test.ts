@@ -9,7 +9,7 @@ const { startUserExportMock, getUserExportStatusMock, downloadUserExportMock } =
         getUserExportStatusMock: vi.fn(),
         downloadUserExportMock: vi.fn(),
     }));
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     startUserExport: startUserExportMock,
     getUserExportStatus: getUserExportStatusMock,
     downloadUserExport: downloadUserExportMock,

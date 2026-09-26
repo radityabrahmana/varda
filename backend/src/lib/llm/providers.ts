@@ -210,7 +210,7 @@ function configuredModelOrThrow(id: string): ConfiguredModel {
   const configured = getConfiguredModel(id);
   if (!configured) {
     throw new Error(
-      `Model ${id} is not declared in MIKE_MODEL_CONFIG_JSON.`,
+      `Model ${id} is not declared in VARDA_MODEL_CONFIG_JSON.`,
     );
   }
   if (!configured.baseUrl?.trim()) {

@@ -1,10 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TabularReview } from "@/app/components/shared/types";
-import { listTabularReviewIds, listTabularReviews } from "@/app/lib/mikeApi";
+import { listTabularReviewIds, listTabularReviews } from "@/app/lib/vardaApi";
 import { usePaginatedTabularReviews } from "./usePaginatedTabularReviews";
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     listTabularReviews: vi.fn(),
     listTabularReviewIds: vi.fn(),
 }));

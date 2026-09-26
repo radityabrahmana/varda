@@ -55,7 +55,7 @@ vi.mock("@/app/hooks/usePaginatedWorkflows", () => ({
   },
 }));
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
   deleteWorkflow: vi.fn(),
   getWorkflowFilterOptions,
   getWorkflowAddon: vi.fn(),

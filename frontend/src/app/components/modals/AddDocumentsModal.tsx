@@ -10,7 +10,7 @@ import {
     addDocumentToProject,
     getProject,
     type UploadProgress,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { Document, Folder } from "../shared/types";
 import { FileDirectory } from "../shared/FileDirectory";
 import type { DirectoryTab } from "../shared/useDirectoryData";

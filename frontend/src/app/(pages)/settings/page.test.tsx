@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MikeApiError } from "@/app/lib/mikeApi";
+import { VardaApiError } from "@/app/lib/vardaApi";
 import SettingsPage from "./page";
 
 const state = vi.hoisted(() => ({
@@ -49,10 +49,10 @@ vi.mock("@/app/contexts/UserProfileContext", () => ({
 }));
 
 // The real module is spread back in because userFacingApiError resolves
-// MikeApiError from it; a bare object mock leaves that `instanceof` check
+// VardaApiError from it; a bare object mock leaves that `instanceof` check
 // comparing against undefined.
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     deleteAccount: state.deleteAccount,
     isMfaRequiredError: vi.fn(() => false),
 }));
@@ -200,7 +200,7 @@ describe("SettingsPage Google email changes", () => {
         const detail =
             "You are the only admin of Elite Law LLP. Make another member an admin, or delete the organization, before deleting your account.";
         state.deleteAccount.mockRejectedValue(
-            new MikeApiError({
+            new VardaApiError({
                 status: 409,
                 code: "org_successor_required",
                 message: detail,

@@ -1,6 +1,6 @@
 // Structure-annotated markdown rendering of the active Word document.
 //
-// The add-in sends the document to Mike as `document_context`. A flat
+// The add-in sends the document to Varda as `document_context`. A flat
 // `body.text` loses everything Word knows about structure — headings, list
 // nesting, tables — so the model reads a contract's clause hierarchy as an
 // undifferentiated wall of text and a table as run-together cells.

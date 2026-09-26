@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useSelectedModel, useSelectedReasoning } from "./useSelectedModel";
 import { canonicalModelId } from "../components/assistant/ModelToggle";
-import type { ApiKeyState } from "../lib/mikeApi";
+import type { ApiKeyState } from "../lib/vardaApi";
 
 const keys: ApiKeyState = {
     claude: { configured: true, source: "user" },

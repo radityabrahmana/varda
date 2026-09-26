@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { deleteProject } from "@/app/lib/mikeApi";
+import { deleteProject } from "@/app/lib/vardaApi";
 import { usePaginatedProjects } from "@/app/hooks/usePaginatedProjects";
 import type { Project } from "@/app/components/shared/types";
 import { ProjectsOverview } from "./ProjectsOverview";
@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
     useSearchParams: () => new URLSearchParams(),
     usePathname: () => "/projects",
 }));
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     deleteProject: vi.fn(async () => {}),
     setProjectMemoryEnabled: vi.fn(),
     updateProject: vi.fn(),

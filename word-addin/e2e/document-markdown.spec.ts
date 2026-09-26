@@ -1,7 +1,7 @@
 /**
  * E2E coverage for the markdown document context.
  *
- * The pane sends the active document to Mike as structure-annotated
+ * The pane sends the active document to Varda as structure-annotated
  * markdown — heading paragraphs carry # marks, list items their markers,
  * tables render as pipe tables — while every passage's own text stays
  * byte-identical to what Word.search can locate (edit blocks and citations

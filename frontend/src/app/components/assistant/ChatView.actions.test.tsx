@@ -8,7 +8,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Chat, Document, Message } from "@/app/components/shared/types";
 import { ChatView } from "./ChatView";
-import { listDocumentVersions } from "@/app/lib/mikeApi";
+import { listDocumentVersions } from "@/app/lib/vardaApi";
 import { PageChromeContext } from "@/app/contexts/PageChromeContext";
 
 const { push, renameChat, deleteChat, setCurrentChatId, setNewChatMessages } =
@@ -79,8 +79,8 @@ vi.mock("@/app/contexts/AuthContext", () => ({
 vi.mock("@/app/contexts/UserProfileContext", () => ({
     useUserProfile: () => ({ profile: null }),
 }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     listDocumentVersions: vi.fn(),
     listQuickActions: vi.fn().mockResolvedValue([]),
 }));

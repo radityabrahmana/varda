@@ -8,7 +8,7 @@ import {
 } from "@/app/components/assistant/message/EventDisclosure";
 import { WorkflowSkeuoIcon } from "@/app/components/shared/AppSidebarSkeuoIcons";
 import { VersionChip } from "@/app/components/shared/VersionChip";
-import { API_BASE } from "@/app/lib/mikeApi";
+import { API_BASE } from "@/app/lib/vardaApi";
 import { authenticatedFetch } from "@/app/lib/authEvents";
 import type { AssistantEvent } from "../../shared/types";
 import { FileTypeIcon } from "../../shared/FileTypeIcon";

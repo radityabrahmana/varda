@@ -9,7 +9,7 @@ import {
   updateLastSelectedChatModel,
   updateLastSelectedReasoningLevel,
   updateCloudWordDocumentEdit,
-} from "../../api/mikeApi";
+} from "../../api/vardaApi";
 import {
   createLocalWordDocumentEdit,
   updateLocalWordChatModel,

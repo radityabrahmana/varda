@@ -17,7 +17,7 @@ import {
   LiquidDropdownRadioItem,
 } from "@/app/components/ui/liquid-dropdown";
 import { cn } from "@/app/lib/utils";
-import type { PersonalisationDetails } from "@/app/lib/mikeApi";
+import type { PersonalisationDetails } from "@/app/lib/vardaApi";
 import {
   COUNTRY_OPTIONS,
   OTHER_JURISDICTION_OPTION,

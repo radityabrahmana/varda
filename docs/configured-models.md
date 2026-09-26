@@ -1,14 +1,14 @@
 # Declaring OpenAI-compatible models
 
-Mike ships with a static catalog of hosted models (Anthropic, Google, OpenAI)
+Varda ships with a static catalog of hosted models (Anthropic, Google, OpenAI)
 and accepts router-prefixed ids for OpenRouter, the Vercel AI Gateway and
 OpenCode Go. A deployment that also runs a self-hosted or third-party
-OpenAI-compatible endpoint declares it with `MIKE_MODEL_CONFIG_JSON`, without
+OpenAI-compatible endpoint declares it with `VARDA_MODEL_CONFIG_JSON`, without
 a code change.
 
 ## Configuration
 
-Set `MIKE_MODEL_CONFIG_JSON` on the backend to a JSON object with a `models`
+Set `VARDA_MODEL_CONFIG_JSON` on the backend to a JSON object with a `models`
 array:
 
 ```json
@@ -36,7 +36,7 @@ array:
 
 | Field | Required | Meaning |
 | --- | --- | --- |
-| `id` | yes | The id Mike uses everywhere: model pickers, stored preferences, committee members. |
+| `id` | yes | The id Varda uses everywhere: model pickers, stored preferences, committee members. |
 | `provider` | yes | Must be `openai-compatible`. Hosted providers are already covered by the static catalog and the router prefixes. |
 | `location` | yes | `local` or `cloud`. Also the default for tool-call tolerance (below). |
 | `label` | no | Display name. Defaults to the id. |
@@ -104,7 +104,7 @@ serves the turn while later entries are its fallback chain:
 }
 ```
 
-An entry can be any model id Mike accepts: a static catalog id, a configured
+An entry can be any model id Varda accepts: a static catalog id, a configured
 model's `id`, or a router-prefixed id. A router-prefixed tier entry runs on the
 deployment's gateway key without each person adding it to their saved router
 models, because the operator has sanctioned it. Entries that do not resolve are

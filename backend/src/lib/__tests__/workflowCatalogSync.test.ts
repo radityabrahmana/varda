@@ -20,7 +20,7 @@ const COMMIT = "b".repeat(40);
 
 async function sourceArchive() {
   const zip = new JSZip();
-  const archiveRoot = "mike-workflows-test";
+  const archiveRoot = "varda-workflows-test";
   const root = `${archiveRoot}/assistant-workflows/proofread`;
   zip.file(
     `${root}/SKILL.md`,
@@ -134,7 +134,7 @@ describe("workflow catalog synchronization", () => {
               expect.objectContaining({
                 filename: "template.docx",
                 storage_path: expect.stringContaining(
-                  "mike-workflows/proofread/",
+                  "varda-workflows/proofread/",
                 ),
               }),
             ],

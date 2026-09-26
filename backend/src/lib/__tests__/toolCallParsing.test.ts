@@ -15,9 +15,9 @@ describe("parseTextToolCalls", () => {
     });
 
     it("reads a well-formed JSON tool_call block", () => {
-        const text = `Calling tool.\n<tool_call>{"name":"${TOOL}","arguments":{"query":"MIKE"}}</tool_call>`;
+        const text = `Calling tool.\n<tool_call>{"name":"${TOOL}","arguments":{"query":"VARDA"}}</tool_call>`;
         expect(parseTextToolCalls(text, 0)).toEqual([
-            { id: "call_text_0_0_0", name: TOOL, input: { query: "MIKE" } },
+            { id: "call_text_0_0_0", name: TOOL, input: { query: "VARDA" } },
         ]);
     });
 
@@ -96,7 +96,7 @@ describe("parseTextToolCalls", () => {
     });
 
     it("deduplicates identical repeated calls", () => {
-        const call = `<tool_call>{"name":"${TOOL}","arguments":{"query":"MIKE"}}</tool_call>`;
+        const call = `<tool_call>{"name":"${TOOL}","arguments":{"query":"VARDA"}}</tool_call>`;
         expect(parseTextToolCalls(`${call}\n${call}`, 0)).toHaveLength(1);
     });
 

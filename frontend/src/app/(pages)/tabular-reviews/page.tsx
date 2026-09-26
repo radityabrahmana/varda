@@ -17,7 +17,7 @@ import {
     grantTabularReviewAccess,
     listProjects,
     updateTabularReview,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { TabularReview, Project } from "@/app/components/shared/types";
 import { TableToolbar } from "@/app/components/shared/TableToolbar";
 import { NewTRModal } from "@/app/components/tabular/NewTRModal";
@@ -263,7 +263,7 @@ export default function TabularReviewsPage() {
         model: string,
         accessAssignments: {
             email: string;
-            role: import("@/app/lib/mikeApi").AccessAssignmentRole;
+            role: import("@/app/lib/vardaApi").AccessAssignmentRole;
         }[],
     ): Promise<string | void> => {
         setCreating(true);

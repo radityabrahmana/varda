@@ -14,7 +14,7 @@ import { Modal } from "../modals/Modal";
 import { FileTypeIcon } from "../shared/FileTypeIcon";
 import { PdfView } from "../shared/views/PdfView";
 import { SpreadsheetView } from "../shared/views/SpreadsheetView";
-import { workflowAddonAssetDisplayUrl } from "@/app/lib/mikeApi";
+import { workflowAddonAssetDisplayUrl } from "@/app/lib/vardaApi";
 import { resolveDocumentViewType } from "@/app/lib/documentViewType";
 
 type DetailView = "columns" | "skill" | "assets";

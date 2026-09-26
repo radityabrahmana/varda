@@ -1,10 +1,10 @@
 import type { SourceDocument } from "../../../../lib/sourceDocuments";
 
-export type { CourtlistenerToolEvent } from "@mike/contracts";
-import type { CourtlistenerToolEvent } from "@mike/contracts";
+export type { CourtlistenerToolEvent } from "@varda/contracts";
+import type { CourtlistenerToolEvent } from "@varda/contracts";
 
-export type { CaseCitationEvent } from "@mike/contracts";
-import type { CaseCitationEvent } from "@mike/contracts";
+export type { CaseCitationEvent } from "@varda/contracts";
+import type { CaseCitationEvent } from "@varda/contracts";
 
 export const COURTLISTENER_TOOL_NAMES = {
     searchCaseLaw: "courtlistener_search_case_law",

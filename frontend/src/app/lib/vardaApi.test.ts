@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AssistantEvent, Chat } from "@/app/components/shared/types";
 
 import {
-    MikeApiError,
+    VardaApiError,
     addDocumentToProject,
     clearTabularCells,
     completeUserOnboarding,
@@ -183,7 +183,7 @@ import {
     updateUserMemory,
     importWorkflowAddon,
     listQuickActions,
-} from "./mikeApi";
+} from "./vardaApi";
 
 const fetchMock = vi.fn();
 
@@ -238,25 +238,25 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
-describe("MikeApiError / isMfaRequiredError", () => {
+describe("VardaApiError / isMfaRequiredError", () => {
     it("carries status and code, defaulting code to null", () => {
-        const withCode = new MikeApiError({
+        const withCode = new VardaApiError({
             message: "nope",
             status: 403,
             code: "mfa_verification_required",
         });
-        expect(withCode.name).toBe("MikeApiError");
+        expect(withCode.name).toBe("VardaApiError");
         expect(withCode.status).toBe(403);
         expect(withCode.code).toBe("mfa_verification_required");
 
-        const withoutCode = new MikeApiError({ message: "nope", status: 500 });
+        const withoutCode = new VardaApiError({ message: "nope", status: 500 });
         expect(withoutCode.code).toBeNull();
     });
 
     it("recognizes exactly the 403 + mfa_verification_required combination", () => {
         expect(
             isMfaRequiredError(
-                new MikeApiError({
+                new VardaApiError({
                     message: "x",
                     status: 403,
                     code: "mfa_verification_required",
@@ -265,12 +265,12 @@ describe("MikeApiError / isMfaRequiredError", () => {
         ).toBe(true);
         expect(
             isMfaRequiredError(
-                new MikeApiError({ message: "x", status: 403, code: "other" }),
+                new VardaApiError({ message: "x", status: 403, code: "other" }),
             ),
         ).toBe(false);
         expect(
             isMfaRequiredError(
-                new MikeApiError({
+                new VardaApiError({
                     message: "x",
                     status: 401,
                     code: "mfa_verification_required",
@@ -350,7 +350,7 @@ describe("apiRequest plumbing (via thin wrappers)", () => {
         await expect(deleteAllChats()).resolves.toBeUndefined();
     });
 
-    it("maps a JSON error body to a MikeApiError with code and detail", async () => {
+    it("maps a JSON error body to a VardaApiError with code and detail", async () => {
         fetchMock.mockResolvedValue(
             jsonResponse(
                 { detail: "MFA required", code: "mfa_verification_required" },
@@ -360,8 +360,8 @@ describe("apiRequest plumbing (via thin wrappers)", () => {
 
         const error = await getUserProfile().catch((e: unknown) => e);
 
-        expect(error).toBeInstanceOf(MikeApiError);
-        const apiError = error as MikeApiError;
+        expect(error).toBeInstanceOf(VardaApiError);
+        const apiError = error as VardaApiError;
         expect(apiError.status).toBe(403);
         expect(apiError.code).toBe("mfa_verification_required");
         expect(apiError.message).toBe("MFA required");
@@ -501,7 +501,7 @@ describe("blob requests (exportAccountData)", () => {
         expect((await exportAccountData()).filename).toBeNull();
     });
 
-    it("throws a MikeApiError on failure", async () => {
+    it("throws a VardaApiError on failure", async () => {
         fetchMock.mockResolvedValue(
             jsonResponse({ detail: "not allowed" }, { status: 403 }),
         );

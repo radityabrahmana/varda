@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Chat } from "../types";
-import { listCloudWordChats } from "../api/mikeApi";
+import { listCloudWordChats } from "../api/vardaApi";
 import { listLocalWordChats } from "../lib/localWordChats";
 import type { WordChatStorageMode } from "../lib/wordChatSettings";
 import { WORD_CHAT_HISTORY_CHANGED } from "../lib/wordChatHistoryEvents";

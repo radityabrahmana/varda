@@ -9,7 +9,7 @@
 #
 # The suite is green with NO secret: of the 31 specs, the 4 LLM-dependent ones
 # (chat + critical path) skip themselves when ANTHROPIC_API_KEY is absent (see
-# e2e/llm.ts), so a keyless run passes the other 27 specs. Mike supports local
+# e2e/llm.ts), so a keyless run passes the other 27 specs. Varda supports local
 # Ollama models without a provider key, but this job does not provision Ollama;
 # the gate is not caused by the best-effort title-generation call. To run and
 # enforce those 4, set the ANTHROPIC_API_KEY repository secret; exact steps, the
@@ -17,7 +17,7 @@
 # always take the skip path), cost, and how to verify the specs ran are in
 # docs/e2e-ci.md ("Enable the LLM specs").
 #
-# The e2e user (e2e@mike.local) is bootstrapped in-job by e2e/auth.setup.ts against
+# The e2e user (e2e@varda.local) is bootstrapped in-job by e2e/auth.setup.ts against
 # the local Supabase admin API, so no E2E_PASSWORD secret is needed — the defaults
 # baked into auth.setup.ts are the single source of truth.
 name: e2e
@@ -114,7 +114,7 @@ jobs:
           AWS_ACCESS_KEY_ID=rustfsadmin \
           AWS_SECRET_ACCESS_KEY=rustfsadmin \
           AWS_DEFAULT_REGION=us-east-1 \
-            aws --endpoint-url http://localhost:9000 s3 mb s3://mike
+            aws --endpoint-url http://localhost:9000 s3 mb s3://varda
           # CI must exercise the SAME bucket CORS policy that docker-compose and
           # the production runbook install (docker/storage-cors.json). A change
           # that adds a request header to the storage PUT must fail CI
@@ -123,15 +123,15 @@ jobs:
           AWS_SECRET_ACCESS_KEY=rustfsadmin \
           AWS_DEFAULT_REGION=us-east-1 \
             aws --endpoint-url http://localhost:9000 s3api put-bucket-cors \
-              --bucket mike --cors-configuration file://docker/storage-cors.json
+              --bucket varda --cors-configuration file://docker/storage-cors.json
           AWS_ACCESS_KEY_ID=rustfsadmin \
           AWS_SECRET_ACCESS_KEY=rustfsadmin \
           AWS_DEFAULT_REGION=us-east-1 \
-            aws --endpoint-url http://localhost:9000 s3api get-bucket-cors --bucket mike
+            aws --endpoint-url http://localhost:9000 s3api get-bucket-cors --bucket varda
           AWS_ACCESS_KEY_ID=rustfsadmin \
           AWS_SECRET_ACCESS_KEY=rustfsadmin \
           AWS_DEFAULT_REGION=us-east-1 \
-            aws --endpoint-url http://localhost:9000 s3 ls s3://mike
+            aws --endpoint-url http://localhost:9000 s3 ls s3://varda
 
       # Supabase (Auth + Postgres). This layout ships no supabase/ config dir
       # (the app targets a hosted Supabase project), so we scaffold one with
@@ -204,10 +204,10 @@ jobs:
             echo "R2_ENDPOINT_URL=http://localhost:9000"
             echo "R2_ACCESS_KEY_ID=rustfsadmin"
             echo "R2_SECRET_ACCESS_KEY=rustfsadmin"
-            echo "R2_BUCKET_NAME=mike"
+            echo "R2_BUCKET_NAME=varda"
             # Keep the release-job fixture reproducible even when the source
             # repository's main branch changes independently of this PR.
-            echo "MIKE_WORKFLOWS_REF=ce62e6a2d3f47e1d3567a4f2edc61898cfe9e78a"
+            echo "VARDA_WORKFLOWS_REF=ce62e6a2d3f47e1d3567a4f2edc61898cfe9e78a"
             echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}"
           } >> backend/.env
           # The web client talks to its own /api gateway. Only the Next server
@@ -216,7 +216,7 @@ jobs:
 
       # Production runs this as a release job after migrations and before the
       # backend starts. E2E must exercise the same ordering so defaults exist.
-      - name: Sync Mike workflow catalog
+      - name: Sync Varda workflow catalog
         run: |
           npm run build --prefix backend
           npm run sync:workflows --prefix backend

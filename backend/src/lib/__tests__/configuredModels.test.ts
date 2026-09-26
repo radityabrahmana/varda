@@ -4,10 +4,10 @@ import { completeWithProvider } from "../llm/providers";
 import { resetModelRegistryCache } from "../llm/registry";
 import type { ConfiguredModel } from "../llm/types";
 
-const originalConfig = process.env.MIKE_MODEL_CONFIG_JSON;
+const originalConfig = process.env.VARDA_MODEL_CONFIG_JSON;
 
 function configure(maxTokensField?: ConfiguredModel["maxTokensField"]) {
-    process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({
+    process.env.VARDA_MODEL_CONFIG_JSON = JSON.stringify({
         models: [
             {
                 id: "custom-model",
@@ -47,9 +47,9 @@ function requestBody(fetchMock: ReturnType<typeof vi.fn>) {
 describe("configured OpenAI-compatible models", () => {
     afterEach(() => {
         if (originalConfig === undefined) {
-            delete process.env.MIKE_MODEL_CONFIG_JSON;
+            delete process.env.VARDA_MODEL_CONFIG_JSON;
         } else {
-            process.env.MIKE_MODEL_CONFIG_JSON = originalConfig;
+            process.env.VARDA_MODEL_CONFIG_JSON = originalConfig;
         }
         resetModelRegistryCache();
         vi.unstubAllGlobals();

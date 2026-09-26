@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getPanelDocument } from "@/app/lib/mikeApi";
+import { getPanelDocument } from "@/app/lib/vardaApi";
 import type { PanelDocument } from "../shared/types";
 
 function mergePanelDocuments(

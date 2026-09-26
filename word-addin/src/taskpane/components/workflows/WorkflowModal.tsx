@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { Workflow } from "../../types";
-import { listWorkflows } from "../../api/mikeApi";
+import { listWorkflows } from "../../api/vardaApi";
 import { Modal } from "../primitives/Modal";
 import { WorkflowList } from "./WorkflowList";
 

@@ -22,6 +22,7 @@ import {
   clearRequestAuthCookies,
   createRequestSupabase,
   publicAuthUser,
+  requestAuthCookies,
 } from "../authSession";
 
 describe("backend-managed auth cookies", () => {
@@ -37,13 +38,13 @@ describe("backend-managed auth cookies", () => {
   it("uses a Secure __Host cookie in production", () => {
     const env = { NODE_ENV: "production" } as NodeJS.ProcessEnv;
     expect(authCookiesAreSecure(env)).toBe(true);
-    expect(authCookieName(env)).toBe("__Host-mike-session");
+    expect(authCookieName(env)).toBe("__Host-varda-session");
   });
 
   it("uses an unprefixed cookie for local development", () => {
     const env = { NODE_ENV: "development" } as NodeJS.ProcessEnv;
     expect(authCookiesAreSecure(env)).toBe(false);
-    expect(authCookieName(env)).toBe("mike-session");
+    expect(authCookieName(env)).toBe("varda-session");
   });
 
   it("forces HttpOnly, SameSite=Lax, Secure, and Path=/ on every session write", () => {
@@ -63,7 +64,7 @@ describe("backend-managed auth cookies", () => {
       "publishable-test-key",
       expect.objectContaining({
         cookieOptions: expect.objectContaining({
-          name: "__Host-mike-session",
+          name: "__Host-varda-session",
           httpOnly: true,
           secure: true,
           sameSite: "lax",
@@ -87,7 +88,7 @@ describe("backend-managed auth cookies", () => {
     options.cookies.setAll(
       [
         {
-          name: "__Host-mike-session",
+          name: "__Host-varda-session",
           value: "opaque-session",
           options: { maxAge: 3600, httpOnly: false, sameSite: "none" },
         },
@@ -96,7 +97,7 @@ describe("backend-managed auth cookies", () => {
     );
 
     const cookie = append.mock.calls[0][1] as string;
-    expect(cookie).toContain("__Host-mike-session=opaque-session");
+    expect(cookie).toContain("__Host-varda-session=opaque-session");
     expect(cookie).toContain("HttpOnly");
     expect(cookie).toContain("Secure");
     expect(cookie).toContain("SameSite=Lax");
@@ -131,7 +132,7 @@ describe("backend-managed auth cookies", () => {
       };
     };
     options.cookies.setAll(
-      [{ name: "__Host-mike-session", value: "opaque", options: {} }],
+      [{ name: "__Host-varda-session", value: "opaque", options: {} }],
       {},
     );
 
@@ -148,7 +149,7 @@ describe("backend-managed auth cookies", () => {
     const req = {
       headers: {
         cookie:
-          "mike-session.0=first; unrelated=keep; mike-session.1=second; mike-session-code-verifier=pkce",
+          "varda-session.0=first; unrelated=keep; varda-session.1=second; varda-session-code-verifier=pkce",
       },
       get: vi.fn().mockReturnValue(undefined),
     } as never;
@@ -158,9 +159,9 @@ describe("backend-managed auth cookies", () => {
 
     expect(append).toHaveBeenCalledTimes(3);
     expect(append.mock.calls.map((call) => call[1])).toEqual([
-      expect.stringContaining("mike-session.0="),
-      expect.stringContaining("mike-session.1="),
-      expect.stringContaining("mike-session-code-verifier="),
+      expect.stringContaining("varda-session.0="),
+      expect.stringContaining("varda-session.1="),
+      expect.stringContaining("varda-session-code-verifier="),
     ]);
     for (const [, cookie] of append.mock.calls) {
       expect(cookie).toContain("Max-Age=0");
@@ -188,5 +189,48 @@ describe("backend-managed auth cookies", () => {
       pendingEmail: "new@example.com",
       createdWithGoogle: true,
     });
+  });
+});
+
+describe("legacy session cookies", () => {
+  const production = { NODE_ENV: "production" } as NodeJS.ProcessEnv;
+
+  it("presents pre-rename session chunks under the current name", () => {
+    expect(
+      requestAuthCookies(
+        "__Host-mike-session.0=one; __Host-mike-session.1=two; other=x",
+        production,
+      ),
+    ).toEqual([
+      { name: "__Host-varda-session.0", value: "one" },
+      { name: "__Host-varda-session.1", value: "two" },
+      { name: "other", value: "x" },
+    ]);
+  });
+
+  it("prefers current-name cookies when both are present", () => {
+    expect(
+      requestAuthCookies(
+        "__Host-mike-session=old; __Host-varda-session=new",
+        production,
+      ),
+    ).toEqual([
+      { name: "__Host-mike-session", value: "old" },
+      { name: "__Host-varda-session", value: "new" },
+    ]);
+  });
+
+  it("clears legacy cookies on sign-out", () => {
+    process.env.NODE_ENV = "development";
+    const append = vi.fn();
+    const req = {
+      headers: { cookie: "mike-session.0=a; varda-session=b; unrelated=c" },
+      get: vi.fn().mockReturnValue(undefined),
+    } as never;
+    clearRequestAuthCookies(req, { append, setHeader: vi.fn() } as never);
+    const cleared = append.mock.calls.map(([, header]) =>
+      String(header).split("=")[0],
+    );
+    expect(cleared).toEqual(["mike-session.0", "varda-session"]);
   });
 });

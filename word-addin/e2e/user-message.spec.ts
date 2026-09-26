@@ -17,7 +17,7 @@ test("collapses long user messages and expands them from the bottom chevron", as
   const prompt = Array.from(
     { length: 18 },
     (_, index) =>
-      `Paragraph ${index + 1} asks Mike to review a different part of the agreement.`,
+      `Paragraph ${index + 1} asks Varda to review a different part of the agreement.`,
   ).join("\n");
   await page.getByPlaceholder("How can I help?").fill(prompt);
   await page.getByRole("button", { name: "Send" }).click();

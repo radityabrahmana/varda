@@ -245,8 +245,8 @@ host = "smtp.resend.com"
 port = 465
 user = "resend"
 pass = "env(RESEND_API_KEY)"
-admin_email = "noreply@mikeoss.com"
-sender_name = "MikeOSS (No Reply)"
+admin_email = "noreply@varda.local"
+sender_name = "Varda (No Reply)"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

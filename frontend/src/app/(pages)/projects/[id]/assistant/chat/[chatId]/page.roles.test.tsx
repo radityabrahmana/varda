@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Suspense, type ReactNode } from "react";
-import { MikeApiError } from "@/app/lib/mikeApi";
+import { VardaApiError } from "@/app/lib/vardaApi";
 import ProjectAssistantChatPage from "./page";
 
 // What this file pins, for a chat that lives INSIDE a project:
@@ -33,10 +33,10 @@ const {
     push: vi.fn(),
 }));
 
-// importOriginal so MikeApiError stays the real class — userFacingApiError
+// importOriginal so VardaApiError stays the real class — userFacingApiError
 // decides whether to show the server's own message with an `instanceof` test.
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     deleteChat: (...args: unknown[]) => deleteChat(...args),
     getChat: (...args: unknown[]) => getChat(...args),
     getProject: (...args: unknown[]) => getProject(...args),
@@ -104,7 +104,7 @@ vi.mock("@/app/components/shared/views/SpreadsheetView", () => ({
 vi.mock("@/app/components/shared/views/DocxView", () => ({
     DocxView: () => null,
 }));
-vi.mock("@/app/components/chat/mike-icon", () => ({ MikeIcon: () => null }));
+vi.mock("@/app/components/chat/varda-icon", () => ({ VardaIcon: () => null }));
 
 // PageHeader renders its custom actions; HeaderActionsMenu is flattened to
 // plain buttons so the test can drive the page's handlers without Radix.
@@ -305,7 +305,7 @@ describe("project chat page — refused mutations are surfaced", () => {
     it("tells the user when a delete is refused", async () => {
         getProject.mockResolvedValue(project("owner"));
         deleteChat.mockRejectedValue(
-            new MikeApiError({
+            new VardaApiError({
                 message: "You do not have permission to delete this chat",
                 status: 403,
             }),
@@ -325,7 +325,7 @@ describe("project chat page — refused mutations are surfaced", () => {
     it("puts the header title back when a rename is refused, and says so", async () => {
         getProject.mockResolvedValue(project("owner"));
         renameChatInHistory.mockRejectedValue(
-            new MikeApiError({
+            new VardaApiError({
                 message: "You do not have permission to rename this chat",
                 status: 403,
             }),

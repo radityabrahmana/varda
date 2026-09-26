@@ -135,10 +135,10 @@ describe("resolveEffectiveChatModel", () => {
 });
 
 describe("configured model selection", () => {
-    const originalConfig = process.env.MIKE_MODEL_CONFIG_JSON;
+    const originalConfig = process.env.VARDA_MODEL_CONFIG_JSON;
 
     beforeEach(() => {
-        process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({
+        process.env.VARDA_MODEL_CONFIG_JSON = JSON.stringify({
             models: [
                 {
                     id: "keyless-compatible",
@@ -160,9 +160,9 @@ describe("configured model selection", () => {
 
     afterEach(() => {
         if (originalConfig === undefined) {
-            delete process.env.MIKE_MODEL_CONFIG_JSON;
+            delete process.env.VARDA_MODEL_CONFIG_JSON;
         } else {
-            process.env.MIKE_MODEL_CONFIG_JSON = originalConfig;
+            process.env.VARDA_MODEL_CONFIG_JSON = originalConfig;
         }
         resetModelRegistryCache();
     });

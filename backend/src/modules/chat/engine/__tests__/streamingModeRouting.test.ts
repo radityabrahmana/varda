@@ -55,7 +55,7 @@ function modelInfoEvents(events: { type: string }[]) {
 beforeEach(() => {
     vi.clearAllMocks();
     streamChatWithTools.mockResolvedValue({ fullText: "" });
-    process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({
+    process.env.VARDA_MODEL_CONFIG_JSON = JSON.stringify({
         tiers: {
             fast: ["gemini-3-flash-preview", "gpt-5.6-terra"],
             deep: ["claude-sonnet-5"],
@@ -65,7 +65,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    delete process.env.MIKE_MODEL_CONFIG_JSON;
+    delete process.env.VARDA_MODEL_CONFIG_JSON;
     resetModelRegistryCache();
 });
 
@@ -147,7 +147,7 @@ describe("runLLMStream Assistant modes", () => {
     });
 
     it("reports a mode no key can serve instead of guessing a model", async () => {
-        process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({
+        process.env.VARDA_MODEL_CONFIG_JSON = JSON.stringify({
             tiers: { deep: ["claude-opus-5"] },
         });
         resetModelRegistryCache();

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-    MikeApiError,
+    VardaApiError,
     createReview,
     deleteContract,
     generateContractMemo,
@@ -21,7 +21,7 @@ import {
     setNegotiationPointStatus,
     uploadContractFile,
     attachContractDocx,
-} from "./mikeApi";
+} from "./vardaApi";
 
 const fetchMock = vi.fn();
 
@@ -146,10 +146,10 @@ describe("contracts API wrappers", () => {
         await expect(
             uploadContractFile(new File(["x"], "c.pdf")),
         ).rejects.toMatchObject({
-            name: "MikeApiError",
+            name: "VardaApiError",
             status: 400,
             message: "Hanya file DOCX yang diperbolehkan.",
-        } satisfies Partial<MikeApiError>);
+        } satisfies Partial<VardaApiError>);
     });
 
     it("createReview posts the JSON body and returns the processing handle", async () => {

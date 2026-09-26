@@ -1,4 +1,4 @@
-import type { AssistantEvent as WireAssistantEvent } from "@mike/contracts";
+import type { AssistantEvent as WireAssistantEvent } from "@varda/contracts";
 // Shared TypeScript types for Varda AI legal assistant
 
 import type {
@@ -8,12 +8,12 @@ import type {
   SourceDocumentQuote,
   SourceDocumentType,
   SourceSubdocument,
-} from "@mike/contracts";
+} from "@varda/contracts";
 import type {
   AskInputItem as SharedAskInputItem,
   AskInputResponseItem as SharedAskInputResponseItem,
   AskInputsEvent as SharedAskInputsEvent,
-} from "@mike/contracts";
+} from "@varda/contracts";
 
 export interface Folder {
   id: string;

@@ -1,22 +1,22 @@
 import { GoogleIconUI } from "@/shared/ui/GoogleIconUI";
-import { MikeIcon } from "@/shared/ui/MikeIconUI";
+import { VardaIcon } from "@/shared/ui/VardaIconUI";
 
 const meta = { title: "Shared UI / BrandIcons" };
 export default meta;
 
-export const MikeStates = () => (
+export const VardaStates = () => (
     <div className="flex items-end gap-6 text-xs text-gray-500">
         <span className="flex flex-col items-center gap-2">
-            <MikeIcon size={32} /> Default
+            <VardaIcon size={32} /> Default
         </span>
         <span className="flex flex-col items-center gap-2">
-            <MikeIcon size={32} spin /> Working
+            <VardaIcon size={32} spin /> Working
         </span>
         <span className="flex flex-col items-center gap-2">
-            <MikeIcon size={32} done /> Done
+            <VardaIcon size={32} done /> Done
         </span>
         <span className="flex flex-col items-center gap-2">
-            <MikeIcon size={32} error /> Error
+            <VardaIcon size={32} error /> Error
         </span>
     </div>
 );

@@ -1,16 +1,12 @@
-# Mike
+# Varda
 
-![Mike](docs/assets/link-image.jpg)
+![Varda](docs/assets/link-image.jpg)
 
-Mike (MikeOSS) is an open-source legal AI platform for document review,
+Varda is an open-source legal AI platform for document review,
 drafting, and legal research.
 
 It combines a Next.js frontend, an Express backend, Supabase Auth/Postgres,
 and Cloudflare R2-compatible object storage.
-
-Website: [mikeoss.com](https://mikeoss.com)
-
-![Mike assistant home screen](docs/assets/mike-home.png)
 
 ## Features
 
@@ -24,7 +20,7 @@ Website: [mikeoss.com](https://mikeoss.com)
 
 ## Quick start
 
-The included Docker Compose stack runs Mike, Supabase, RustFS object storage,
+The included Docker Compose stack runs Varda, Supabase, RustFS object storage,
 and local email capture without requiring managed infrastructure.
 
 1. Copy the local environment templates:
@@ -84,20 +80,20 @@ authentication behavior, Ollama setup, and first-run guidance.
 
 ## Connectors
 
-Mike connects to the systems a legal team already works in — Slack and any
+Varda connects to the systems a legal team already works in — Slack and any
 remote [MCP](https://modelcontextprotocol.io) server — from
 **Settings > Connectors**. There are two setup pathways, and every connector
 uses one of them:
 
 **Zero-setup (the server registers itself).** Most hosted MCP servers support
 OAuth dynamic client registration (RFC 7591). For these, nothing is configured
-on the Mike server at all: a user clicks **Add**, pastes the server URL (or
+on the Varda server at all: a user clicks **Add**, pastes the server URL (or
 picks a preset), and completes the provider's consent screen in a popup. Servers
 that use a bearer token or custom headers instead of OAuth also fall in this
 pathway — the credentials are entered in the same modal and stored encrypted.
 
 **Bring-your-own OAuth app (you register a client once).** Some providers do
-not implement dynamic client registration, so the person hosting Mike creates
+not implement dynamic client registration, so the person hosting Varda creates
 an OAuth client with that provider once, puts its credentials in
 `backend/.env`, and every user of the deployment can then connect their own
 account with one click:
@@ -119,7 +115,7 @@ backend's own port never appears in a redirect URI):
 | Deployment | `API_PUBLIC_URL` | Register with the provider |
 | --- | --- | --- |
 | Local development | `http://localhost:3000/api` | `http://localhost:3000/api/user/…/oauth/callback` |
-| Production | `https://<your-mike-host>/api` | `https://<your-mike-host>/api/user/…/oauth/callback` |
+| Production | `https://<your-varda-host>/api` | `https://<your-varda-host>/api/user/…/oauth/callback` |
 
 The path is `/user/mcp-connectors/oauth/callback` for MCP connectors. A
 Connect attempt on an unconfigured Slack/Google MCP connector shows the exact
@@ -146,7 +142,7 @@ rights in the workspace):
    turn on the **Slack MCP Server** toggle under the app's *Agents* settings,
    and enable **PKCE** under *OAuth & Permissions*.
 3. Add the callback,
-   `https://<your-mike-host>/api/user/mcp-connectors/oauth/callback`, as a
+   `https://<your-varda-host>/api/user/mcp-connectors/oauth/callback`, as a
    redirect URL. Slack requires HTTPS, so local development needs an HTTPS
    tunnel pointed at the **frontend** (port 3000, which proxies `/api` to the
    backend) — for example `cloudflared tunnel --url http://localhost:3000` —
@@ -165,18 +161,19 @@ can be toggled per connector.
 
 Tools Slack marks as writes — sending messages, adding reactions, creating
 canvases and lists, scheduling messages — are cached but kept **disabled**,
-and the toggle refuses to enable them: Mike has no human-confirmation step
+and the toggle refuses to enable them: Varda has no human-confirmation step
 for write tools yet, so the assistant is only ever given the read and search
 tools. The consent screen therefore grants more than the assistant can use;
 trim the manifest's user scopes if that is not acceptable for your workspace.
 
 ## System workflows
 
-Mike's system assistant and tabular-review workflows are maintained in the
-[`Open-Legal-Products/mike-workflows`](https://github.com/Open-Legal-Products/mike-workflows)
+Varda's system assistant and tabular-review workflows are maintained in the
+[`radityabrahmana/varda-workflows`](https://github.com/radityabrahmana/varda-workflows)
 repository. See [Contributing](CONTRIBUTING.md#system-workflows) for how they are
 packaged and synchronized with this application.
 
 ## License
 
-Mike is available under the [GNU Affero General Public License v3.0](LICENSE).
+Varda is available under the [GNU Affero General Public License v3.0](LICENSE).
+It is derived from an AGPL-licensed open-source project; see [NOTICE](NOTICE).

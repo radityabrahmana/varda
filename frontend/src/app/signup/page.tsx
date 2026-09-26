@@ -16,6 +16,10 @@ import {
 } from "@/app/components/auth/authStyles";
 import { knownErrorCodeMessage } from "@/app/lib/userFacingError";
 
+// Legal links are per deployment; the notice is hidden until both are set.
+const TERMS_URL = process.env.NEXT_PUBLIC_TERMS_URL?.trim() || null;
+const PRIVACY_URL = process.env.NEXT_PUBLIC_PRIVACY_URL?.trim() || null;
+
 const SIGNUP_ERROR_MESSAGES = {
     user_already_exists: "An account with this email already exists.",
     email_exists: "An account with this email already exists.",
@@ -205,26 +209,28 @@ function SignupContent() {
                         )}
 
                         <div className="space-y-3 pt-2">
-                            <div className="text-center text-xs text-gray-500">
-                                By signing up, you agree to our{" "}
-                                <Link
-                                    href="https://mikeoss.com/terms"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline"
-                                >
-                                    Terms of Use
-                                </Link>{" "}
-                                and{" "}
-                                <Link
-                                    href="https://mikeoss.com/privacy"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline"
-                                >
-                                    Privacy Policy
-                                </Link>
-                            </div>
+                            {TERMS_URL && PRIVACY_URL && (
+                                <div className="text-center text-xs text-gray-500">
+                                    By signing up, you agree to our{" "}
+                                    <Link
+                                        href={TERMS_URL}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                    >
+                                        Terms of Use
+                                    </Link>{" "}
+                                    and{" "}
+                                    <Link
+                                        href={PRIVACY_URL}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                    >
+                                        Privacy Policy
+                                    </Link>
+                                </div>
+                            )}
                             <PillButtonUI
                                 type="submit"
                                 tone="black"

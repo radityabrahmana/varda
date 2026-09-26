@@ -16,7 +16,7 @@ import {
     deleteChat,
     listChats,
     renameChat,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { Chat, Message } from "@/app/components/shared/types";
 import type { ProjectRole } from "@/app/lib/permissions";
 

@@ -14,12 +14,12 @@ import type { Db } from "../supabase";
 const db = {} as Db;
 
 afterEach(() => {
-    delete process.env.MIKE_MODEL_CONFIG_JSON;
+    delete process.env.VARDA_MODEL_CONFIG_JSON;
     resetModelRegistryCache();
 });
 
 function configureTiers(tiers: Record<string, string[]>) {
-    process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({ tiers });
+    process.env.VARDA_MODEL_CONFIG_JSON = JSON.stringify({ tiers });
     resetModelRegistryCache();
 }
 

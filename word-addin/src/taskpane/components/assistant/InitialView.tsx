@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import quickActionsIcon from "@icons/features/quick-actions.svg";
-import { getUserProfile } from "../../api/mikeApi";
-import { MikeIcon } from "../../../shared/chat/mike-icon";
+import { getUserProfile } from "../../api/vardaApi";
+import { VardaIcon } from "../../../shared/chat/varda-icon";
 import type { QuickAction } from "../../types";
 import { useQuickActions } from "../../lib/quickActionStore";
 import { quickActionDisplayName } from "../../lib/quickActions";
@@ -56,7 +56,7 @@ export function InitialView({
         {name && (
           <>
             <div
-              data-testid="initial-mike-icon"
+              data-testid="initial-varda-icon"
               className="absolute h-[26px] w-[26px]"
               style={{
                 left: "50%",
@@ -68,7 +68,7 @@ export function InitialView({
                   "transform 900ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
               }}
             >
-              <MikeIcon size={ICON_SIZE} />
+              <VardaIcon size={ICON_SIZE} />
             </div>
             <h1
               ref={textRef}

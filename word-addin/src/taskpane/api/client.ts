@@ -7,26 +7,26 @@ import {
   uploadFilesWithSessionCore,
   type UploadOutcome,
   type UploadProgress,
-} from "@mike/upload-session-client";
+} from "@varda/upload-session-client";
 
 export {
   UploadBatchError,
   failedUploadMessage,
-} from "@mike/upload-session-client";
+} from "@varda/upload-session-client";
 export type {
   UploadOutcome,
   UploadProgress,
-} from "@mike/upload-session-client";
+} from "@varda/upload-session-client";
 
 type AuthHeaderProvider = () => Promise<Record<string, string>>;
 
-interface MikeApiClientConfig {
+interface VardaApiClientConfig {
   baseUrl?: string;
   getAuthHeaders?: AuthHeaderProvider;
   fetchImpl?: typeof fetch;
 }
 
-interface ResolvedMikeApiClientConfig {
+interface ResolvedVardaApiClientConfig {
   baseUrl: string;
   getAuthHeaders: AuthHeaderProvider;
   fetchImpl: typeof fetch;
@@ -37,19 +37,19 @@ const devLog = (...args: Parameters<typeof console.log>): void => {
   if (isDev) console.log(...args);
 };
 
-class MikeApiError extends Error {
+class VardaApiError extends Error {
   readonly status: number;
   readonly code: string | null;
 
   constructor(args: { message: string; status: number; code?: string | null }) {
     super(args.message);
-    this.name = "MikeApiError";
+    this.name = "VardaApiError";
     this.status = args.status;
     this.code = args.code ?? null;
   }
 }
 
-let clientConfig: ResolvedMikeApiClientConfig = {
+let clientConfig: ResolvedVardaApiClientConfig = {
   baseUrl: "http://localhost:3001",
   getAuthHeaders: async () => ({}),
   // A wrapper keeps native fetch detached from the config object. Chromium
@@ -57,7 +57,7 @@ let clientConfig: ResolvedMikeApiClientConfig = {
   fetchImpl: (...args: Parameters<typeof fetch>) => fetch(...args),
 };
 
-export function configureMikeApiClient(config: MikeApiClientConfig): void {
+export function configureVardaApiClient(config: VardaApiClientConfig): void {
   clientConfig = {
     baseUrl: config.baseUrl ?? clientConfig.baseUrl,
     getAuthHeaders: config.getAuthHeaders ?? clientConfig.getAuthHeaders,
@@ -97,7 +97,7 @@ async function sendRequest(
 async function toApiError(
   response: Response,
   path: string,
-): Promise<MikeApiError> {
+): Promise<VardaApiError> {
   const text = await response.text();
   try {
     const parsed = JSON.parse(text) as {
@@ -117,24 +117,24 @@ async function toApiError(
         : typeof parsed.detail === "string" && parsed.detail
           ? parsed.detail
           : `API error: ${response.status}`;
-    devLog("[mike-api] non-ok response", {
+    devLog("[varda-api] non-ok response", {
       path,
       status: response.status,
       code,
       detail: parsed.detail,
     });
-    return new MikeApiError({
+    return new VardaApiError({
       status: response.status,
       code,
       message,
     });
   } catch {
-    devLog("[mike-api] non-ok non-json response", {
+    devLog("[varda-api] non-ok non-json response", {
       path,
       status: response.status,
       bodyPreview: text.slice(0, 200),
     });
-    return new MikeApiError({
+    return new VardaApiError({
       status: response.status,
       message: text || `API error: ${response.status}`,
     });
@@ -193,7 +193,7 @@ async function uploadSessionFiles<T>(args: {
       apiRequest,
       fetchStorage: (...fetchArgs) => clientConfig.fetchImpl(...fetchArgs),
       shouldRetryControlRequest: createControlRequestRetryPolicy((error) =>
-        error instanceof MikeApiError
+        error instanceof VardaApiError
           ? { status: error.status, code: error.code }
           : null,
       ),

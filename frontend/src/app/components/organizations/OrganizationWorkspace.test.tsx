@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MikeApiError } from "@/app/lib/mikeApi";
+import { VardaApiError } from "@/app/lib/vardaApi";
 import { OrganizationWorkspace } from "./OrganizationWorkspace";
 
 const mocks = vi.hoisted(() => ({
@@ -26,8 +26,8 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/app/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { id: "me", email: "me@firm.example" } }),
 }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
   getOrg: mocks.getOrg,
   listOrgMembers: mocks.listOrgMembers,
   listOrgResources: mocks.listOrgResources,
@@ -165,7 +165,7 @@ describe("OrganizationWorkspace", () => {
   it("shows last-admin failures with the warning primitive", async () => {
     const user = userEvent.setup();
     mocks.updateOrgMember.mockRejectedValue(
-      new MikeApiError({
+      new VardaApiError({
         status: 409,
         message: "An organization must keep at least one admin.",
       }),

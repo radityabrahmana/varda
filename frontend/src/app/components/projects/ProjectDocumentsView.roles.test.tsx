@@ -24,7 +24,7 @@ vi.mock("@/app/components/modals/AddDocumentsModal", () => ({
 vi.mock("next/navigation", () => ({
     useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     createProjectFolder: vi.fn(),
     deleteProjectFolder: vi.fn(),
     getProject: vi.fn().mockResolvedValue({ id: "p1", documents: [] }),

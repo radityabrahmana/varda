@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Chat, Citation, Message } from "@/app/components/shared/types";
-import { MikeApiError } from "@/app/lib/mikeApi";
+import { VardaApiError } from "@/app/lib/vardaApi";
 import { ChatView } from "./ChatView";
 import { PageChromeContext } from "@/app/contexts/PageChromeContext";
 
@@ -16,8 +16,8 @@ const { listDocumentVersions } = vi.hoisted(() => ({
     listDocumentVersions: vi.fn(),
 }));
 
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     listDocumentVersions: (...args: unknown[]) => listDocumentVersions(...args),
 }));
 
@@ -159,7 +159,7 @@ beforeEach(() => {
 describe("ChatView citation on a chat shared without its documents", () => {
     it("explains a refused document instead of doing nothing", async () => {
         listDocumentVersions.mockRejectedValue(
-            new MikeApiError({ message: "Not found", status: 404 }),
+            new VardaApiError({ message: "Not found", status: 404 }),
         );
         renderView();
 
@@ -198,7 +198,7 @@ describe("ChatView citation on a chat shared without its documents", () => {
     // own file names a culprit who does not exist.
     it("tells the chat's owner the document is gone, not withheld", async () => {
         listDocumentVersions.mockRejectedValue(
-            new MikeApiError({ message: "Not found", status: 404 }),
+            new VardaApiError({ message: "Not found", status: 404 }),
         );
         renderView({ is_owner: true, access_role: "owner" });
 
@@ -217,7 +217,7 @@ describe("ChatView citation on a chat shared without its documents", () => {
     // project's documents, and a 404 there means the cited one was deleted.
     it("does not blame a sharer for a project chat's deleted document", async () => {
         listDocumentVersions.mockRejectedValue(
-            new MikeApiError({ message: "Not found", status: 404 }),
+            new VardaApiError({ message: "Not found", status: 404 }),
         );
         renderView({ project_id: "project-1", access_role: "editor" });
 
@@ -235,7 +235,7 @@ describe("ChatView citation on a chat shared without its documents", () => {
     // clicking a card for a missing document did nothing whatsoever.
     it("explains a refused document from the download card too", async () => {
         listDocumentVersions.mockRejectedValue(
-            new MikeApiError({ message: "Not found", status: 404 }),
+            new VardaApiError({ message: "Not found", status: 404 }),
         );
         renderView();
 
@@ -248,7 +248,7 @@ describe("ChatView citation on a chat shared without its documents", () => {
 
     it("tells the owner a download card's document is gone", async () => {
         listDocumentVersions.mockRejectedValue(
-            new MikeApiError({ message: "Not found", status: 404 }),
+            new VardaApiError({ message: "Not found", status: 404 }),
         );
         renderView({ is_owner: true, access_role: "owner" });
 

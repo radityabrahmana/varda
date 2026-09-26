@@ -1,5 +1,5 @@
 -- Playbook rules scoped by document type + the NDA rule set.
--- Run in the Varda (Mike) Supabase SQL editor — NOT Lovable. Idempotent.
+-- Run in the Varda Supabase SQL editor — NOT Lovable. Idempotent.
 --
 -- applies_to = NULL  → rule applies to every document type (GP3, GP5)
 -- applies_to = {...} → rule is only scored for those reviews.document_type values

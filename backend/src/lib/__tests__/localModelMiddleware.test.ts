@@ -84,7 +84,7 @@ describe("localModelToleranceMiddleware — streaming", () => {
     it("recovers a tool call from prose and hides the markup", async () => {
         const { parts } = await runStream([
             "Calling tool.\n<tool_call>",
-            `{"name":"${TOOL}","arguments":{"query":"MIKE"}}`,
+            `{"name":"${TOOL}","arguments":{"query":"VARDA"}}`,
             "</tool_call>",
         ]);
         expect(textParts(parts)).toBe("Calling tool.\n");
@@ -95,7 +95,7 @@ describe("localModelToleranceMiddleware — streaming", () => {
                 type: "tool-call",
                 toolCallId: "call_text_0_0_0",
                 toolName: TOOL,
-                input: JSON.stringify({ query: "MIKE" }),
+                input: JSON.stringify({ query: "VARDA" }),
             },
         ]);
         expect(parts.at(-1)).toMatchObject({
@@ -154,7 +154,7 @@ describe("localModelToleranceMiddleware — streaming", () => {
             content: [
                 {
                     type: "text",
-                    text: `<tool_call>{"name":"${TOOL}","arguments":{"query":"MIKE"}}</tool_call>`,
+                    text: `<tool_call>{"name":"${TOOL}","arguments":{"query":"VARDA"}}</tool_call>`,
                 },
             ],
             finishReason: STOP,
@@ -176,7 +176,7 @@ describe("localModelToleranceMiddleware — streaming", () => {
                 type: "tool-call",
                 toolCallId: "call_text_0_0_0",
                 toolName: TOOL,
-                input: JSON.stringify({ query: "MIKE" }),
+                input: JSON.stringify({ query: "VARDA" }),
             },
         ]);
     });
@@ -189,7 +189,7 @@ describe("localModelToleranceMiddleware — generate", () => {
             content: [
                 {
                     type: "text",
-                    text: `Calling tool.\n<tool_call>{"name":"${TOOL}","arguments":{"query":"MIKE"}}</tool_call>`,
+                    text: `Calling tool.\n<tool_call>{"name":"${TOOL}","arguments":{"query":"VARDA"}}</tool_call>`,
                 },
             ],
             finishReason: STOP,
@@ -209,7 +209,7 @@ describe("localModelToleranceMiddleware — generate", () => {
                 type: "tool-call",
                 toolCallId: "call_text_0_0_0",
                 toolName: TOOL,
-                input: JSON.stringify({ query: "MIKE" }),
+                input: JSON.stringify({ query: "VARDA" }),
             },
         ]);
         expect(result.finishReason).toEqual({

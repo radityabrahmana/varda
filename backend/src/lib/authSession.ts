@@ -9,7 +9,11 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { requestOriginIsWordAddin } from "./origins";
 import { supabaseSessionConfiguration } from "./runtimeConfig";
 
-const AUTH_COOKIE_BASE_NAME = "mike-session";
+const AUTH_COOKIE_BASE_NAME = "varda-session";
+// Sessions issued before the rename use this base name. They are read as if
+// they carried the current name, rewritten on the next refresh, and cleared on
+// sign-out, so existing users stay signed in across the deploy.
+const LEGACY_AUTH_COOKIE_BASE_NAME = "mike-session";
 
 function authConfiguration() {
   const { url, key } = supabaseSessionConfiguration();
@@ -30,6 +34,34 @@ export function authCookiesAreSecure(
 
 export function authCookieName(env: NodeJS.ProcessEnv = process.env): string {
   return `${authCookiesAreSecure(env) ? "__Host-" : ""}${AUTH_COOKIE_BASE_NAME}`;
+}
+
+function legacyAuthCookieName(env: NodeJS.ProcessEnv = process.env): string {
+  return `${authCookiesAreSecure(env) ? "__Host-" : ""}${LEGACY_AUTH_COOKIE_BASE_NAME}`;
+}
+
+/**
+ * Parses the request cookies, presenting legacy session cookies under the
+ * current name when the request carries no current-name session cookie.
+ */
+export function requestAuthCookies(
+  cookieHeader: string,
+  env: NodeJS.ProcessEnv = process.env,
+): { name: string; value: string }[] {
+  const cookies = parseCookieHeader(cookieHeader).map(({ name, value }) => ({
+    name,
+    value: value ?? "",
+  }));
+  const current = authCookieName(env);
+  if (cookies.some(({ name }) => belongsToAuthStorage(name, current))) {
+    return cookies;
+  }
+  const legacy = legacyAuthCookieName(env);
+  return cookies.map((cookie) =>
+    belongsToAuthStorage(cookie.name, legacy)
+      ? { ...cookie, name: current + cookie.name.slice(legacy.length) }
+      : cookie,
+  );
 }
 
 function appendCookie(
@@ -66,11 +98,13 @@ function belongsToAuthStorage(name: string, baseName: string): boolean {
 }
 
 export function clearRequestAuthCookies(req: Request, res: Response): void {
-  const baseName = authCookieName();
+  const baseNames = [authCookieName(), legacyAuthCookieName()];
   const cookies = parseCookieHeader(req.headers.cookie ?? "");
   const cookieOptions = requestCookieOptions(req);
   for (const { name } of cookies) {
-    if (!belongsToAuthStorage(name, baseName)) continue;
+    if (!baseNames.some((baseName) => belongsToAuthStorage(name, baseName))) {
+      continue;
+    }
     appendCookie(res, name, "", {
       ...cookieOptions,
       maxAge: 0,
@@ -101,7 +135,7 @@ export function createRequestSupabase(
     },
     cookies: {
       getAll() {
-        return parseCookieHeader(req.headers.cookie ?? "");
+        return requestAuthCookies(req.headers.cookie ?? "");
       },
       setAll(cookiesToSet, responseHeaders) {
         for (const { name, value, options } of cookiesToSet) {

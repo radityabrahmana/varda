@@ -3,15 +3,15 @@ type DragTypes = Pick<DataTransfer, "types">;
 export function isDocumentViewerDrag(dataTransfer: DragTypes): boolean {
     return (
         isExternalFileDrag(dataTransfer) ||
-        dataTransfer.types.includes("application/mike-doc") ||
-        dataTransfer.types.includes("application/mike-docs")
+        dataTransfer.types.includes("application/varda-doc") ||
+        dataTransfer.types.includes("application/varda-docs")
     );
 }
 
 export function isProjectItemDrag({ types }: DragTypes): boolean {
     return (
-        types.includes("application/mike-doc") ||
-        types.includes("application/mike-folder")
+        types.includes("application/varda-doc") ||
+        types.includes("application/varda-folder")
     );
 }
 
@@ -22,6 +22,6 @@ export function isExternalFileDrag({ types }: DragTypes): boolean {
 export function isChatAttachmentDrag(dataTransfer: DragTypes): boolean {
     return (
         isExternalFileDrag(dataTransfer) ||
-        dataTransfer.types.includes("application/mike-doc")
+        dataTransfer.types.includes("application/varda-doc")
     );
 }

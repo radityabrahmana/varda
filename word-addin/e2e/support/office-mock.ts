@@ -136,12 +136,12 @@ interface StoredDocumentState {
  */
 export function installOfficeMock(seed: OfficeSeed): void {
   const w = window as any;
-  const documentStateKey = "__mike_word_e2e_document_v1";
-  const officeStorageKey = "__mike_word_e2e_office_storage_v1";
-  const accessTokenKey = "mike_token";
-  const refreshTokenKey = "mike_refresh_token";
-  const editApplyModeKey = "mike_word_edit_apply_mode";
-  const chatStorageModePrefix = "mike_word_chat_storage_mode:";
+  const documentStateKey = "__varda_word_e2e_document_v1";
+  const officeStorageKey = "__varda_word_e2e_office_storage_v1";
+  const accessTokenKey = "varda_token";
+  const refreshTokenKey = "varda_refresh_token";
+  const editApplyModeKey = "varda_word_edit_apply_mode";
+  const chatStorageModePrefix = "varda_word_chat_storage_mode:";
 
   const clone = <T>(value: T): T => {
     if (value === undefined) return value;

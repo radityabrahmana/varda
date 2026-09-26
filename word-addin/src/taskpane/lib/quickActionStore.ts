@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { listQuickActions } from "../api/mikeApi";
+import { listQuickActions } from "../api/vardaApi";
 import type { QuickAction } from "../types";
 
 let snapshot: QuickAction[] = [];

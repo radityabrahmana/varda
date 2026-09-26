@@ -22,7 +22,7 @@ import {
     resolveProjectFolderPath,
     uploadProjectDocument,
     uploadProjectDocuments,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { Document } from "@/app/components/shared/types";
 import { AddDocumentsModal } from "@/app/components/modals/AddDocumentsModal";
 import {

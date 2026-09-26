@@ -3,7 +3,7 @@ import { type GlobalProvider, ThemeState } from "@ladle/react";
 import "./ladle.css";
 
 /**
- * Mike's dark mode is class-based — `@custom-variant dark (&:is(.dark *))` in
+ * Varda's dark mode is class-based — `@custom-variant dark (&:is(.dark *))` in
  * globals.css — and the app sets `.dark` on the document root from the
  * Settings > Appearance preference. Ladle's theme toggle only flips its own
  * global state, so it has to drive the same class or every dark-mode token in

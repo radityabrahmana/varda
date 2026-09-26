@@ -1,13 +1,13 @@
 # Scoped memory
 
-Mike can maintain one private Markdown file named `memory.md` for a user and
+Varda can maintain one private Markdown file named `memory.md` for a user and
 one shared Markdown file for each project. Memory is optional, inspectable, and
 editable. It is reference context for later conversations; it is not a source
 of authorization, instructions, or citations.
 
 Memory has two separate paths:
 
-- **Use during chat:** before generating an answer, Mike loads the enabled
+- **Use during chat:** before generating an answer, Varda loads the enabled
   memory files that are safe for that conversation and supplies them to the
   chat model as lower-authority reference context.
 - **Learning after chat:** after a completed conversation becomes quiet, a

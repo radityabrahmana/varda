@@ -5,14 +5,14 @@ import Image from "next/image";
 import { MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useUserProfile } from "@/app/contexts/UserProfileContext";
-import { MikeIcon } from "@/app/components/chat/mike-icon";
+import { VardaIcon } from "@/app/components/chat/varda-icon";
 import { ChatInput, type ChatInputHandle } from "./ChatInput";
 import { QuickActionsModal } from "./QuickActionsModal";
 import {
     createQuickAction,
     listQuickActions,
     updateQuickAction,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { Document, Message, QuickAction } from "../shared/types";
 import {
     LIQUID_GLASS_HOVER_CLASS,
@@ -192,7 +192,7 @@ export function InitialView({ onSubmit, onDocumentClick }: InitialViewProps) {
                                 "transform 900ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                         }}
                     >
-                        <MikeIcon size={ICON_SIZE} />
+                        <VardaIcon size={ICON_SIZE} />
                     </div>
                     <h1
                         ref={textRef}

@@ -18,7 +18,7 @@ import {
     uploadStandaloneDocument,
     uploadStandaloneDocuments,
     uploadWorkflowAsset,
-} from "./mikeApi";
+} from "./vardaApi";
 import { uploadProcessingPollDelayMs } from "@/shared/api/uploadSessionClient";
 
 const fetchMock = vi.fn();

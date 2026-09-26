@@ -13,7 +13,7 @@ const { createChat, listChats, renameChatApi } = vi.hoisted(() => ({
     renameChatApi: vi.fn(),
 }));
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     createChat: (...args: unknown[]) => createChat(...args),
     listChats: (...args: unknown[]) => listChats(...args),
     renameChat: (...args: unknown[]) => renameChatApi(...args),
