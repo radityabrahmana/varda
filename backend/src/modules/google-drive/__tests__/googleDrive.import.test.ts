@@ -93,7 +93,7 @@ beforeEach(() => {
       document_id: DOC,
       version_number: 1,
       storage_path: "",
-      source: "google_drive",
+      source: "upload",
       filename: "",
       created_at: "2026-09-26T10:00:00Z",
       deleted_at: null,
@@ -135,9 +135,11 @@ describe("importDriveFile", () => {
     });
     expect(calls[1]).toContain(`export?mimeType=${encodeURIComponent(DOCX_MIME)}`);
     expect(vi.mocked(uploadFile).mock.calls[0][0]).toBe(`documents/${USER}/${DOC}/source.docx`);
+    // Recorded as an upload: that is the vocabulary the source check
+    // constraint and the version-numbering function accept.
     expect(vi.mocked(createDocumentVersion).mock.calls[0][1]).toMatchObject({
       document_id: DOC,
-      source: "google_drive",
+      source: "upload",
       version_number: 1,
       file_type: "docx",
       size_bytes: "PK-docx-bytes".length,
@@ -146,7 +148,12 @@ describe("importDriveFile", () => {
     expect(inserted).toMatchObject({ project_id: null, org_id: null, user_id: USER, library_kind: "file" });
     const link = fake.calls[2].payload as Record<string, unknown>;
     expect(link).toMatchObject({ document_id: DOC, drive_file_id: "file-1", drive_head_revision_id: "rev-9", imported_by: USER });
-    expect(vi.mocked(recordAudit).mock.calls[0][1]).toMatchObject({ action: "document.uploaded", documentId: DOC, surface: "assistant" });
+    expect(vi.mocked(recordAudit).mock.calls[0][1]).toMatchObject({
+      action: "document.uploaded",
+      documentId: DOC,
+      surface: "assistant",
+      detail: { source: "google_drive", drive_file_id: "file-1" },
+    });
     fake.done();
   });
 
@@ -231,6 +238,7 @@ describe("importDriveFile", () => {
     const result = await importDriveFile(fake.db, { userId: USER, userEmail: null, fileId: "file-1" }, deps(driveFetch().fetchImpl));
     expect(result).toMatchObject({ ok: false, kind: "error" });
     expect(vi.mocked(deleteFile)).toHaveBeenCalledWith(`documents/${USER}/${DOC}/source.docx`);
+    expect(vi.mocked(deleteFile)).toHaveBeenCalledWith(`converted-pdfs/${USER}/${DOC}.pdf`);
     expect(fake.calls[2].filters).toEqual([["eq", "id", DOC]]);
     fake.done();
   });

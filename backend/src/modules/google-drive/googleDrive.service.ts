@@ -19,7 +19,8 @@ export {
   type OAuthDeps,
 } from "./googleDrive.oauth";
 export {
-  DOCUMENT_SOURCE_GOOGLE_DRIVE,
+  AUDIT_SOURCE_GOOGLE_DRIVE,
+  DOCUMENT_VERSION_SOURCE,
   importDriveFile,
   type ImportDriveFileArgs,
   type ImportedDocument,

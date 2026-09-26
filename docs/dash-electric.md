@@ -60,8 +60,8 @@ Open PRs against `radityabrahmana/varda` — `gh pr create -R radityabrahmana/va
   `read_regulation`. Generic by design: another tenant loads its own ministry's rules. Tables in
   `janus-migrations/20260924_01_regulation_library.sql` (apply by hand).
 - `backend/src/modules/google-drive/` — Google Drive as a document source (`docs/google-drive.md`): per-user
-  OAuth connection, file listing, import as version 1 with `source = 'google_drive'` plus a
-  `document_google_drive_links` row for the later write-back. Generic by design. Tables in
+  OAuth connection, file listing, import as version 1 (`source = 'upload'`; provenance in the
+  `document_google_drive_links` row, which the later write-back also uses). Generic by design. Tables in
   `janus-migrations/20260926_01_google_drive.sql` (apply by hand).
 - `frontend/src/app/components/contracts/`, `components/playbook/`, pages `/contracts`, `/contracts/new`,
   `/contracts/[id]`, `/playbook`.
