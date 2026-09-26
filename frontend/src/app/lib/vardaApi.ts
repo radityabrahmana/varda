@@ -1024,6 +1024,76 @@ export async function setMcpToolEnabled(
     );
 }
 
+// ---------------------------------------------------------------------------
+// Google Drive as a document source (docs/google-drive.md)
+
+export interface GoogleDriveStatus {
+    configured: boolean;
+    connected: boolean;
+    account_email: string | null;
+    /** The granted scope allows writing files back to Drive. */
+    can_write: boolean;
+}
+
+export interface GoogleDriveFile {
+    id: string;
+    name: string;
+    mimeType: string;
+    modifiedTime: string | null;
+    webViewLink: string | null;
+    headRevisionId: string | null;
+    size: number | null;
+    ownerEmail: string | null;
+    /** The type Varda stores the file as (a Google Doc becomes docx). */
+    file_type: string;
+}
+
+export const GOOGLE_DRIVE_NOT_CONNECTED_CODE = "google_drive_not_connected";
+export const GOOGLE_DRIVE_NOT_CONFIGURED_CODE = "google_drive_not_configured";
+
+export async function getGoogleDriveStatus(): Promise<GoogleDriveStatus> {
+    return apiRequest<GoogleDriveStatus>("/google-drive/status");
+}
+
+export async function startGoogleDriveOAuth(): Promise<{
+    authorizationUrl: string;
+    callbackOrigin: string;
+}> {
+    return apiRequest("/google-drive/oauth/start", { method: "POST" });
+}
+
+export async function disconnectGoogleDrive(): Promise<GoogleDriveStatus> {
+    return apiRequest<GoogleDriveStatus>("/google-drive/connection", {
+        method: "DELETE",
+    });
+}
+
+export async function listGoogleDriveFiles(args: {
+    search?: string;
+    pageToken?: string | null;
+}): Promise<{ files: GoogleDriveFile[]; next_page_token: string | null }> {
+    const params = new URLSearchParams();
+    if (args.search?.trim()) params.set("q", args.search.trim());
+    if (args.pageToken) params.set("page_token", args.pageToken);
+    const query = params.toString();
+    return apiRequest(`/google-drive/files${query ? `?${query}` : ""}`);
+}
+
+/** Import one Drive file as a Varda document (into a project when given). */
+export async function importGoogleDriveFile(args: {
+    fileId: string;
+    projectId?: string | null;
+}): Promise<Document> {
+    return apiRequest<Document>("/google-drive/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            file_id: args.fileId,
+            ...(args.projectId ? { project_id: args.projectId } : {}),
+        }),
+    });
+}
+
 /**
  * Error code the backend attaches when a connector cannot start because the
  * deployment is missing operator-side setup (an OAuth client for a provider

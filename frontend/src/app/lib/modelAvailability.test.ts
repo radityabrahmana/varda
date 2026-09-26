@@ -107,6 +107,11 @@ describe("isModelAvailable", () => {
     it("is true for ollama models even with no keys configured", () => {
         expect(isModelAvailable("ollama/llama3.2", keys({}))).toBe(true);
     });
+
+    it("is true for the Auto/Fast/Deep modes: the server picks the tier model", () => {
+        expect(isModelAvailable("varda/auto", keys({}))).toBe(true);
+        expect(isModelAvailable("varda/deep", keys({}))).toBe(true);
+    });
 });
 
 describe("isProviderAvailable", () => {

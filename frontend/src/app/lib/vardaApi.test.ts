@@ -159,6 +159,11 @@ import {
     shareWorkflow,
     startMcpConnectorOAuth,
     startUserExport,
+    getGoogleDriveStatus,
+    startGoogleDriveOAuth,
+    disconnectGoogleDrive,
+    listGoogleDriveFiles,
+    importGoogleDriveFile,
     streamChat,
     streamProjectChat,
     streamTabularChat,
@@ -1152,6 +1157,14 @@ describe("searchProjectDirectory", () => {
 });
 
 describe("getProjectDirectoryLevel", () => {
+    it("omits limit and offset from the directory search when unset", async () => {
+        fetchMock.mockResolvedValue(jsonResponse([]));
+        await searchProjectDirectory({ search: "nda" });
+        expect(lastFetchCall().url).toBe(
+            "/api/projects?view=directory-search&search=nda",
+        );
+    });
+
     it("serializes a folder level, pagination, and abort signal", async () => {
         fetchMock.mockResolvedValue(
             jsonResponse({
@@ -2119,6 +2132,51 @@ describe("thin endpoint wrappers", () => {
             url: "/user/mcp-connectors/m1/tools/t1",
             method: "PATCH",
             body: { enabled: true },
+        },
+        // Google Drive source
+        {
+            name: "getGoogleDriveStatus",
+            call: () => getGoogleDriveStatus(),
+            url: "/google-drive/status",
+            method: "GET",
+        },
+        {
+            name: "startGoogleDriveOAuth",
+            call: () => startGoogleDriveOAuth(),
+            url: "/google-drive/oauth/start",
+            method: "POST",
+        },
+        {
+            name: "disconnectGoogleDrive",
+            call: () => disconnectGoogleDrive(),
+            url: "/google-drive/connection",
+            method: "DELETE",
+        },
+        {
+            name: "listGoogleDriveFiles",
+            call: () => listGoogleDriveFiles({ search: " PKS ", pageToken: "p2" }),
+            url: "/google-drive/files?q=PKS&page_token=p2",
+            method: "GET",
+        },
+        {
+            name: "listGoogleDriveFiles (no filters)",
+            call: () => listGoogleDriveFiles({}),
+            url: "/google-drive/files",
+            method: "GET",
+        },
+        {
+            name: "importGoogleDriveFile",
+            call: () => importGoogleDriveFile({ fileId: "f1", projectId: "p1" }),
+            url: "/google-drive/import",
+            method: "POST",
+            body: { file_id: "f1", project_id: "p1" },
+        },
+        {
+            name: "importGoogleDriveFile (standalone)",
+            call: () => importGoogleDriveFile({ fileId: "f1" }),
+            url: "/google-drive/import",
+            method: "POST",
+            body: { file_id: "f1" },
         },
         // Projects
         {

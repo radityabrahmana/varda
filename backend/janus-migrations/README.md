@@ -12,6 +12,8 @@ project, and record the last applied filename in the migration handoff doc.
 Every file is idempotent (`if not exists` / `add column if not exists`).
 
 Later Dash-side additions that follow the same convention: `review_access_grants`,
-`review_suggestions`, `review_revision_edits`, and the regulation library
+`review_suggestions`, `review_revision_edits`, the regulation library
 (`regulations`, `regulation_nodes`, `search_regulation_nodes()`; see
-`docs/regulation-library.md`).
+`docs/regulation-library.md`), and the Google Drive source
+(`user_google_drive_connections`, `google_drive_oauth_states`,
+`document_google_drive_links`; see `docs/google-drive.md`).

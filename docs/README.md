@@ -16,6 +16,8 @@
   asynchronous learning, deletion, and operations
 - [CourtListener integration](courtlistener.md) — live US case-law tools and
   optional bulk data
+- [Google Drive as a document source](google-drive.md) — the composer's
+  Sources menu, the per-user Google connection, import of Docs/Sheets/Slides
 - [Microsoft Word add-in](../word-addin/README.md) — concise setup and command
   reference
 - [Word add-in development and deployment](word-addin-development.md) — manual

@@ -35,8 +35,11 @@ vi.mock("./ModelToggle", async (importOriginal) => ({
     ModelToggle: () => null,
 }));
 
-vi.mock("./AddDocButton", () => ({
-    AddDocButton: () => <button aria-label="Add documents" />,
+vi.mock("./SourcesMenu", () => ({
+    SourcesMenu: () => <button aria-label="Add sources" />,
+}));
+vi.mock("./GoogleDrivePickerModal", () => ({
+    GoogleDrivePickerModal: () => null,
 }));
 vi.mock("./UploadOverlay", () => ({ UploadOverlay: () => null }));
 vi.mock("../shared/FileTypeIcon", () => ({ FileTypeIcon: () => null }));
@@ -100,7 +103,7 @@ describe("ChatInput canSend gating", () => {
             screen.getByRole("button", { name: "Send message" }),
         ).toBeDisabled();
         expect(
-            screen.queryByRole("button", { name: "Add documents" }),
+            screen.queryByRole("button", { name: "Add sources" }),
         ).toBeNull();
         expect(
             screen.queryByRole("button", { name: "Open workflows" }),
@@ -171,7 +174,7 @@ describe("ChatInput canSend gating", () => {
             screen.getByPlaceholderText("How can I help?"),
         ).not.toBeDisabled();
         expect(
-            screen.getByRole("button", { name: "Add documents" }),
+            screen.getByRole("button", { name: "Add sources" }),
         ).toBeInTheDocument();
     });
 
