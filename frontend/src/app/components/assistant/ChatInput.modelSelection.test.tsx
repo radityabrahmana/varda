@@ -44,7 +44,10 @@ vi.mock("./ModelToggle", async (importOriginal) => ({
     ),
 }));
 
-vi.mock("./AddDocButton", () => ({ AddDocButton: () => null }));
+vi.mock("./SourcesMenu", () => ({ SourcesMenu: () => null }));
+vi.mock("./GoogleDrivePickerModal", () => ({
+    GoogleDrivePickerModal: () => null,
+}));
 vi.mock("./UploadOverlay", () => ({ UploadOverlay: () => null }));
 vi.mock("../shared/FileTypeIcon", () => ({ FileTypeIcon: () => null }));
 vi.mock("../modals/AddDocumentsModal", () => ({

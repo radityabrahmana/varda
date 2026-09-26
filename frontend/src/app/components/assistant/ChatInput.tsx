@@ -17,7 +17,8 @@ import {
     Waypoints,
     X,
 } from "lucide-react";
-import { AddDocButton } from "./AddDocButton";
+import { SourcesMenu } from "./SourcesMenu";
+import { GoogleDrivePickerModal } from "./GoogleDrivePickerModal";
 import { UploadOverlay } from "./UploadOverlay";
 import { FileTypeIcon } from "../shared/FileTypeIcon";
 import { AddDocumentsModal } from "../modals/AddDocumentsModal";
@@ -65,6 +66,7 @@ import {
     type UploadProgress,
 } from "@/app/lib/vardaApi";
 import {
+    SUPPORTED_DOCUMENT_ACCEPT,
     formatUnsupportedDocumentWarning,
     partitionSupportedDocumentFiles,
 } from "@/app/lib/documentUploadValidation";
@@ -199,6 +201,8 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
     const controlsRef = useRef<HTMLDivElement>(null);
     const [compactControls, setCompactControls] = useState(false);
     const [docSelectorOpen, setDocSelectorOpen] = useState(false);
+    const [drivePickerOpen, setDrivePickerOpen] = useState(false);
+    const sourceFileInputRef = useRef<HTMLInputElement>(null);
     const [docSelectorInitialTab, setDocSelectorInitialTab] =
         useState<DirectoryTab>("files");
     const [workflowModalOpen, setWorkflowModalOpen] = useState(false);
@@ -786,11 +790,17 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                     >
                         <div className="flex items-center gap-1">
                             {!hideAddDocButton && canSend && (
-                                <AddDocButton
+                                <SourcesMenu
+                                    onUpload={() =>
+                                        sourceFileInputRef.current?.click()
+                                    }
                                     onBrowseAll={() => {
                                         setDocSelectorInitialTab("files");
                                         setDocSelectorOpen(true);
                                     }}
+                                    onGoogleDrive={() =>
+                                        setDrivePickerOpen(true)
+                                    }
                                     selectedDocIds={attachedDocs.map(
                                         (d) => d.id,
                                     )}
@@ -885,6 +895,35 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput(
                 </div>
             </div>
 
+            <input
+                ref={sourceFileInputRef}
+                type="file"
+                accept={SUPPORTED_DOCUMENT_ACCEPT}
+                multiple
+                className="hidden"
+                aria-label="Upload files"
+                onChange={(event) => {
+                    const files = Array.from(event.target.files ?? []);
+                    event.target.value = "";
+                    if (files.length > 0) void handleDroppedFiles(files);
+                }}
+            />
+            <GoogleDrivePickerModal
+                open={drivePickerOpen}
+                onClose={() => setDrivePickerOpen(false)}
+                projectId={dropUploadsToProject ? projectId : undefined}
+                onImported={(document) => {
+                    addAttachedDocuments([document]);
+                    if (dropUploadsToProject && projectId) {
+                        onDocumentsUploaded?.([document]);
+                    }
+                }}
+                breadcrumb={
+                    selectedWorkflow
+                        ? ["Assistant", selectedWorkflow.title, "Google Drive"]
+                        : ["Assistant", "Google Drive"]
+                }
+            />
             <AddDocumentsModal
                 open={docSelectorOpen}
                 keepMounted

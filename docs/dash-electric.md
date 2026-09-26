@@ -15,6 +15,7 @@ before touching deployment, data or the Dash-specific modules.
 | Database + auth + storage | Supabase project `tmnlpfpzoxmujwilhbpw` (Varda's own; bucket `varda`, S3 protocol, region ap-southeast-1) |
 | Models | OpenRouter via `OPENROUTER_API_KEY`; Assistant models come from `VARDA_MODEL_CONFIG_JSON` (Gemini 3 Flash / 2.5 Pro over OpenRouter), plus a `tiers` block for the Auto/Fast/Deep modes (Fast = `openrouter/google/gemini-3.8-flash`, Deep = `openrouter/anthropic/claude-sonnet-5`; `docs/assistant-modes.md`); contract review uses `google/gemini-2.5-pro` → `gemini-2.5-flash` fallback (`CONTRACTS_AI_MODEL`, `CONTRACTS_AI_FALLBACK_MODEL`, `CONTRACTS_AI_MAX_TOKENS`) |
 | Legal research | Pasal.id (Indonesian legislation) via `PASAL_MCP_TOKEN` on the backend service; see `docs/pasal.md`. CourtListener (US) is not configured. |
+| Google Drive | Sources → Google Drive in the composer imports Google Docs as DOCX (`docs/google-drive.md`). Needs `GOOGLE_DRIVE_OAUTH_CLIENT_ID/SECRET` on the backend service (a Web OAuth client in Google Cloud with redirect URI `https://varda.dashelectric.co/api/google-drive/oauth/callback`, Drive API enabled, consent screen Internal) and the SQL in `janus-migrations/20260926_01_google_drive.sql`. |
 | Sign-up | `SIGNUP_ALLOWED_DOMAINS=dashelectric.co` + `auth.users` trigger; Google login enabled in Supabase |
 | Organization | "Dash Electric" (`55d6b8f4-…`); every `@dashelectric.co` account joins via an `auth.users` trigger |
 
@@ -58,6 +59,10 @@ Open PRs against `radityabrahmana/varda` — `gh pr create -R radityabrahmana/va
   upload KUHPerdata, Permenhub and other rules Pasal.id lacks; the Assistant gets `search_regulations` /
   `read_regulation`. Generic by design: another tenant loads its own ministry's rules. Tables in
   `janus-migrations/20260924_01_regulation_library.sql` (apply by hand).
+- `backend/src/modules/google-drive/` — Google Drive as a document source (`docs/google-drive.md`): per-user
+  OAuth connection, file listing, import as version 1 with `source = 'google_drive'` plus a
+  `document_google_drive_links` row for the later write-back. Generic by design. Tables in
+  `janus-migrations/20260926_01_google_drive.sql` (apply by hand).
 - `frontend/src/app/components/contracts/`, `components/playbook/`, pages `/contracts`, `/contracts/new`,
   `/contracts/[id]`, `/playbook`.
 - `backend/janus-migrations/*.sql` — SQL for the **Dash-only tables** (reviews, playbook_rules,

@@ -47,6 +47,7 @@ import {
   SettingsLabel,
 } from "@/app/components/settings/SettingsText";
 import { SettingsCard } from "@/app/components/settings/SettingsCard";
+import { GoogleDriveConnectionCard } from "@/app/components/settings/GoogleDriveConnectionCard";
 import { SettingsHeading } from "@/app/components/settings/SettingsHeading";
 import { ToggleSwitchUI } from "@/shared/ui/ToggleSwitchUI";
 import { settingsGlassIconButtonClassName } from "../settingsStyles";
@@ -804,6 +805,7 @@ export default function ConnectorsPage() {
       )}
 
       <div className="space-y-3">
+        <GoogleDriveConnectionCard />
         {!loading &&
           (connectors.length === 0 ? (
             <SettingsCard>

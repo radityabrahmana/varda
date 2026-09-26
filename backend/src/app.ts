@@ -25,6 +25,7 @@ import { uploadSessionsRouter } from "./modules/uploads/uploads.routes";
 import { contractsRouter } from "./modules/contracts/contracts.routes";
 import { playbookRouter } from "./modules/playbook/playbook.routes";
 import { regulationsRouter } from "./modules/regulations/regulations.routes";
+import { googleDriveRouter } from "./modules/google-drive/googleDrive.routes";
 import {
   projectMemoryRouter,
   userMemoryRouter,
@@ -312,6 +313,7 @@ app.use("/upload-sessions", uploadSessionsRouter);
 app.use("/contracts", contractsRouter);
 app.use("/playbook", playbookRouter);
 app.use("/regulations", regulationsRouter);
+app.use("/google-drive", googleDriveRouter);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
