@@ -16,6 +16,7 @@
 
 import JSZip from "jszip";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
+import { createNumberingResolver } from "./docxNumbering";
 
 // ---------------------------------------------------------------------------
 // JSZip path helpers
@@ -157,17 +158,18 @@ function getTextContent(wtEl: XNode): string {
 }
 
 // Build a w:r element that wraps a piece of text. Newlines in the text are
-// emitted as <w:br/> soft line breaks (interleaved with w:t/w:delText
-// segments) so models can request multi-line replacements without the
-// literal "\n" showing up as visible text.
+// emitted as <w:br/> soft line breaks and tabs as <w:tab/> (interleaved with
+// w:t/w:delText segments) so models can request multi-line replacements
+// without the literal "\n" showing up as visible text, and so the tabs and
+// breaks the flattener reads back as "\t" / "\n" round-trip unchanged.
 function buildRun(rPr: XNode | null, text: string, tagName: "w:t" | "w:delText"): XNode {
     const children: XNode[] = [];
     if (rPr) children.push(cloneNode(rPr));
-    const segments = text.split("\n");
-    for (let i = 0; i < segments.length; i++) {
-        if (i > 0) children.push(makeEl("w:br", []));
-        const seg = segments[i];
-        if (seg.length > 0) {
+    const segments = text.split(/(\n|\t)/);
+    for (const seg of segments) {
+        if (seg === "\n") children.push(makeEl("w:br", []));
+        else if (seg === "\t") children.push(makeEl("w:tab", []));
+        else if (seg.length > 0) {
             children.push(
                 makeEl(tagName, [makeText(seg)], { "xml:space": "preserve" }),
             );
@@ -215,29 +217,42 @@ function flattenParagraph(paraChildren: XNode[]): Flattened {
         const rKids = elChildren(rEl);
         let rPr: XNode | null = null;
         const textNodes: RunSlot["textNodes"] = [];
+        const pushText = (el: XNode, txt: string) => {
+            const start = paraText.length;
+            textNodes.push({
+                wtEl: el,
+                text: txt,
+                paraStart: start,
+                paraEnd: start + txt.length,
+            });
+            const runIdx = runs.length;
+            const tnIdx = textNodes.length - 1;
+            paraText += txt;
+            for (let i = 0; i < txt.length; i++) {
+                charRunArr.push(runIdx);
+                charTextNodeArr.push(tnIdx);
+                charOffsetArr.push(i);
+            }
+        };
         for (const rk of rKids) {
             const name = elName(rk);
             if (name === "w:rPr") {
                 rPr = rk;
             } else if (name === "w:t") {
-                const txt = getTextContent(rk);
-                const start = paraText.length;
-                textNodes.push({
-                    wtEl: rk,
-                    text: txt,
-                    paraStart: start,
-                    paraEnd: start + txt.length,
-                });
-                const runIdx = runs.length;
-                const tnIdx = textNodes.length - 1;
-                paraText += txt;
-                for (let i = 0; i < txt.length; i++) {
-                    charRunArr.push(runIdx);
-                    charTextNodeArr.push(tnIdx);
-                    charOffsetArr.push(i);
-                }
+                pushText(rk, getTextContent(rk));
+            } else if (name === "w:tab") {
+                // Tabs and soft line breaks are part of the text a reader
+                // sees ("NAME\t: Robert"), so they take part in matching and
+                // are rebuilt as <w:tab/> / <w:br/> by buildRun.
+                pushText(rk, "\t");
+            } else if (
+                (name === "w:br" &&
+                    (!elAttrs(rk)["@_w:type"] || elAttrs(rk)["@_w:type"] === "textWrapping")) ||
+                name === "w:cr"
+            ) {
+                pushText(rk, "\n");
             }
-            // other run children (w:tab, w:br, w:sym, …) are left alone
+            // other run children (page breaks, w:sym, …) are left alone
         }
         runs.push({ childIndex: topChildIdx, rPr, textNodes });
     };
@@ -568,7 +583,14 @@ interface Normalized {
     origIdx: number[];
 }
 
-function normalizeWs(input: string): Normalized {
+/**
+ * "ws" collapses each whitespace run to one space; "nows" drops whitespace
+ * entirely, so a tab the model rendered as a space (or nothing) still lines
+ * up. Both keep a per-character map back to the original string.
+ */
+type NormMode = "ws" | "nows";
+
+function normalizeWs(input: string, mode: NormMode = "ws"): Normalized {
     const s = preNormalize(input);
     const norm: string[] = [];
     const origIdx: number[] = [];
@@ -576,11 +598,11 @@ function normalizeWs(input: string): Normalized {
     for (let i = 0; i < s.length; i++) {
         const ch = s[i];
         if (/\s/.test(ch)) {
-            if (!prevSpace) {
+            if (!prevSpace && mode === "ws") {
                 norm.push(" ");
                 origIdx.push(i);
-                prevSpace = true;
             }
+            prevSpace = true;
         } else {
             norm.push(ch);
             origIdx.push(i);
@@ -588,6 +610,149 @@ function normalizeWs(input: string): Normalized {
         }
     }
     return { norm: norm.join(""), origIdx };
+}
+
+// --- Needle variants --------------------------------------------------------
+// Models quote clauses the way a person reads them: with the automatic clause
+// number in front ("5.2.1. Tanggung jawab…") although that number is not text
+// in the document, and with a closing full stop the paragraph does not have.
+// Each variant is only tried after the verbatim needle failed everywhere.
+
+/** A clause label a reader sees in front of a paragraph: "5.2.1.", "(a)", "iv.", "•". */
+const LEADING_LABEL =
+    /^(?:\(?\d+(?:\.\d+)+\.?\)?|\d+[.)]|\(?[a-zA-Z][.)]|\(?[ivxlcIVXLC]+\)|[ivxlcIVXLC]+\.|[•●○■□▪*\-–—])\s+/;
+const TRAILING_PUNCT = /[.;,:]$/;
+
+interface NeedleVariant {
+    find: string;
+    replace: string;
+}
+
+function needleVariants(find: string, replace: string): NeedleVariant[] {
+    const out: NeedleVariant[] = [{ find, replace }];
+    const seen = new Set([find]);
+    const add = (v: NeedleVariant) => {
+        if (!v.find || seen.has(v.find)) return;
+        seen.add(v.find);
+        out.push(v);
+    };
+    const stripLabel = (v: NeedleVariant): NeedleVariant | null => {
+        const m = LEADING_LABEL.exec(v.find);
+        if (!m) return null;
+        const label = m[0];
+        return {
+            find: v.find.slice(label.length),
+            replace: v.replace.startsWith(label) ? v.replace.slice(label.length) : v.replace,
+        };
+    };
+    const stripPunct = (v: NeedleVariant): NeedleVariant | null => {
+        const m = TRAILING_PUNCT.exec(v.find);
+        if (!m) return null;
+        const p = m[0];
+        return {
+            find: v.find.slice(0, -p.length),
+            replace: v.replace.endsWith(p) ? v.replace.slice(0, -p.length) : v.replace,
+        };
+    };
+    const unlabelled = stripLabel(out[0]);
+    if (unlabelled) add(unlabelled);
+    const unpunct = stripPunct(out[0]);
+    if (unpunct) add(unpunct);
+    const both = unlabelled ? stripPunct(unlabelled) : null;
+    if (both) add(both);
+    return out;
+}
+
+// --- Fuzzy paragraph anchor -------------------------------------------------
+// When a quote is close to, but not exactly, one span of one paragraph (a
+// paraphrased tail, a dropped word), anchor on the paragraph span that the
+// longest common word subsequence covers. The deletion then spans that real
+// text, and collapseDiff trims whatever the replacement leaves unchanged.
+
+const FUZZY_MIN_WORDS = 8;
+const FUZZY_MIN_SIMILARITY = 0.8;
+const FUZZY_MIN_MARGIN = 0.1;
+const FUZZY_MAX_CELLS = 4_000_000;
+
+interface Token {
+    key: string;
+    start: number;
+    end: number;
+}
+
+function tokenize(norm: string): Token[] {
+    const out: Token[] = [];
+    const re = /\S+/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(norm)) !== null) {
+        const key = m[0].replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "").toLowerCase();
+        if (!key) continue;
+        out.push({ key, start: m.index, end: m.index + m[0].length });
+    }
+    return out;
+}
+
+/** Longest common subsequence of token keys; returns matched indices in `b`. */
+function lcsMatches(a: Token[], b: Token[]): number[] {
+    const m = a.length;
+    const n = b.length;
+    const width = n + 1;
+    const dp = new Int32Array((m + 1) * width);
+    for (let i = m - 1; i >= 0; i--) {
+        for (let j = n - 1; j >= 0; j--) {
+            dp[i * width + j] =
+                a[i].key === b[j].key
+                    ? dp[(i + 1) * width + j + 1] + 1
+                    : Math.max(dp[(i + 1) * width + j], dp[i * width + j + 1]);
+        }
+    }
+    const matched: number[] = [];
+    let i = 0;
+    let j = 0;
+    while (i < m && j < n) {
+        if (a[i].key === b[j].key) {
+            matched.push(j);
+            i++;
+            j++;
+        } else if (dp[(i + 1) * width + j] >= dp[i * width + j + 1]) {
+            i++;
+        } else {
+            j++;
+        }
+    }
+    return matched;
+}
+
+function fuzzyAnchor(
+    paraTokens: Token[][],
+    findNorm: string,
+): { kind: "ok"; hit: { paraIdx: number; normStart: number; normEnd: number } } | { kind: "none" } | { kind: "ambiguous" } {
+    const needle = tokenize(findNorm);
+    if (needle.length < FUZZY_MIN_WORDS) return { kind: "none" };
+    type Candidate = { paraIdx: number; normStart: number; normEnd: number; similarity: number };
+    let best: Candidate | null = null;
+    let second: Candidate | null = null;
+    for (let paraIdx = 0; paraIdx < paraTokens.length; paraIdx++) {
+        const hay = paraTokens[paraIdx];
+        if (hay.length * 2 < needle.length || needle.length * hay.length > FUZZY_MAX_CELLS) continue;
+        const matched = lcsMatches(needle, hay);
+        if (matched.length * 2 < needle.length) continue;
+        const first = matched[0];
+        const last = matched[matched.length - 1];
+        const spanWords = last - first + 1;
+        const similarity = (2 * matched.length) / (needle.length + spanWords);
+        if (similarity < FUZZY_MIN_SIMILARITY) continue;
+        const cand: Candidate = { paraIdx, normStart: hay[first].start, normEnd: hay[last].end, similarity };
+        if (!best || cand.similarity > best.similarity) {
+            second = best;
+            best = cand;
+        } else if (!second || cand.similarity > second.similarity) {
+            second = cand;
+        }
+    }
+    if (!best) return { kind: "none" };
+    if (second && best.similarity - second.similarity < FUZZY_MIN_MARGIN) return { kind: "ambiguous" };
+    return { kind: "ok", hit: { paraIdx: best.paraIdx, normStart: best.normStart, normEnd: best.normEnd } };
 }
 
 /**
@@ -739,7 +904,18 @@ function maxTrackedId(doc: XNode[]): number {
  * `context_after` strings on, since it exactly mirrors the string the
  * anchor matcher operates against.
  */
-export async function extractDocxBodyText(bytes: Buffer): Promise<string> {
+export async function extractDocxBodyText(
+    bytes: Buffer,
+    opts?: {
+        /**
+         * Prefix each automatically numbered paragraph with the label Word
+         * renders ("5.2.1. …"), so clause numbers survive extraction. The
+         * label is not document text, so the anchor matcher strips it from a
+         * quote that carries it (see needleVariants).
+         */
+        numbering?: boolean;
+    },
+): Promise<string> {
     const zip = await JSZip.loadAsync(bytes);
     const docXmlFile = getZipEntry(zip, "word/document.xml");
     if (!docXmlFile) return "";
@@ -748,6 +924,7 @@ export async function extractDocxBodyText(bytes: Buffer): Promise<string> {
     const tree = parser.parse(docXmlRaw) as XNode[];
     const bodyChildren = findBody(tree);
     if (!bodyChildren) return "";
+    const numbering = opts?.numbering ? await createNumberingResolver(zip) : null;
 
     const lines: string[] = [];
     const collect = (nodes: XNode[]) => {
@@ -756,7 +933,8 @@ export async function extractDocxBodyText(bytes: Buffer): Promise<string> {
             if (!name) continue;
             if (name === "w:p") {
                 const flat = flattenParagraph(elChildren(n));
-                lines.push(flat.paraText);
+                const label = numbering ? numbering.labelFor(n) : "";
+                lines.push(label ? `${label} ${flat.paraText}` : flat.paraText);
             } else if (
                 name === "w:tbl" ||
                 name === "w:tr" ||
@@ -870,9 +1048,13 @@ export async function applyTrackedEdits(
     }
 
     // Precompute normalized forms per paragraph for reuse across edits.
-    const paraNorms: Normalized[] = paragraphs.map((p) =>
-        normalizeWs(p.flat.paraText),
-    );
+    const paraNorms: Record<NormMode, Normalized[]> = {
+        ws: paragraphs.map((p) => normalizeWs(p.flat.paraText, "ws")),
+        nows: paragraphs.map((p) => normalizeWs(p.flat.paraText, "nows")),
+    };
+
+    // Word tokens per paragraph for the fuzzy tier, built on first use.
+    let paraTokens: Token[][] | null = null;
 
     let nextWId = maxTrackedId(tree) + 1;
     const plansPerParagraph = new Map<number, PlannedChange[]>();
@@ -898,17 +1080,20 @@ export async function applyTrackedEdits(
             continue;
         }
 
-        const findNorm = normalizeWs(find).norm;
-        const ctxBeforeNorm = normalizeWs(ctxBefore).norm;
-        const ctxAfterNorm = normalizeWs(ctxAfter).norm;
-
-        // Strategy:
-        //   1) find + full context  (strictest — preferred)
-        //   2) find + half context  (drop whichever context side is shorter)
-        //   3) find alone           (only if globally unique across doc)
-        // At each stage we scan every paragraph. "Unique across the doc"
-        // means exactly one paragraph yields exactly one match.
+        // Anchor strategy, strictest first. Every needle variant (as given;
+        // leading clause label stripped; trailing punctuation stripped) is
+        // tried with full context, either half, then find-only (globally
+        // unique) — first on whitespace-collapsed text, then ignoring
+        // whitespace altogether. A word-level fuzzy match against whole
+        // paragraphs is the last resort. The first tier with exactly one hit
+        // wins; a tier with several hits marks the edit ambiguous.
         type Hit = { paraIdx: number; normStart: number; normEnd: number };
+
+        const variants = needleVariants(find, replace);
+        const ctxNorm = {
+            ws: { cb: normalizeWs(ctxBefore, "ws").norm, ca: normalizeWs(ctxAfter, "ws").norm },
+            nows: { cb: normalizeWs(ctxBefore, "nows").norm, ca: normalizeWs(ctxAfter, "nows").norm },
+        };
 
         /**
          * Search every paragraph with the given context sides. If any
@@ -916,6 +1101,8 @@ export async function applyTrackedEdits(
          * return the collected hits; otherwise signal ambiguous.
          */
         const tryStrategy = (
+            mode: NormMode,
+            findNorm: string,
             cb: string,
             ca: string,
         ): { kind: "ok"; hits: Hit[] } | { kind: "ambiguous" } => {
@@ -923,7 +1110,7 @@ export async function applyTrackedEdits(
             let ambiguous = false;
             for (let pi = 0; pi < paragraphs.length; pi++) {
                 const r = findUniqueAnchor(
-                    paraNorms[pi].norm,
+                    paraNorms[mode][pi].norm,
                     findNorm,
                     cb,
                     ca,
@@ -938,23 +1125,43 @@ export async function applyTrackedEdits(
             return { kind: "ok", hits };
         };
 
-        let selected: Hit | null = null;
-        const attempts = [
-            { cb: ctxBeforeNorm, ca: ctxAfterNorm },
-            { cb: ctxBeforeNorm, ca: "" },
-            { cb: "", ca: ctxAfterNorm },
-            { cb: "", ca: "" }, // find-only
-        ];
+        let selected: (Hit & { mode: NormMode; replace: string }) | null = null;
         let sawAmbiguous = false;
-        for (const { cb, ca } of attempts) {
-            const r = tryStrategy(cb, ca);
-            if (r.kind === "ambiguous") {
-                sawAmbiguous = true;
-                continue;
+        search: for (const mode of ["ws", "nows"] as const) {
+            const { cb: cbFull, ca: caFull } = ctxNorm[mode];
+            const attempts = [
+                { cb: cbFull, ca: caFull },
+                { cb: cbFull, ca: "" },
+                { cb: "", ca: caFull },
+                { cb: "", ca: "" }, // find-only
+            ];
+            for (const v of variants) {
+                const findNorm = normalizeWs(v.find, mode).norm;
+                for (const { cb, ca } of attempts) {
+                    const r = tryStrategy(mode, findNorm, cb, ca);
+                    if (r.kind === "ambiguous") {
+                        sawAmbiguous = true;
+                        continue;
+                    }
+                    if (r.hits.length === 1) {
+                        selected = { ...r.hits[0], mode, replace: v.replace };
+                        break search;
+                    }
+                }
             }
-            if (r.hits.length === 1) {
-                selected = r.hits[0];
-                break;
+        }
+        if (!selected && find) {
+            paraTokens ??= paraNorms.ws.map((p) => tokenize(p.norm));
+            for (const v of variants) {
+                const r = fuzzyAnchor(paraTokens, normalizeWs(v.find, "ws").norm);
+                if (r.kind === "ambiguous") {
+                    sawAmbiguous = true;
+                    continue;
+                }
+                if (r.kind === "ok") {
+                    selected = { ...r.hit, mode: "ws", replace: v.replace };
+                    break;
+                }
             }
         }
 
@@ -970,7 +1177,7 @@ export async function applyTrackedEdits(
 
         const hit = selected;
         const paraIdx = hit.paraIdx;
-        const paraNorm = paraNorms[paraIdx];
+        const paraNorm = paraNorms[hit.mode][paraIdx];
         const origLen = paragraphs[paraIdx].flat.paraText.length;
         const { start: findStart, end: findEnd } = mapNormRangeToOriginal(
             paraNorm,
@@ -989,7 +1196,7 @@ export async function applyTrackedEdits(
 
         const { deleted, inserted, leadingEq } = collapseDiff(
             originalFind,
-            replace,
+            hit.replace,
             granularity,
         );
         const minStart = findStart + leadingEq;

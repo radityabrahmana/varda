@@ -14,6 +14,20 @@ import { useReviewAccess } from "./reviewAccess";
 // projection failed (or there is no DOCX) the card falls back to the plain
 // FeedbackWidget, exactly as before.
 
+/**
+ * The redline engine's anchor error is written for the model that retries
+ * the edit; the card says what it means for the reader.
+ */
+export function anchorErrorMessage(error: string): string {
+    if (error.startsWith("Ambiguous match")) {
+        return "Teks asli muncul lebih dari satu kali di dokumen, jadi perubahan ini belum masuk sebagai redline.";
+    }
+    if (error.startsWith("Could not locate")) {
+        return "Teks asli tidak ditemukan persis di dokumen, jadi perubahan ini belum masuk sebagai redline.";
+    }
+    return "Perubahan ini belum masuk sebagai redline di dokumen.";
+}
+
 export interface RevisionCardActionsProps {
     reviewId: string;
     revision: Revision;
@@ -39,8 +53,8 @@ export function RevisionCardActions({ reviewId, revision, edit, existing, onReso
         return (
             <>
                 {edit?.error ? (
-                    <p className="mt-2 text-xs text-amber-700">
-                        Tidak dapat dipetakan ke dokumen ({edit.error}). Umpan balik tetap tercatat tanpa perubahan terlacak.
+                    <p className="mt-2 text-xs text-amber-700" title={edit.error}>
+                        {anchorErrorMessage(edit.error)} Umpan balik tetap tercatat tanpa perubahan terlacak.
                     </p>
                 ) : null}
                 <FeedbackWidget

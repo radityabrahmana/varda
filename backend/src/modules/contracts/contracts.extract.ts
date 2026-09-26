@@ -3,8 +3,15 @@
 // Pure with respect to the database: takes the uploaded bytes and filename,
 // returns the extracted content or a typed failure. The HTML post-processing
 // mirrors Janus's NewReview page so the viewer renders identically.
+//
+// contract_text comes from Varda's own OOXML walker, the same flattening the
+// redline anchor matcher runs against, with Word's automatic clause numbers
+// rendered in front of each paragraph. The model therefore quotes text that
+// the matcher can find and cites the clause numbers the reader sees; mammoth
+// (which drops automatic numbering) remains the fallback and the HTML source.
 
 import { normalizeDocxZipPaths } from "../../lib/convert";
+import { extractDocxBodyText } from "../../lib/docxTrackedChanges";
 import { failure, internalFailure, ok, type ServiceResult } from "../../lib/serviceResult";
 
 export const CONTRACT_UPLOAD_MAX_BYTES = 25 * 1024 * 1024;
@@ -33,13 +40,16 @@ export async function extractContract(
   try {
     const normalized = await normalizeDocxZipPaths(file.buffer);
     const mammoth = await import("mammoth");
-    const [{ value: contract_text }, { value: rawHtml }] = await Promise.all([
-      mammoth.extractRawText({ buffer: normalized }),
+    const [numberedText, { value: rawHtml }] = await Promise.all([
+      extractDocxBodyText(normalized, { numbering: true }).catch(() => ""),
       mammoth.convertToHtml(
         { buffer: normalized },
         { styleMap: ["b => strong", "i => em", "u => u", "strike => s", "highlight => mark"] },
       ),
     ]);
+    const contract_text = numberedText.trim()
+      ? numberedText
+      : (await mammoth.extractRawText({ buffer: normalized })).value;
     const contract_html = rawHtml
       .replace(/<table>/g, '<table style="width:100%">')
       .replace(/<p>\s*<\/p>/g, "")

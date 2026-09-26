@@ -59,6 +59,14 @@ describe("review prompt", () => {
     expect(prompt).toContain('memanggil function "submit_contract_review"');
   });
 
+  it("tells the model how quotes anchor: verbatim single-line, no clause label, same language, one revision per language", () => {
+    const prompt = buildReviewSystemPrompt(RULES);
+    expect(prompt).toContain("JANGAN sertakan nomor tersebut di awal original_text");
+    expect(prompt).toContain("dari SATU baris CONTRACT TEXT");
+    expect(prompt).toContain("dalam BAHASA YANG SAMA dengan original_text");
+    expect(prompt).toContain('"Pasal 5.2.1 (EN)" dan "Pasal 5.2.1 (ID)"');
+  });
+
   it("enumerates the compliance slugs in the tool schema (Gemini ignores additionalProperties)", () => {
     const pc = (REVIEW_TOOL.function.parameters as { properties: Record<string, { properties?: Record<string, unknown>; required?: string[]; additionalProperties?: unknown }> }).properties.playbook_compliance;
     expect(Object.keys(pc.properties ?? {})).toEqual([...PLAYBOOK_COMPLIANCE_SLUGS]);

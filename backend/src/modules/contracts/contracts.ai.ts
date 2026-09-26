@@ -78,6 +78,12 @@ Untuk kutipan klausul kontrak (original_text, highlight_text, clause_text), guna
 
 Untuk setiap item dalam red_flags, revisions, clarifications, yellow_flags, dan positive_findings, WAJIB sertakan field 'highlight_text': kutipan PERSIS dari teks kontrak (10-100 kata) yang bisa di-match secara programatis.
 
+ATURAN KUTIPAN & REVISI — setiap revisi dipetakan otomatis ke dokumen sebagai tracked change, jadi kutipannya harus bisa ditemukan persis:
+- Nomor pasal di awal baris CONTRACT TEXT (mis. "5.2.1." atau "14.6.") adalah penomoran otomatis Word, bukan teks dokumen. Pakai nomor itu apa adanya untuk field 'clause' (jangan hitung ulang), tetapi JANGAN sertakan nomor tersebut di awal original_text atau highlight_text.
+- original_text dan highlight_text: salin PERSIS satu potongan teks yang berurutan dari SATU baris CONTRACT TEXT, termasuk tanda baca dan ejaan aslinya. Jangan parafrase, jangan pakai elipsis, jangan gabungkan beberapa lokasi dengan "/" atau baris baru.
+- suggested_text: teks pengganti lengkap untuk potongan original_text tersebut, dalam BAHASA YANG SAMA dengan original_text (kutipan Inggris diganti teks Inggris, kutipan Indonesia diganti teks Indonesia).
+- Dokumen dwibahasa: jika klausul yang sama ada dalam versi Inggris dan Indonesia, buat DUA revisi terpisah dengan rationale yang sama, satu per versi bahasa, masing-masing dengan original_text dan suggested_text dalam bahasa versi itu. Tandai field clause dengan "(EN)" / "(ID)", mis. "Pasal 5.2.1 (EN)" dan "Pasal 5.2.1 (ID)".
+
 ${profile.persona}
 
 OUR CONTRACT REVIEW PLAYBOOK (MANDATORY RULES)
