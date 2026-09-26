@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PanelDocument } from "../shared/types";
-import { MikeApiError } from "@/app/lib/mikeApi";
+import { VardaApiError } from "@/app/lib/vardaApi";
 import { resolvePanelDocumentVersionResult } from "./panelDocumentVersion";
 
 const document: PanelDocument = {
@@ -80,7 +80,7 @@ describe("resolvePanelDocumentVersionResult", () => {
         const loadVersions = vi
             .fn()
             .mockRejectedValue(
-                new MikeApiError({ message: "Not found", status: 404 }),
+                new VardaApiError({ message: "Not found", status: 404 }),
             );
 
         await expect(
@@ -92,7 +92,7 @@ describe("resolvePanelDocumentVersionResult", () => {
         const loadVersions = vi
             .fn()
             .mockRejectedValue(
-                new MikeApiError({ message: "Forbidden", status: 403 }),
+                new VardaApiError({ message: "Forbidden", status: 403 }),
             );
 
         await expect(
@@ -114,7 +114,7 @@ describe("resolvePanelDocumentVersionResult", () => {
         const loadVersions = vi
             .fn()
             .mockRejectedValue(
-                new MikeApiError({ message: "Server error", status: 500 }),
+                new VardaApiError({ message: "Server error", status: 500 }),
             );
 
         await expect(

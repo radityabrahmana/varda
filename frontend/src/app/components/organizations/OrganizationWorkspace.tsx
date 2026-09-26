@@ -61,7 +61,7 @@ import {
   type OrgInvitation,
   type OrgMember,
   type OrgResources,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { ORG_ROLE_LABELS, type OrgRole } from "@/app/lib/permissions";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import {

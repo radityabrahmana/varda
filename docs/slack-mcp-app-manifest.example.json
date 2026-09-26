@@ -1,21 +1,21 @@
 {
     "display_information": {
-        "name": "Mike MCP Client",
-        "description": "OAuth client for Mike's Slack MCP connector"
+        "name": "Varda MCP Client",
+        "description": "OAuth client for Varda's Slack MCP connector"
     },
     "features": {
         "bot_user": {
-            "display_name": "mike-mcp",
+            "display_name": "varda-mcp",
             "always_online": false
         },
         "assistant_view": {
-            "assistant_description": "OAuth client for Mike's Slack MCP connector",
+            "assistant_description": "OAuth client for Varda's Slack MCP connector",
             "suggested_prompts": []
         }
     },
     "oauth_config": {
         "redirect_urls": [
-            "https://REPLACE-WITH-YOUR-MIKE-HOST/api/user/mcp-connectors/oauth/callback"
+            "https://REPLACE-WITH-YOUR-VARDA-HOST/api/user/mcp-connectors/oauth/callback"
         ],
         "scopes": {
             "bot": ["users:read"],

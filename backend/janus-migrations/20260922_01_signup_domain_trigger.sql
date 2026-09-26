@@ -1,5 +1,5 @@
 -- Hard enforcement of the sign-up domain policy (mirrors SIGNUP_ALLOWED_DOMAINS
--- on the backend). Runs in the Varda (Mike) Supabase SQL editor — NOT Lovable.
+-- on the backend). Runs in the Varda Supabase SQL editor — NOT Lovable.
 -- Blocks every new auth.users row whose email is not @dashelectric.co, whether it
 -- comes from the password form, Google OAuth, or a direct GoTrue call with the
 -- publishable key. Existing accounts are untouched (insert-only trigger).

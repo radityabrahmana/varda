@@ -7,10 +7,10 @@ import {
     listOrgMembers,
     listOrgs,
     lookupUserByEmail,
-    MikeApiError,
+    VardaApiError,
     shareWorkflow,
     updateWorkflow,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { Document, Workflow } from "../shared/types";
 import { NewWorkflowModal } from "./NewWorkflowModal";
 
@@ -18,8 +18,8 @@ const { useUserProfile } = vi.hoisted(() => ({
     useUserProfile: vi.fn(),
 }));
 
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     copyDocumentsToWorkflowAssets: vi.fn(),
     createWorkflow: vi.fn(),
     listOrgMembers: vi.fn(),
@@ -430,7 +430,7 @@ describe("NewWorkflowModal editing", () => {
         const onCreated = vi.fn();
         const onClose = vi.fn();
         vi.mocked(shareWorkflow).mockRejectedValueOnce(
-            new MikeApiError({
+            new VardaApiError({
                 message: "Only owners can share this workflow.",
                 status: 403,
             }),
@@ -471,7 +471,7 @@ describe("NewWorkflowModal editing", () => {
         const user = userEvent.setup({ delay: null });
         const onClose = vi.fn();
         vi.mocked(shareWorkflow).mockRejectedValue(
-            new MikeApiError({
+            new VardaApiError({
                 message: "Only owners can share this workflow.",
                 status: 403,
             }),
@@ -522,7 +522,7 @@ describe("NewWorkflowModal editing", () => {
 
     it("surfaces a failure to load the organization list", async () => {
         vi.mocked(listOrgs).mockRejectedValue(
-            new MikeApiError({
+            new VardaApiError({
                 message: "Organizations are unavailable.",
                 status: 403,
             }),

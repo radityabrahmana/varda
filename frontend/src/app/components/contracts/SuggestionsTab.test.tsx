@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import type { SuggestionRow } from "./reviewTypes";
 
 const mocks = vi.hoisted(() => ({ resolveContractSuggestion: vi.fn(), postContractSuggestion: vi.fn() }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     resolveContractSuggestion: mocks.resolveContractSuggestion,
     postContractSuggestion: mocks.postContractSuggestion,
 }));

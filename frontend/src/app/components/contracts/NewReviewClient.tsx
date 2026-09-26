@@ -9,7 +9,7 @@ import {
     getReviewStatus,
     listContracts,
     uploadContractFile,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import {
     DOCUMENT_TYPES,
     PROCESSING_STEPS,

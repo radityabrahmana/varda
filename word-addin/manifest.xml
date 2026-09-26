@@ -7,9 +7,9 @@
 
   <Id>a1b2c3d4-e5f6-7890-abcd-ef1234567890</Id>
   <Version>1.0.0.1</Version>
-  <ProviderName>MikeOSS</ProviderName>
+  <ProviderName>Varda</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Mike" />
+  <DisplayName DefaultValue="Varda" />
   <Description DefaultValue="AI-powered legal assistant for Word" />
 
   <IconUrl DefaultValue="https://localhost:3200/assets/icon-32.png" />
@@ -44,7 +44,7 @@
 
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
-              <Group id="MikeOSS.Group">
+              <Group id="Varda.Group">
                 <Label resid="GroupLabel" />
                 <Icon>
                   <bt:Image size="16" resid="Icon.16x16" />
@@ -52,7 +52,7 @@
                   <bt:Image size="80" resid="Icon.80x80" />
                 </Icon>
 
-                <Control xsi:type="Button" id="MikeOSS.OpenMike">
+                <Control xsi:type="Button" id="Varda.OpenVarda">
                   <Label resid="TaskpaneButton.Label" />
                   <Supertip>
                     <Title resid="TaskpaneButton.Label" />
@@ -64,7 +64,7 @@
                     <bt:Image size="80" resid="Icon.80x80" />
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>MikeTaskpane</TaskpaneId>
+                    <TaskpaneId>VardaTaskpane</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url" />
                   </Action>
                 </Control>
@@ -87,11 +87,11 @@
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3200/taskpane.html" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GroupLabel" DefaultValue="Mike Legal AI" />
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Mike" />
+        <bt:String id="GroupLabel" DefaultValue="Varda Legal AI" />
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Varda" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open the Mike AI legal assistant pane" />
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Open the Varda AI legal assistant pane" />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

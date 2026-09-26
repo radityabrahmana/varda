@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { EditCardsSectionUI } from "@/shared/ui/EditCardsSectionUI";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { RESPONSE_GLASS_SURFACE } from "./messageStyles";
-import { resolveDocumentEdit } from "@/app/lib/mikeApi";
+import { resolveDocumentEdit } from "@/app/lib/vardaApi";
 import type { EditAnnotation } from "../../shared/types";
 import { applyOptimisticResolution } from "../EditCard";
 

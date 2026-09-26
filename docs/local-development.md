@@ -6,7 +6,7 @@ is required.
 
 The stack includes:
 
-- the Mike frontend and backend;
+- the Varda frontend and backend;
 - Supabase Postgres, Auth, data API, and gateway;
 - RustFS for S3-compatible object storage; and
 - Mailpit for local authentication email.
@@ -42,7 +42,7 @@ Open [http://localhost:3000](http://localhost:3000) and sign up.
 
 | Service | Address | Notes |
 | --- | --- | --- |
-| Mike | `http://localhost:3000` | Main application |
+| Varda | `http://localhost:3000` | Main application |
 | Supabase API | `http://localhost:54321` | Auth and data API gateway |
 | Postgres | `localhost:54322` | Host access for database tools |
 | RustFS console | `http://localhost:9001` | `rustfsadmin` / `rustfsadmin` |
@@ -56,7 +56,7 @@ localhost but must be regenerated before exposing an instance anywhere.
 
 By default, a local email-and-password registration is automatically confirmed
 and the new user is signed in. Supabase Auth sends authentication email; the
-Mike backend does not send it directly.
+Varda backend does not send it directly.
 
 To exercise the confirmation-email flow, set
 `GOTRUE_MAILER_AUTOCONFIRM=false` in the root `.env`, then recreate Auth:
@@ -115,7 +115,7 @@ Google account as an OAuth test user while the Google app remains in testing.
 ## Local models with Ollama
 
 [Ollama](https://ollama.com) models are discovered dynamically. Anything shown
-by `ollama list` appears in Mike's model pickers under **Local**, without an API
+by `ollama list` appears in Varda's model pickers under **Local**, without an API
 key.
 
 The Dockerized backend reaches Ollama on the host at
@@ -123,14 +123,14 @@ The Dockerized backend reaches Ollama on the host at
 available elsewhere.
 
 Choose a model that fits the host's available memory, pull it, then refresh
-Mike. Replace `MODEL_TAG` with a tag from the Ollama library:
+Varda. Replace `MODEL_TAG` with a tag from the Ollama library:
 
 ```bash
 ollama pull MODEL_TAG
 ```
 
 Models with tool-calling support can drive the full assistant. If a local model
-rejects tools, Mike retries without them so plain chat can continue. Model size
+rejects tools, Varda retries without them so plain chat can continue. Model size
 has a significant effect on speed and memory use, especially during tabular
 review where the model may run across many cells.
 

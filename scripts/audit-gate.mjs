@@ -138,7 +138,7 @@ async function loadNpmReport() {
       headers: {
         accept: "application/json",
         "content-type": "application/json",
-        "user-agent": "mike-audit-gate/1.0",
+        "user-agent": "varda-audit-gate/1.0",
       },
       body: JSON.stringify(batch),
     }, { attempts: 1, timeoutMs: 15_000 });
@@ -213,7 +213,7 @@ async function loadOsvReport() {
       headers: {
         accept: "application/json",
         "content-type": "application/json",
-        "user-agent": "mike-audit-gate/1.0",
+        "user-agent": "varda-audit-gate/1.0",
       },
       body: JSON.stringify({ queries: batchQueries }),
     });
@@ -248,7 +248,7 @@ async function loadOsvReport() {
   const details = await Promise.all(
     [...vulnerabilityIds].map((id) =>
       fetchJson(`${osvBaseUrl}/vulns/${encodeURIComponent(id)}`, {
-        headers: { accept: "application/json", "user-agent": "mike-audit-gate/1.0" },
+        headers: { accept: "application/json", "user-agent": "varda-audit-gate/1.0" },
       }),
     ),
   );

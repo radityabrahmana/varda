@@ -10,7 +10,7 @@ import {
     grantContractAccess,
     revokeContractAccess,
     type ContentAccess,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 
 // Share dialog for one contract review (the "Bagikan" header action). Reviews

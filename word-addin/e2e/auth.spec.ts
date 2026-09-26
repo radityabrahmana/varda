@@ -1,12 +1,12 @@
 /**
- * Auth flow E2E coverage for the Mike Word add-in.
+ * Auth flow E2E coverage for the Varda Word add-in.
  *
  * Exercises the real, user-visible behaviour of the login gate:
  *   - App.tsx loading spinner -> cookie-session gate -> LoginPage / floating shell / Sign out
  *   - auth/LoginPage.tsx submit-disabled gate + error alert
  *   - auth/useAuth.ts session synchronization without exposing bearer tokens
  *
- * The Mike backend auth endpoints are mocked via addin.mockLogin and the shared
+ * The Varda backend auth endpoints are mocked via addin.mockLogin and the shared
  * fixture. Google dialog messages are supplied by the Office shim, so no live
  * identity provider or backend is contacted.
  */
@@ -28,7 +28,7 @@ test.describe("auth flow", () => {
       page.getByRole("button", { name: "Continue with Google" }),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "Sign up" })).toBeVisible();
-    await expect(page.getByText("Mike", { exact: true })).toBeVisible();
+    await expect(page.getByText("Varda", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign up" })).toHaveCount(0);
     await expect(page.getByText("Loading…")).toBeHidden();
 
@@ -194,7 +194,7 @@ test.describe("auth flow", () => {
         ).__OAUTH_DIALOG__;
         state.sendMessage(
           JSON.stringify({
-            type: "mike-google-oauth",
+            type: "varda-google-oauth",
             requestId,
             status: "success",
             handoffTicket: "a".repeat(43),
@@ -234,7 +234,7 @@ test.describe("auth flow", () => {
         ).__OAUTH_DIALOG__;
         state.sendMessage(
           JSON.stringify({
-            type: "mike-google-oauth",
+            type: "varda-google-oauth",
             requestId,
             status: "success",
             handoffTicket: "a".repeat(43),
@@ -266,7 +266,7 @@ test.describe("auth flow", () => {
       const requestId = new URL(state.url).searchParams.get("requestId");
       state.sendMessage(
         JSON.stringify({
-          type: "mike-google-oauth",
+          type: "varda-google-oauth",
           requestId,
           status: "error",
           message: "Google access was denied",

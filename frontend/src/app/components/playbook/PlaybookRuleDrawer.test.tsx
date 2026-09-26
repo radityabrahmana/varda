@@ -5,8 +5,8 @@ import { PlaybookDrawerProvider, RuleRefButton } from "./PlaybookRuleDrawer";
 import type { PlaybookRule } from "./playbookTypes";
 
 const mocks = vi.hoisted(() => ({ listPlaybookRules: vi.fn(), getMe: vi.fn(), updatePlaybookRule: vi.fn() }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     listPlaybookRules: mocks.listPlaybookRules,
     getMe: mocks.getMe,
     updatePlaybookRule: mocks.updatePlaybookRule,

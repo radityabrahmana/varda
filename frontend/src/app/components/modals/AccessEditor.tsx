@@ -2,8 +2,8 @@
 
 import { useState, type ReactNode } from "react";
 import { Check, ChevronDown, Info, Loader2 } from "lucide-react";
-import type { UserLookupResult } from "@/app/lib/mikeApi";
-import type { AccessAssignmentRole } from "@/app/lib/mikeApi";
+import type { UserLookupResult } from "@/app/lib/vardaApi";
+import type { AccessAssignmentRole } from "@/app/lib/vardaApi";
 import {
     PROJECT_ROLE_DESCRIPTIONS,
     PROJECT_ROLE_LABELS,

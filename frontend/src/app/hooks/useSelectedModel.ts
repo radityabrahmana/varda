@@ -10,7 +10,7 @@ import {
 } from "../components/assistant/ModelToggle";
 import { isModelAvailable } from "../lib/modelAvailability";
 import { isModeModelId } from "../lib/assistantModes";
-import type { ApiKeyState } from "../lib/mikeApi";
+import type { ApiKeyState } from "../lib/vardaApi";
 
 /**
  * The composer's accepted-id surface. Exported so the Word add-in drift guard

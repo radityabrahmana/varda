@@ -9,7 +9,7 @@ import {
     FormTextInput,
 } from "@/app/components/ui/form-field";
 import type { Project } from "@/app/components/shared/types";
-import { listOrgs, type Org } from "@/app/lib/mikeApi";
+import { listOrgs, type Org } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { ProjectPracticeField } from "./ProjectPracticeField";
 

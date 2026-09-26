@@ -1,5 +1,5 @@
 import React from "react";
-import { EditCardUI } from "@mike/edit-card-ui";
+import { EditCardUI } from "@varda/edit-card-ui";
 import type { RedlineEdit } from "../../lib/redline";
 import { EDIT_CARD_SURFACE } from "./message/messageStyles";
 import type { EditBusyAction, EditCardStatus } from "../../lib/wordChatTypes";
@@ -128,7 +128,7 @@ export function EditCard({
   // reported how many places the passage matched.
   const ambiguousCopy =
     status === "ambiguous" && matches !== undefined && matches > 1
-      ? `Skipped — this text appears ${matches} times in the document. Tell Mike which one to change.`
+      ? `Skipped — this text appears ${matches} times in the document. Tell Varda which one to change.`
       : undefined;
   // A replace-all edit names its breadth so "Applied" can't be misread as a
   // single change.

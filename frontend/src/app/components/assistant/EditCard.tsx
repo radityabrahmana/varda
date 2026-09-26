@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { EditCardUI } from "@/shared/ui/EditCardUI";
-import { resolveDocumentEdit } from "@/app/lib/mikeApi";
+import { resolveDocumentEdit } from "@/app/lib/vardaApi";
 import type { EditAnnotation } from "../shared/types";
 import { RESPONSE_GLASS_SURFACE } from "./message/messageStyles";
 

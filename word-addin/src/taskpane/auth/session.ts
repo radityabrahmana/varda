@@ -2,8 +2,8 @@
 import { describeNetworkFailure } from "../lib/networkError";
 import { parseGoogleOAuthDialogMessage } from "./oauthProtocol";
 
-const LEGACY_ACCESS_KEY = "mike_token";
-const LEGACY_REFRESH_KEY = "mike_refresh_token";
+const LEGACY_ACCESS_KEY = "varda_token";
+const LEGACY_REFRESH_KEY = "varda_refresh_token";
 const API_BASE = (process.env.REACT_APP_API_BASE_URL || "/api").replace(
   /\/+$/,
   "",

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { Download, Eye, FileDiff, Upload, Users } from "lucide-react";
-import { MikeApiError, attachContractDocx, generateContractMemo, getContract, getContractDownloadUrl, patchContract, projectContractRedline, type ContractPatch } from "@/app/lib/mikeApi";
+import { VardaApiError, attachContractDocx, generateContractMemo, getContract, getContractDownloadUrl, patchContract, projectContractRedline, type ContractPatch } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PageHeader } from "@/app/components/shared/PageHeader";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
@@ -94,7 +94,7 @@ export function ReviewWorkspace({ reviewId }: { reviewId: string }) {
             })
             .catch((error: unknown) => {
                 if (cancelled) return;
-                if (error instanceof MikeApiError && error.status === 404) setState({ kind: "not_found" });
+                if (error instanceof VardaApiError && error.status === 404) setState({ kind: "not_found" });
                 else setState({ kind: "error", message: "Tinjauan tidak dapat dimuat. Coba lagi." });
             });
         return () => {

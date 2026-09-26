@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDocumentFileUrl } from "@/app/lib/mikeApi";
+import { getDocumentFileUrl } from "@/app/lib/vardaApi";
 import { authenticatedFetch } from "@/app/lib/authEvents";
 
 export interface FetchDocxResult {

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * E2E config for the Mike Word add-in.
+ * E2E config for the Varda Word add-in.
  *
  * SERVE STRATEGY: We build the add-in for production (`build:e2e`, with fixed
  * REACT_APP_* values so route globs are predictable) and static-serve `dist/`

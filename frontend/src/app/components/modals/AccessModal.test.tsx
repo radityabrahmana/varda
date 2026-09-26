@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { getOrg, lookupUserByEmail, MikeApiError } from "@/app/lib/mikeApi";
+import { getOrg, lookupUserByEmail, VardaApiError } from "@/app/lib/vardaApi";
 import { AccessModal } from "./AccessModal";
 import { OrganizationAccessEditor } from "./AccessEditor";
 
-// `importOriginal` keeps the real `MikeApiError` class: `userFacingApiError`
+// `importOriginal` keeps the real `VardaApiError` class: `userFacingApiError`
 // decides with `instanceof`, so a stand-in class would make every 4xx look
 // like an unexpected failure and the tests below would pass vacuously.
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     getOrg: vi.fn(),
     lookupUserByEmail: vi.fn().mockResolvedValue({
         exists: true,
@@ -335,7 +335,7 @@ describe("AccessModal — per-recipient roles", () => {
         renderRoleAware({
             onGrant: () =>
                 Promise.reject(
-                    new MikeApiError({
+                    new VardaApiError({
                         status: 400,
                         message:
                             "The project creator already has owner access",
@@ -366,7 +366,7 @@ describe("AccessModal — per-recipient roles", () => {
         renderRoleAware({
             onGrant: () =>
                 Promise.reject(
-                    new MikeApiError({
+                    new VardaApiError({
                         status: 500,
                         message:
                             'duplicate key value violates unique constraint "grants_pkey"',
@@ -395,7 +395,7 @@ describe("AccessModal — per-recipient roles", () => {
         renderRoleAware({
             onGrant: () =>
                 Promise.reject(
-                    new MikeApiError({
+                    new VardaApiError({
                         status: 403,
                         message:
                             "Only a project owner can change who has access.",

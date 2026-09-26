@@ -34,11 +34,11 @@ const CLOUD_DEEPSEEK: ConfiguredModel = {
 };
 
 function configure(value: unknown) {
-    process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify(value);
+    process.env.VARDA_MODEL_CONFIG_JSON = JSON.stringify(value);
     resetModelRegistryCache();
 }
 
-const originalConfig = process.env.MIKE_MODEL_CONFIG_JSON;
+const originalConfig = process.env.VARDA_MODEL_CONFIG_JSON;
 const originalKey = process.env.DEEPSEEK_API_KEY;
 
 beforeEach(() => {
@@ -46,8 +46,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    if (originalConfig === undefined) delete process.env.MIKE_MODEL_CONFIG_JSON;
-    else process.env.MIKE_MODEL_CONFIG_JSON = originalConfig;
+    if (originalConfig === undefined) delete process.env.VARDA_MODEL_CONFIG_JSON;
+    else process.env.VARDA_MODEL_CONFIG_JSON = originalConfig;
     if (originalKey === undefined) delete process.env.DEEPSEEK_API_KEY;
     else process.env.DEEPSEEK_API_KEY = originalKey;
     resetModelRegistryCache();
@@ -55,7 +55,7 @@ afterEach(() => {
 
 describe("loadModelRegistry", () => {
     it("returns an empty registry when nothing is configured", () => {
-        delete process.env.MIKE_MODEL_CONFIG_JSON;
+        delete process.env.VARDA_MODEL_CONFIG_JSON;
         resetModelRegistryCache();
         expect(loadModelRegistry()).toEqual({
             models: [],
@@ -65,10 +65,10 @@ describe("loadModelRegistry", () => {
     });
 
     it("rejects invalid JSON with an actionable message", () => {
-        process.env.MIKE_MODEL_CONFIG_JSON = "{not json";
+        process.env.VARDA_MODEL_CONFIG_JSON = "{not json";
         resetModelRegistryCache();
         expect(() => loadModelRegistry()).toThrow(
-            /MIKE_MODEL_CONFIG_JSON is not valid JSON/,
+            /VARDA_MODEL_CONFIG_JSON is not valid JSON/,
         );
     });
 
@@ -269,12 +269,12 @@ describe("model resolution", () => {
 
 describe("configured Assistant tiers", () => {
     afterEach(() => {
-        delete process.env.MIKE_MODEL_CONFIG_JSON;
+        delete process.env.VARDA_MODEL_CONFIG_JSON;
         resetModelRegistryCache();
     });
 
     it("reads ordered, de-duplicated tier lists and drops malformed entries", () => {
-        process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({
+        process.env.VARDA_MODEL_CONFIG_JSON = JSON.stringify({
             tiers: {
                 fast: ["openrouter/google/gemini-3-flash", " ", 42, "openrouter/google/gemini-3-flash"],
                 deep: ["openrouter/anthropic/claude-sonnet-5", "has space"],
@@ -289,7 +289,7 @@ describe("configured Assistant tiers", () => {
     });
 
     it("treats an empty tier list as undeclared", () => {
-        process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({ tiers: { fast: [] } });
+        process.env.VARDA_MODEL_CONFIG_JSON = JSON.stringify({ tiers: { fast: [] } });
         resetModelRegistryCache();
         expect(configuredTierModels("fast")).toBeNull();
     });

@@ -1,5 +1,5 @@
 -- Dash Electric organization: auto-membership by email domain.
--- Run in the Varda (Mike) Supabase SQL editor — NOT Lovable.
+-- Run in the Varda Supabase SQL editor — NOT Lovable.
 -- Org "Dash Electric" was created via the API on 2026-09-22:
 --   id 55d6b8f4-639e-4112-a6f3-718a81353fa4 (created_by = radityabrahmana@gmail.com admin).
 -- 1) Backfill: every existing @dashelectric.co account becomes a member;

@@ -6,11 +6,11 @@ import {
     uploadProjectDocument,
     uploadProjectDocuments,
     uploadStandaloneDocuments,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { ChatInput, type ChatInputHandle } from "./ChatInput";
 import { AddDocumentsModal } from "../modals/AddDocumentsModal";
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     listWorkflows: vi.fn(async () => []),
     uploadProjectDocument: vi.fn(),
     uploadStandaloneDocument: vi.fn(),

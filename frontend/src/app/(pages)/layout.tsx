@@ -13,7 +13,7 @@ import { HeaderButtonUI, HeaderButtonsUI } from "@/shared/ui/HeaderButtonsUI";
 import { cn } from "@/app/lib/utils";
 import { loginUrlForCurrentLocation } from "@/app/lib/authRedirects";
 
-export default function MikeLayout({
+export default function VardaLayout({
     children,
 }: {
     children: React.ReactNode;

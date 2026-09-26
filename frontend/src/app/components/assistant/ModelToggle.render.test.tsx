@@ -9,7 +9,7 @@ import {
 import type {
     ApiKeyState,
     ConfiguredModelOption,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 
 const { configuredModels } = vi.hoisted(() => ({
     configuredModels: [] as ConfiguredModelOption[],

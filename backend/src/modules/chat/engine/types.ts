@@ -82,8 +82,8 @@ export type ChatMessage = {
  * EXTRACTED source text (not the raw file bytes) and are only present for
  * single-segment quotes that matched.
  */
-export type { QuoteVerification } from "@mike/contracts";
-import type { QuoteVerification } from "@mike/contracts";
+export type { QuoteVerification } from "@varda/contracts";
+import type { QuoteVerification } from "@varda/contracts";
 
 // ---------------------------------------------------------------------------
 // Doc resolution helpers (used by citations + documentOps)
@@ -118,22 +118,22 @@ export function resolveDocLabel(
 // Event / annotation types (shared between toolDispatcher and streaming)
 // ---------------------------------------------------------------------------
 
-export type { AskInputOption } from "@mike/contracts";
-import type { AskInputOption } from "@mike/contracts";
+export type { AskInputOption } from "@varda/contracts";
+import type { AskInputOption } from "@varda/contracts";
 
 export const MAX_ASK_INPUT_TEXT_LENGTH = 5_000;
 
-export type { AskInputItem } from "@mike/contracts";
-import type { AskInputItem } from "@mike/contracts";
+export type { AskInputItem } from "@varda/contracts";
+import type { AskInputItem } from "@varda/contracts";
 
-export type { AskInputsEvent } from "@mike/contracts";
-import type { AskInputsEvent } from "@mike/contracts";
+export type { AskInputsEvent } from "@varda/contracts";
+import type { AskInputsEvent } from "@varda/contracts";
 
-export type { AskInputResponseItem } from "@mike/contracts";
-import type { AskInputResponseItem } from "@mike/contracts";
+export type { AskInputResponseItem } from "@varda/contracts";
+import type { AskInputResponseItem } from "@varda/contracts";
 
-export type { AskInputsResponseRequest } from "@mike/contracts";
-import type { AskInputsResponseRequest } from "@mike/contracts";
+export type { AskInputsResponseRequest } from "@varda/contracts";
+import type { AskInputsResponseRequest } from "@varda/contracts";
 
-export type { EditAnnotation } from "@mike/contracts";
-import type { EditAnnotation } from "@mike/contracts";
+export type { EditAnnotation } from "@varda/contracts";
+import type { EditAnnotation } from "@varda/contracts";

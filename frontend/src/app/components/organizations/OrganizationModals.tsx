@@ -18,7 +18,7 @@ import {
   updateOrg,
   type Org,
   type OrgInvitation,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import {
   ORG_ROLE_DESCRIPTIONS,
   ORG_ROLE_LABELS,

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { ToggleSwitchUI } from "@mike/toggle-switch-ui";
+import { ToggleSwitchUI } from "@varda/toggle-switch-ui";
 import {
   createQuickAction,
   listWorkflows,
   updateQuickAction,
-} from "../../api/mikeApi";
+} from "../../api/vardaApi";
 import type { QuickAction, Workflow } from "../../types";
 import {
   addQuickAction,

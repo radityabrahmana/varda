@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useUserProfile } from "@/app/contexts/UserProfileContext";
 import { ChatInput } from "./ChatInput";
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     listWorkflows: vi.fn(async () => []),
     uploadProjectDocument: vi.fn(),
     uploadStandaloneDocument: vi.fn(),

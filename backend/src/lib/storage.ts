@@ -6,7 +6,7 @@
  *   R2_ENDPOINT_URL     — https://<account-id>.r2.cloudflarestorage.com
  *   R2_ACCESS_KEY_ID    — R2 API token (Access Key ID)
  *   R2_SECRET_ACCESS_KEY — R2 API token (Secret Access Key)
- *   R2_BUCKET_NAME      — bucket name (default: "mike")
+ *   R2_BUCKET_NAME      — bucket name (default: "varda")
  */
 
 import {
@@ -80,7 +80,7 @@ function getUploadSigningClient(): S3Client {
   return client;
 }
 
-const BUCKET = process.env.R2_BUCKET_NAME ?? "mike";
+const BUCKET = process.env.R2_BUCKET_NAME ?? "varda";
 
 export const storageEnabled = Boolean(
   process.env.R2_ENDPOINT_URL &&

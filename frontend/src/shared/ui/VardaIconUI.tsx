@@ -135,22 +135,22 @@ function Blades({ ids }: { ids: Record<string, string> }) {
     );
 }
 
-export function MikeIcon({
+export function VardaIcon({
     spin = false,
     done = false,
     error = false,
-    mike = false,
+    varda = false,
     size = 24,
     style,
 }: {
     spin?: boolean;
     done?: boolean;
     error?: boolean;
-    mike?: boolean;
+    varda?: boolean;
     size?: number;
     style?: React.CSSProperties;
 }) {
-    void mike;
+    void varda;
     const id = useId().replace(/:/g, "");
     const darkTheme = useDarkTheme();
     const palette = error

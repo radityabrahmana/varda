@@ -6,7 +6,7 @@
  *   4. Project assistant: create a new chat and submit a question
  *
  * Auth: inherits storageState from playwright.config.ts ("e2e/.auth/user.json")
- * Test user: e2e@mike.local / E2eTestPass1!
+ * Test user: e2e@varda.local / E2eTestPass1!
  */
 import { test, expect, type Page } from "@playwright/test";
 import { hasLlmKey, LLM_SKIP_REASON } from "./llm";

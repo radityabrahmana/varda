@@ -136,7 +136,7 @@ describe("ProjectDocumentTabs", () => {
         );
         const dataTransfer = {
             getData: (type: string) =>
-                type === "application/mike-doc" ? "a" : "",
+                type === "application/varda-doc" ? "a" : "",
         };
         fireEvent.drop(screen.getByRole("tab", { name: "Second.docx" }), {
             dataTransfer,

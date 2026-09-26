@@ -1,5 +1,5 @@
 /**
- * Shared Playwright fixture for the Mike Word add-in E2E suite.
+ * Shared Playwright fixture for the Varda Word add-in E2E suite.
  *
  * Spec authors import `{ test, expect }` from this module and drive the task
  * pane through the typed `addin` fixture — they should NEVER need to touch the
@@ -108,7 +108,7 @@ export interface Addin {
   expectAuthedShell(): Promise<void>;
 
   // ----- reads -----
-  /** Read legacy `mike_token` storage (must remain null after initialization). */
+  /** Read legacy `varda_token` storage (must remain null after initialization). */
   getToken(): Promise<string | null>;
   /** Read legacy refresh-token storage (must remain null after initialization). */
   getRefreshToken(): Promise<string | null>;
@@ -144,14 +144,14 @@ export interface Addin {
     chunks: string[],
     opts?: ChatStreamOpts,
   ): Promise<{ release: () => void }>;
-  /** Mock any Mike API endpoint returning JSON for the given METHOD + URL glob. */
+  /** Mock any Varda API endpoint returning JSON for the given METHOD + URL glob. */
   mockApiJson(
     method: HttpMethod,
     urlGlob: string,
     json: unknown,
     opts?: MockJsonOpts,
   ): Promise<void>;
-  /** Mock any Mike API endpoint returning an error status for METHOD + URL glob. */
+  /** Mock any Varda API endpoint returning an error status for METHOD + URL glob. */
   mockApiError(
     method: HttpMethod,
     urlGlob: string,
@@ -207,7 +207,7 @@ export const test = base.extend<{ addin: Addin }>({
         body: JSON.stringify({
           user: {
             id: "test-user-id",
-            email: "e2e@mike.local",
+            email: "e2e@varda.local",
             pendingEmail: null,
             createdWithGoogle: false,
           },
@@ -247,7 +247,7 @@ export const test = base.extend<{ addin: Addin }>({
         body: JSON.stringify({
           user: {
             id: "test-user-id",
-            email: "e2e@mike.local",
+            email: "e2e@varda.local",
             pendingEmail: null,
             createdWithGoogle: true,
           },
@@ -491,7 +491,7 @@ export const test = base.extend<{ addin: Addin }>({
                 storage: { getItem(k: string): Promise<string | null> };
               };
             }
-          ).OfficeRuntime.storage.getItem("mike_token"),
+          ).OfficeRuntime.storage.getItem("varda_token"),
         );
       },
 
@@ -510,7 +510,7 @@ export const test = base.extend<{ addin: Addin }>({
                 storage: { getItem(k: string): Promise<string | null> };
               };
             }
-          ).OfficeRuntime.storage.getItem("mike_refresh_token"),
+          ).OfficeRuntime.storage.getItem("varda_refresh_token"),
         );
       },
 
@@ -605,7 +605,7 @@ export const test = base.extend<{ addin: Addin }>({
               body: JSON.stringify({
                 user: {
                   id: "test-user-id",
-                  email: "e2e@mike.local",
+                  email: "e2e@varda.local",
                   pendingEmail: null,
                   createdWithGoogle: false,
                 },

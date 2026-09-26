@@ -13,7 +13,7 @@ import type {
     Message,
 } from "@/app/components/shared/types";
 import ProjectAssistantChatPage from "./page";
-import { getProject } from "@/app/lib/mikeApi";
+import { getProject } from "@/app/lib/vardaApi";
 
 const state = vi.hoisted(() => ({
     attachmentFilename: "Budget.xlsx",
@@ -42,8 +42,8 @@ const state = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
     useRouter: () => ({ replace: state.replace, push: state.push }),
 }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     getProject: vi.fn().mockResolvedValue({
         id: "p1",
         name: "Matter",
@@ -221,7 +221,7 @@ describe("closing document tabs", () => {
         });
         fireEvent.drop(screen.getByRole("region", { name: "Document viewer" }), {
             dataTransfer: {
-                types: ["application/mike-doc"],
+                types: ["application/varda-doc"],
                 getData: () => "notes",
             },
         });
@@ -259,9 +259,9 @@ describe("document viewer drops", () => {
         await renderWorkspace();
         const viewer = screen.getByRole("region", { name: "Document viewer" });
         const dataTransfer = {
-            types: ["application/mike-doc"],
+            types: ["application/varda-doc"],
             getData: vi.fn((type) =>
-                type === "application/mike-doc" ? "doc1" : "",
+                type === "application/varda-doc" ? "doc1" : "",
             ),
         };
         fireEvent.dragOver(viewer, { dataTransfer });
@@ -289,9 +289,9 @@ describe("document viewer drops", () => {
             screen.getByRole("region", { name: "Document viewer" }),
             {
                 dataTransfer: {
-                    types: ["application/mike-docs"],
+                    types: ["application/varda-docs"],
                     getData: (type: string) =>
-                        type === "application/mike-docs"
+                        type === "application/varda-docs"
                             ? JSON.stringify(["doc1", "excel"])
                             : "",
                 },
@@ -381,9 +381,9 @@ describe("document viewer drops", () => {
             screen.getByRole("region", { name: "Document viewer" }),
             {
                 dataTransfer: {
-                    types: ["application/mike-doc"],
+                    types: ["application/varda-doc"],
                     getData: (type: string) =>
-                        type === "application/mike-doc" ? "missing" : "",
+                        type === "application/varda-doc" ? "missing" : "",
                 },
             },
         );
@@ -399,8 +399,8 @@ describe("document viewer drops", () => {
         await renderWorkspace();
         const viewer = screen.getByRole("region", { name: "Document viewer" });
         for (const type of [
-            "application/mike-folder",
-            "application/mike-project-tab",
+            "application/varda-folder",
+            "application/varda-project-tab",
         ]) {
             const dataTransfer = { types: [type], getData: vi.fn() };
             expect(fireEvent.dragOver(viewer, { dataTransfer })).toBe(true);

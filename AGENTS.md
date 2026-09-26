@@ -85,7 +85,7 @@ Preserve the accessibility baseline:
 - Route and page components live in `frontend/src/app/`.
 - Shared domain types live in
   `frontend/src/app/components/shared/types.ts`.
-- Calls to the Express backend belong in `frontend/src/app/lib/mikeApi.ts` so
+- Calls to the Express backend belong in `frontend/src/app/lib/vardaApi.ts` so
   authentication, API error parsing, and request behavior stay consistent.
 - Reusable client behavior belongs in `frontend/src/app/hooks/` or
   `frontend/src/app/lib/`, with a colocated `*.test.ts` or `*.test.tsx` file.
@@ -131,7 +131,7 @@ helpers in `frontend/src/app/lib/userFacingError.ts` for unexpected failures.
   composes handlers and failure hooks. Keep queue transport in `lib/dbq/` and
   `workers/`, and the assistant engine in `modules/chat/engine/`.
 - Shared serialized API/event declarations live in `packages/contracts/` and
-  are imported with `import type` from `@mike/contracts`. Keep client display
+  are imported with `import type` from `@varda/contracts`. Keep client display
   state local and update producer/consumer tests when changing a wire payload.
 - Authentication and other request middleware live in
   `backend/src/middleware/`.

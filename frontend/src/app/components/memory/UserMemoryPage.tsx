@@ -24,7 +24,7 @@ import {
   getUserMemory,
   setUserMemoryEnabled,
   updateUserMemory,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 
 type ConfirmAction = "disable";

@@ -6,8 +6,8 @@ const apiMocks = vi.hoisted(() => ({
     uploadProjectDocuments: vi.fn(),
 }));
 
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     addDocumentToProject: vi.fn(),
     getProject: vi.fn(),
     uploadProjectDocuments: apiMocks.uploadProjectDocuments,

@@ -24,7 +24,7 @@ import {
     revokeProjectAccess,
     updateProject,
     type ProjectGrant,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type {
     Chat,
     ColumnConfig,
@@ -407,7 +407,7 @@ export function ProjectWorkspaceProvider({
         model: string,
         _accessAssignments: {
             email: string;
-            role: import("@/app/lib/mikeApi").AccessAssignmentRole;
+            role: import("@/app/lib/vardaApi").AccessAssignmentRole;
         }[],
     ) {
         // Project-owned reviews inherit their project's organization and

@@ -6,7 +6,7 @@
  * arriving in one chunk, surface `error` events, and flush whatever the
  * TextDecoder still holds when the stream closes without a trailing newline.
  * These tests drive the real hook against a mocked global fetch returning
- * genuine ReadableStream bodies (through the real streamChat in mikeApi.ts).
+ * genuine ReadableStream bodies (through the real streamChat in vardaApi.ts).
  */
 import { act, renderHook, waitFor } from "@testing-library/react";
 import {

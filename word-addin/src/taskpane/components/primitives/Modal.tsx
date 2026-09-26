@@ -1,10 +1,10 @@
 import React, { type ReactNode } from "react";
-import { ModalUI } from "@mike/modal-ui";
+import { ModalUI } from "@varda/modal-ui";
 import { cn } from "../../../shared/lib/utils";
 import {
   PillButtonUI as PillButton,
   type PillButtonUITone,
-} from "@mike/pill-button-ui";
+} from "@varda/pill-button-ui";
 
 interface ModalProps {
   open: boolean;

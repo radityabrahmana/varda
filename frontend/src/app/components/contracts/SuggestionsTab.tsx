@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, Crosshair, PenLine, X } from "lucide-react";
-import { resolveContractSuggestion } from "@/app/lib/mikeApi";
+import { resolveContractSuggestion } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { useReviewAccess } from "./reviewAccess";

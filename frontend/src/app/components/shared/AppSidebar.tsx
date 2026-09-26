@@ -21,7 +21,7 @@ import { useUserProfile } from "@/app/contexts/UserProfileContext";
 import { useChatHistoryContext } from "@/app/contexts/ChatHistoryContext";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { MikeIcon } from "@/app/components/chat/mike-icon";
+import { VardaIcon } from "@/app/components/chat/varda-icon";
 import { SidebarChatItem } from "@/app/components/shared/SidebarChatItem";
 import {
     ChatSkeuoIcon,
@@ -36,7 +36,7 @@ import {
 } from "@/app/components/shared/AppSidebarSkeuoIcons";
 import { HistorySkeuoIcon } from "@/app/components/shared/HistorySkeuoIcon";
 import { ProjectSvgIcon } from "@/app/components/shared/FolderSvgIcon";
-import { listProjectSummaries } from "@/app/lib/mikeApi";
+import { listProjectSummaries } from "@/app/lib/vardaApi";
 import type { Project } from "@/app/components/shared/types";
 import { cn } from "@/app/lib/utils";
 import { WarningPopup } from "@/app/components/popups/WarningPopup";
@@ -287,7 +287,7 @@ export function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                                 href="/assistant"
                                 className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
                             >
-                                <MikeIcon size={20} />
+                                <VardaIcon size={20} />
                                 <span
                                     className={`text-[22px] font-light font-serif ${
                                         shouldAnimate ? "sidebar-fade-in" : ""

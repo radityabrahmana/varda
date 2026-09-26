@@ -9,7 +9,7 @@ import {
     shareWorkflow,
     updateWorkflow,
     type Org,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import type { Document, Workflow } from "../shared/types";
 import { FileDirectory } from "../shared/FileDirectory";

@@ -8,7 +8,7 @@ import type { Document } from "@/app/components/shared/types";
 import type { TabDropPosition } from "@/app/lib/reorderTabs";
 import { cn } from "@/app/lib/utils";
 
-const TAB_DRAG_TYPE = "application/mike-project-document-tab";
+const TAB_DRAG_TYPE = "application/varda-project-document-tab";
 
 interface Props {
     tabs: ReadonlyArray<{ documentId: string; filename: string }>;

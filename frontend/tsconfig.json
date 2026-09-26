@@ -20,10 +20,10 @@
       }
     ],
     "paths": {
-      "@mike/contracts": ["../packages/contracts/index.d.ts"],
+      "@varda/contracts": ["../packages/contracts/index.d.ts"],
       "@/*": ["./src/*"],
-      "@mike/upload-session-client": ["./src/shared/api/uploadSessionClient.ts"],
-      "@mike/secure-uuid": ["./src/shared/lib/secureUuid.ts"]
+      "@varda/upload-session-client": ["./src/shared/api/uploadSessionClient.ts"],
+      "@varda/secure-uuid": ["./src/shared/lib/secureUuid.ts"]
     }
   },
   "include": [

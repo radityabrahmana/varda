@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MikeApiError, createPlaybookRule, listPlaybookRules, updatePlaybookRule } from "./mikeApi";
+import { VardaApiError, createPlaybookRule, listPlaybookRules, updatePlaybookRule } from "./vardaApi";
 
 const fetchMock = vi.fn();
 const jsonResponse = (body: unknown, init?: ResponseInit) =>
@@ -46,6 +46,6 @@ describe("playbook api", () => {
         expect(JSON.parse(init.body as string)).toEqual({ is_active: false });
 
         fetchMock.mockResolvedValueOnce(jsonResponse({ error: "Hanya administrator" }, { status: 403 }));
-        await expect(updatePlaybookRule("r1", { title: "x" })).rejects.toBeInstanceOf(MikeApiError);
+        await expect(updatePlaybookRule("r1", { title: "x" })).rejects.toBeInstanceOf(VardaApiError);
     });
 });

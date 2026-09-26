@@ -1,7 +1,7 @@
 /**
  * E2E coverage for the conflicted card's "Accept & apply" action.
  *
- * Mike never layers a tracked replacement over pending revisions — the card
+ * Varda never layers a tracked replacement over pending revisions — the card
  * skips as conflicted instead. "Accept & apply" is the explicit two-step
  * escape hatch: accept the revisions occupying the target passage, then
  * rerun the edit's normal apply lifecycle, so the resulting card's

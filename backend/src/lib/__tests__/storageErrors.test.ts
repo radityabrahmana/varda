@@ -89,7 +89,7 @@ describe("storage error logging", () => {
   });
 
   it("uploads a local file as a stream with an explicit content length", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "mike-storage-test-"));
+    const directory = await mkdtemp(join(tmpdir(), "varda-storage-test-"));
     const filePath = join(directory, "converted.pdf");
     await writeFile(filePath, Buffer.from("streamed pdf"));
     let uploaded = Buffer.alloc(0);

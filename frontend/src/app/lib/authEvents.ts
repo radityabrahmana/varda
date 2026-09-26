@@ -1,4 +1,4 @@
-export const AUTH_SESSION_INVALIDATED_EVENT = "mike:auth-session-invalidated";
+export const AUTH_SESSION_INVALIDATED_EVENT = "varda:auth-session-invalidated";
 
 /**
  * Fetch an authenticated application resource and immediately invalidate the

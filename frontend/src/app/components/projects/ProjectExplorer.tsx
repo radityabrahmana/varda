@@ -196,8 +196,8 @@ export const ProjectExplorer = forwardRef<ProjectExplorerHandle, Props>(function
     }
 
     async function handleDropOnTarget(targetFolderId: string | null, e: React.DragEvent) {
-        const docId = e.dataTransfer.getData("application/mike-doc");
-        const movingFolderId = e.dataTransfer.getData("application/mike-folder");
+        const docId = e.dataTransfer.getData("application/varda-doc");
+        const movingFolderId = e.dataTransfer.getData("application/varda-folder");
 
         if (docId && onMoveDoc) {
             const doc = documents.find((d) => d.id === docId);
@@ -282,7 +282,7 @@ export const ProjectExplorer = forwardRef<ProjectExplorerHandle, Props>(function
                             <div
                                 draggable
                                 onDragStart={(e) => {
-                                    e.dataTransfer.setData("application/mike-folder", folder.id);
+                                    e.dataTransfer.setData("application/varda-folder", folder.id);
                                     e.dataTransfer.effectAllowed = "move";
                                     setRowDragPreview({
                                         dataTransfer: e.dataTransfer,
@@ -365,7 +365,7 @@ export const ProjectExplorer = forwardRef<ProjectExplorerHandle, Props>(function
                             key={`d-${doc.id}`}
                             draggable
                             onDragStart={(e) => {
-                                e.dataTransfer.setData("application/mike-doc", doc.id);
+                                e.dataTransfer.setData("application/varda-doc", doc.id);
                                 e.dataTransfer.effectAllowed = "copyMove";
                                 setRowDragPreview({
                                     dataTransfer: e.dataTransfer,

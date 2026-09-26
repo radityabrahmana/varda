@@ -1,6 +1,6 @@
 # Manual and production deployment
 
-Use this path when connecting Mike to managed Supabase and S3-compatible
+Use this path when connecting Varda to managed Supabase and S3-compatible
 storage instead of the infrastructure bundled with Docker Compose.
 
 ## Prerequisites
@@ -73,8 +73,8 @@ cd backend
 npm run sync:workflows
 ```
 
-The job resolves `MIKE_WORKFLOWS_REF`, downloads and validates the raw
-`Open-Legal-Products/mike-workflows` archive, uploads reference assets to the
+The job resolves `VARDA_WORKFLOWS_REF`, downloads and validates the raw
+`radityabrahmana/varda-workflows` archive, uploads reference assets to the
 configured S3-compatible storage, and transactionally replaces the active
 `mike_workflows` catalog. Temporary archive and JSON files are deleted when the
 job exits. Run this as a release job before directing traffic to the new
@@ -101,7 +101,7 @@ Use:
 - the Supabase project URL for backend `SUPABASE_URL`;
 - the anon/publishable key for backend `SUPABASE_PUBLISHABLE_KEY`;
 - the service-role key for backend `SUPABASE_SECRET_KEY`; and
-- the internal Mike backend origin for frontend `API_BASE_URL`.
+- the internal Varda backend origin for frontend `API_BASE_URL`.
 
 Set backend `API_PUBLIC_URL` to the browser-reachable frontend gateway, including
 its `/api` prefix (for example, `https://app.example.com/api`). OAuth providers,
@@ -132,7 +132,7 @@ once to establish the new cookie; tokens are not copied through JavaScript.
 
 ### Object-storage CORS for direct uploads
 
-Mike's upload-session API gives an authenticated browser a short-lived signed
+Varda's upload-session API gives an authenticated browser a short-lived signed
 `PUT` URL for one specific staging object. The bucket must therefore allow
 browser `PUT` requests from each deployed frontend origin. Configure the
 equivalent of this CORS policy in Cloudflare R2, MinIO, RustFS, or the selected
@@ -141,7 +141,7 @@ S3-compatible provider:
 ```json
 [
   {
-    "AllowedOrigins": ["https://your-mike.example"],
+    "AllowedOrigins": ["https://your-varda.example"],
     "AllowedMethods": ["PUT", "HEAD"],
     "AllowedHeaders": ["Content-Type", "x-amz-*"],
     "ExposeHeaders": ["ETag"],
@@ -202,7 +202,7 @@ key restores the global key as the fallback.
 ## Authentication email
 
 Supabase Auth sends signup, email-change, and password-recovery messages.
-Configure production SMTP in the Supabase dashboard; Mike does not require a
+Configure production SMTP in the Supabase dashboard; Varda does not require a
 Resend API key for these messages.
 
 In **Authentication > URL Configuration**, set the Site URL to the deployed
@@ -210,7 +210,7 @@ frontend origin and add that origin's `/auth/callback` URL to the redirect
 allow list. For example:
 
 ```text
-https://your-mike.example/auth/callback
+https://your-varda.example/auth/callback
 ```
 
 Enable email confirmation for production signups. Keep secure email change
@@ -219,7 +219,7 @@ addresses. Set the minimum password length to 10; this applies when passwords
 are created or changed and does not invalidate existing shorter passwords. The
 same callback handles signup confirmation, confirmed email
 changes, and password-recovery links before sending the user to the appropriate
-Mike page.
+Varda page.
 
 Review the Supabase email templates after changing the public Site URL, and
 test every link against the deployed frontend before inviting users. Existing
@@ -230,7 +230,7 @@ mirrored into `user_profiles`.
 
 Create a **Web application** OAuth client in Google Auth Platform. Its
 authorized redirect URI is the Supabase Auth callback shown on the Google
-provider page, not Mike's frontend callback. For hosted Supabase it normally
+provider page, not Varda's frontend callback. For hosted Supabase it normally
 has this form:
 
 ```text
@@ -239,10 +239,10 @@ https://<project-ref>.supabase.co/auth/v1/callback
 
 Enable Google under **Supabase > Authentication > Providers**, then enter the
 Google client ID and secret. In **Authentication > URL Configuration**, allow
-both deployed Mike clients:
+both deployed Varda clients:
 
 ```text
-https://your-mike.example/auth/callback
+https://your-varda.example/auth/callback
 https://your-word-addin.example/oauth-dialog.html
 ```
 
@@ -255,7 +255,7 @@ token or request Google Drive or Gmail access.
 
 ## Enterprise SSO (SAML)
 
-Self-hosted Mike can use SAML providers registered in Supabase Auth (GoTrue),
+Self-hosted Varda can use SAML providers registered in Supabase Auth (GoTrue),
 including Okta, Microsoft Entra ID, and Google Workspace SAML. The login page
 offers an SSO entry point; the backend permits the flow only when SSO is
 enabled. The existing email/password and Google methods remain available; this
@@ -302,7 +302,7 @@ https://auth.example.com/auth/v1/sso/saml/metadata
 ```
 
 Use its entity ID/audience and assertion consumer service (ACS) URL in your
-IdP. The ACS is `https://auth.example.com/auth/v1/sso/saml/acs`, not Mike's
+IdP. The ACS is `https://auth.example.com/auth/v1/sso/saml/acs`, not Varda's
 frontend callback. Configure the IdP to supply an email attribute and assign
 the intended users or groups to the application.
 
@@ -338,7 +338,7 @@ providers with `GET /auth/v1/admin/sso/providers`; use
 `PUT /auth/v1/admin/sso/providers/<provider-id>` to update an existing provider
 instead of repeating creation. Keep admin access restricted.
 
-### Enable Mike and verify sign-in
+### Enable Varda and verify sign-in
 
 Set these in `backend/.env` (or the backend service environment), then restart
 the backend. No frontend rebuild is needed:
@@ -355,15 +355,15 @@ discovery. `SSO_ALLOWED_DOMAINS` is an optional comma-separated list of exact
 domains. Use DNS names, or punycode for international domains, without URLs or
 wildcards. Invalid domain settings fail closed. Omitting the allowlist permits
 any domain registered in GoTrue.
-The allowlist controls Mike's sign-in initiation, not account authorization or
+The allowlist controls Varda's sign-in initiation, not account authorization or
 direct access to GoTrue; enforce membership and access policy at the IdP and
 Auth service.
 
-Mike calls GoTrue's `/sso` API using the server-side Supabase SDK, which sends
+Varda calls GoTrue's `/sso` API using the server-side Supabase SDK, which sends
 `skip_http_redirect: true` and a PKCE challenge. After IdP authentication,
-GoTrue redirects to Mike's existing `/auth/callback`; the backend exchanges
+GoTrue redirects to Varda's existing `/auth/callback`; the backend exchanges
 the code using its HttpOnly verifier cookie and establishes the normal session.
-Start sign-in from Mike in the same browser; IdP-initiated flows are outside
+Start sign-in from Varda in the same browser; IdP-initiated flows are outside
 this integration. The Word add-in's existing authentication remains unchanged.
 
 Before inviting users, verify the metadata contains the public ACS URL, try
@@ -372,8 +372,8 @@ the app, and confirm logout and an unapproved domain behave as expected. SAML
 identities can be separate accounts from existing email/Google identities; do
 not assume matching emails link accounts or transfer project access.
 
-Cloudflare Access or IAP in front of Mike is complementary perimeter access
-control. It does not establish Mike's Supabase session and is not a substitute
+Cloudflare Access or IAP in front of Varda is complementary perimeter access
+control. It does not establish Varda's Supabase session and is not a substitute
 for this SAML integration. Ensure the IdP/browser can reach the required SAML
 endpoints through any perimeter controls.
 
@@ -415,13 +415,13 @@ Build and run the production add-in host with its public URLs baked into the
 static bundle and its private backend origin supplied only at runtime:
 
 ```bash
-docker build -t mike-word-addin \
+docker build -t varda-word-addin \
   --build-arg REACT_APP_WEB_APP_URL=https://app.example.com \
   --build-arg WORD_ADDIN_PUBLIC_URL=https://word.example.com \
   word-addin
 docker run --rm -p 3200:3200 \
   -e WORD_ADDIN_BACKEND_ORIGIN=http://backend:3001 \
-  mike-word-addin
+  varda-word-addin
 ```
 
 Put an HTTPS ingress or reverse proxy in front of port 3200. The included host
@@ -430,7 +430,7 @@ serves `dist/` and streams `/api/*` to the backend while preserving cookies,
 
 ## Background jobs and Redis
 
-Mike runs durable background jobs (document conversion, tabular extraction,
+Varda runs durable background jobs (document conversion, tabular extraction,
 audit recording, account deletion, storage cleanup, export builds) through one
 of two interchangeable transports:
 
@@ -465,7 +465,7 @@ Keep failed cleanup rows as well as pending ones; upgraded workers reclaim them.
 
 Backend and frontend Docker build contexts are now the repository root, so both
 can compile against `packages/contracts`. For a manual backend image build use
-`docker build -f backend/Dockerfile -t mike-backend .` from the root.
+`docker build -f backend/Dockerfile -t varda-backend .` from the root.
 
 ## Deployment safety
 

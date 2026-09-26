@@ -1,5 +1,5 @@
 {
-  "name": "@mike/contracts",
+  "name": "@varda/contracts",
   "version": "0.0.0",
   "private": true,
   "types": "index.d.ts",

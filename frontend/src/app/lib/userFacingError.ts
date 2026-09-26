@@ -1,11 +1,11 @@
-import { MikeApiError } from "./mikeApi";
+import { VardaApiError } from "./vardaApi";
 
 export function userFacingApiError(
     error: unknown,
     fallback: string,
 ): string {
     if (
-        error instanceof MikeApiError &&
+        error instanceof VardaApiError &&
         error.status >= 400 &&
         error.status < 500 &&
         error.message

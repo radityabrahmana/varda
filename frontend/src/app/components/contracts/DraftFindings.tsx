@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { RuleRefButton } from "@/app/components/playbook/PlaybookRuleDrawer";
 import { Crosshair } from "lucide-react";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
-import { patchContract, postContractFeedback, saveContractClause } from "@/app/lib/mikeApi";
+import { patchContract, postContractFeedback, saveContractClause } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import type { ReviewDetailRow, ReviewFeedbackRow, ReviewOutput, RevisionEditRow } from "./reviewTypes";
 import { RevisionCardActions } from "./RevisionCard";

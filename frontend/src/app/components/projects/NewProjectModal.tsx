@@ -12,7 +12,7 @@ import {
     listOrgs,
     setProjectMemoryEnabled,
     uploadProjectDocuments,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { FileDirectory } from "../shared/FileDirectory";
 import type { Document, Project } from "../shared/types";
 import { useAuth } from "@/app/contexts/AuthContext";

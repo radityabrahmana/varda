@@ -4,8 +4,8 @@ import {
   nearestReasoningLevelForModel,
   reasoningLevelsForModel,
   type ReasoningLevel,
-} from "@mike/model-toggle-ui";
-import { getOllamaModels, type ApiKeyStatus } from "../../api/mikeApi";
+} from "@varda/model-toggle-ui";
+import { getOllamaModels, type ApiKeyStatus } from "../../api/vardaApi";
 import {
   isModelAvailable,
   MODE_OPTIONS,

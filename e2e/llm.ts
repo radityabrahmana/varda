@@ -3,7 +3,7 @@
  *
  * Four specs (chat rename, chat delete, project-assistant create+submit, and
  * the critical-path "ask a question" flow) create/populate a chat by sending a
- * message. Mike supports keyless local models through Ollama, but the GitHub
+ * message. Varda supports keyless local models through Ollama, but the GitHub
  * Actions job does not provision an Ollama server or pull a model. Its only
  * live model is therefore the Anthropic model enabled by ANTHROPIC_API_KEY.
  * Without that secret, these specs cannot submit a message in CI and would

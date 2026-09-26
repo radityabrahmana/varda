@@ -17,7 +17,7 @@ docker compose up -d --force-recreate auth
 
 Authentication email is sent by Supabase Auth. Check its email-provider
 settings, delivery logs, and rate limits, and configure production SMTP in the
-Supabase dashboard. Mike intentionally shows the same password-reset response
+Supabase dashboard. Varda intentionally shows the same password-reset response
 for registered and unregistered addresses, so that screen cannot confirm
 whether an account exists.
 
@@ -35,7 +35,7 @@ verify that the latest database migration has been applied.
 
 ## Port 54322 is already allocated
 
-Another local Postgres or Supabase stack is using Mike's default host port.
+Another local Postgres or Supabase stack is using Varda's default host port.
 Stop that stack or choose another mapping, for example:
 
 ```bash
@@ -48,7 +48,7 @@ Add a key under **Settings > API Keys**, or configure it in
 `backend/.env` and restart the backend.
 
 For local Ollama models, confirm `ollama list` shows an installed model and the
-backend can reach the URL configured by `OLLAMA_BASE_URL`. Refresh Mike after
+backend can reach the URL configured by `OLLAMA_BASE_URL`. Refresh Varda after
 installing a model.
 
 ## CourtListener tools are unavailable

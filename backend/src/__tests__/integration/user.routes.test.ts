@@ -258,7 +258,7 @@ vi.mock("../../modules/user/user.dataExport", () => ({
     buildUserTabularReviewsExport: (...args: unknown[]) =>
         buildUserTabularReviewsExport(...args),
     userExportFilename: (kind: string, userId: string) =>
-        `mike-${kind}-export-${userId.slice(0, 8)}.json`,
+        `varda-${kind}-export-${userId.slice(0, 8)}.json`,
 }));
 
 import { app } from "../../app";
@@ -1077,7 +1077,7 @@ describe("user.routes", () => {
             expect(res.headers["content-type"]).toContain("application/json");
             expect(res.headers["content-disposition"]).toContain("attachment");
             expect(res.headers["content-disposition"]).toContain(
-                "mike-account-export-u1.json",
+                "varda-account-export-u1.json",
             );
             expect(buildUserAccountExport).toHaveBeenCalledWith(
                 expect.anything(),
@@ -1094,7 +1094,7 @@ describe("user.routes", () => {
             expect(res.status).toBe(200);
             expect(res.body).toEqual({ chats: "data" });
             expect(res.headers["content-disposition"]).toContain(
-                "mike-chats-export-u1.json",
+                "varda-chats-export-u1.json",
             );
             expect(buildUserChatsExport).toHaveBeenCalledTimes(1);
         });
@@ -1107,7 +1107,7 @@ describe("user.routes", () => {
             expect(res.status).toBe(200);
             expect(res.body).toEqual({ reviews: "data" });
             expect(res.headers["content-disposition"]).toContain(
-                "mike-tabular-reviews-export-u1.json",
+                "varda-tabular-reviews-export-u1.json",
             );
             expect(buildUserTabularReviewsExport).toHaveBeenCalledTimes(1);
         });

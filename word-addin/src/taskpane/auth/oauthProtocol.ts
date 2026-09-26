@@ -1,4 +1,4 @@
-export const GOOGLE_OAUTH_MESSAGE_TYPE = "mike-google-oauth" as const;
+export const GOOGLE_OAUTH_MESSAGE_TYPE = "varda-google-oauth" as const;
 
 export type GoogleOAuthDialogMessage =
   | {

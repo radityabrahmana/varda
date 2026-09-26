@@ -62,7 +62,7 @@ export async function openRouterChat(req: ChatRequest, timeoutMs = DEFAULT_TIMEO
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         // OpenRouter attribution headers (optional, shown in their dashboard).
-        "HTTP-Referer": process.env.API_PUBLIC_URL?.trim() || "https://mike.local",
+        "HTTP-Referer": process.env.API_PUBLIC_URL?.trim() || "https://varda.local",
         "X-Title": "Tinjau contract review",
       },
       body: JSON.stringify(req),

@@ -33,9 +33,9 @@ import {
     updateTabularReview,
     revokeTabularReviewAccess,
     uploadReviewDocument,
-    MikeApiError,
+    VardaApiError,
     type ContentAccessGrant,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type {
     ColumnConfig,
     Document,
@@ -536,7 +536,7 @@ export function TRView({ reviewId, projectId }: Props) {
             );
         } catch (err) {
             if (
-                err instanceof MikeApiError &&
+                err instanceof VardaApiError &&
                 (err.code === "review_running" || err.code === "review_stale")
             ) {
                 await loadLatestReview();
@@ -1026,7 +1026,7 @@ export function TRView({ reviewId, projectId }: Props) {
             await clearTabularCells(reviewId, rowIds);
         } catch (err) {
             if (
-                err instanceof MikeApiError &&
+                err instanceof VardaApiError &&
                 (err.code === "review_running" || err.code === "review_stale")
             ) {
                 await loadLatestReview();

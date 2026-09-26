@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MikeApiError, type Org } from "@/app/lib/mikeApi";
+import { VardaApiError, type Org } from "@/app/lib/vardaApi";
 import {
   InviteOrganizationMemberModal,
   OrganizationSettingsModal,
@@ -28,8 +28,8 @@ const mocks = vi.hoisted(() => ({
   createOrg: vi.fn(),
 }));
 
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
   createOrgInvitation: mocks.createOrgInvitation,
   cancelOrgInvitation: mocks.cancelOrgInvitation,
   resendOrgInvitation: mocks.resendOrgInvitation,
@@ -151,7 +151,7 @@ describe("OrganizationSettingsModal", () => {
   it("names the failure a failed delete, not unsaved settings", async () => {
     const user = userEvent.setup();
     mocks.deleteOrg.mockRejectedValue(
-      new MikeApiError({
+      new VardaApiError({
         message: "Move or delete this organization's projects first",
         status: 409,
       }),

@@ -18,7 +18,7 @@ import {
   type ApiKeyStatus,
   type UploadOutcome,
   type UploadProgress,
-} from "../../api/mikeApi";
+} from "../../api/vardaApi";
 import { useSelectedModel } from "../../hooks/useSelectedModel";
 import type { Document, Workflow } from "../../types";
 import {
@@ -43,7 +43,7 @@ import {
   slashCommandQueryFromValue,
   withoutSlashCommand,
   workflowSlashCommandFromTitle,
-} from "@mike/workflow-slash-command-ui";
+} from "@varda/workflow-slash-command-ui";
 import {
   WORD_WORKFLOW_SLASH_MENU_ID,
   WorkflowSlashMenu,

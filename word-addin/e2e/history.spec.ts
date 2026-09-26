@@ -262,7 +262,7 @@ test("persisted cloud failures and cancellations both refresh history", async ({
       __WORD_HISTORY_EVENT_COUNT__?: number;
     };
     testWindow.__WORD_HISTORY_EVENT_COUNT__ = 0;
-    window.addEventListener("mike-word-chat-history-changed", () => {
+    window.addEventListener("varda-word-chat-history-changed", () => {
       testWindow.__WORD_HISTORY_EVENT_COUNT__ =
         (testWindow.__WORD_HISTORY_EVENT_COUNT__ ?? 0) + 1;
     });

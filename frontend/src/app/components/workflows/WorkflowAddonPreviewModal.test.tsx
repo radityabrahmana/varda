@@ -52,7 +52,7 @@ function addon(assets: WorkflowAddon["assets"]): WorkflowAddon {
     type: "assistant",
     prompt_md: "# Draft from precedent\nUse the reference.",
     contributors: [
-      { name: "Mike", organisation: null, role: null, linkedin: null },
+      { name: "Varda", organisation: null, role: null, linkedin: null },
     ],
     language: "English",
     practice: "General Transactions",

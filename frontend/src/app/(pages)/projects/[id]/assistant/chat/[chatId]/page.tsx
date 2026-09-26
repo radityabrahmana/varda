@@ -36,7 +36,7 @@ import {
     moveDocumentToFolder,
     moveSubfolderToFolder,
     resolveProjectFolderPath,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { useAssistantChat } from "@/app/hooks/useAssistantChat";
 import { useAssistantMessageLayout } from "@/app/hooks/useAssistantMessageLayout";
 import { useProjectPicker } from "@/app/hooks/useProjectPicker";
@@ -79,7 +79,7 @@ import {
     providerLabel,
 } from "@/app/lib/modelAvailability";
 import { PermissionDeniedPopup } from "@/app/components/popups/PermissionDeniedPopup";
-import { MikeIcon } from "@/app/components/chat/mike-icon";
+import { VardaIcon } from "@/app/components/chat/varda-icon";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useUserProfile } from "@/app/contexts/UserProfileContext";
 import { useSidebar } from "@/app/contexts/SidebarContext";
@@ -204,7 +204,7 @@ function AssistantGreeting({ username }: { username: string }) {
                             "transform 900ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                     }}
                 >
-                    <MikeIcon size={ICON_SIZE} />
+                    <VardaIcon size={ICON_SIZE} />
                 </div>
                 <h1
                     ref={textRef}
@@ -845,7 +845,7 @@ export default function ProjectAssistantChatPage({ params }: Props) {
         event.preventDefault();
         event.stopPropagation();
         setChatDragOver(false);
-        const docId = event.dataTransfer.getData("application/mike-doc");
+        const docId = event.dataTransfer.getData("application/varda-doc");
         if (!docId) {
             const files = Array.from(event.dataTransfer.files);
             if (files.length > 0) chatInputRef.current?.addFiles(files);
@@ -1670,10 +1670,10 @@ export default function ProjectAssistantChatPage({ params }: Props) {
                             onDrop={async (e) => {
                                 e.preventDefault();
                                 const docId = e.dataTransfer.getData(
-                                    "application/mike-doc",
+                                    "application/varda-doc",
                                 );
                                 const folderId = e.dataTransfer.getData(
-                                    "application/mike-folder",
+                                    "application/varda-folder",
                                 );
                                 if (docId) {
                                     e.stopPropagation();

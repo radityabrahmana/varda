@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MikeApiError } from "@/app/lib/mikeApi";
+import { VardaApiError } from "@/app/lib/vardaApi";
 import { OrganizationsOverview } from "./OrganizationsOverview";
 
 const mocks = vi.hoisted(() => ({
@@ -17,11 +17,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mocks.push }),
 }));
-// Spread the real module: userFacingApiError resolves MikeApiError from this
+// Spread the real module: userFacingApiError resolves VardaApiError from this
 // same module, so a bare object mock leaves its `instanceof` check with an
 // undefined right-hand side.
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
   listOrgs: mocks.listOrgs,
   listMyOrgInvitations: mocks.listMyOrgInvitations,
   createOrg: mocks.createOrg,
@@ -191,7 +191,7 @@ describe("OrganizationsOverview", () => {
     const user = userEvent.setup();
     mocks.listMyOrgInvitations
       .mockRejectedValueOnce(
-        new MikeApiError({ status: 503, message: "upstream down" }),
+        new VardaApiError({ status: 503, message: "upstream down" }),
       )
       .mockResolvedValue([INVITATION]);
     render(<OrganizationsOverview />);
@@ -223,7 +223,7 @@ describe("OrganizationsOverview", () => {
     // The invitations half of the same load already did this; the orgs half
     // threw the server's sentence away for a hardcoded one.
     mocks.listOrgs.mockRejectedValue(
-      new MikeApiError({
+      new VardaApiError({
         status: 403,
         message: "Your account is not permitted to list organizations",
       }),

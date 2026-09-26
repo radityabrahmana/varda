@@ -1,11 +1,11 @@
 import React from "react";
 import { Trash2 } from "lucide-react";
-import { ToggleSwitchUI } from "@mike/toggle-switch-ui";
+import { ToggleSwitchUI } from "@varda/toggle-switch-ui";
 import { PageTitle } from "../primitives/PageTitle";
-import { PillButtonUI as PillButton } from "@mike/pill-button-ui";
+import { PillButtonUI as PillButton } from "@varda/pill-button-ui";
 import type { WordChatStorageMode } from "../../lib/wordChatSettings";
 import { Modal } from "../primitives/Modal";
-import { GlassCardUI } from "@mike/glass-card-ui";
+import { GlassCardUI } from "@varda/glass-card-ui";
 
 interface SettingsPageProps {
   storageMode: WordChatStorageMode;

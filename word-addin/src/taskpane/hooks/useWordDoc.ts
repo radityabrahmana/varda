@@ -33,7 +33,7 @@ declare const trackedEditHandleBrand: unique symbol;
 
 /**
  * An in-memory reference to only the Word revisions created for one logical
- * Mike edit. Callers must treat the string as opaque.
+ * Varda edit. Callers must treat the string as opaque.
  */
 export type TrackedEditHandle = string & {
   readonly [trackedEditHandleBrand]: true;
@@ -200,7 +200,7 @@ function serializeWordMutation<T>(operation: () => Promise<T>): Promise<T> {
 
 function createTrackedEditHandle(): TrackedEditHandle {
   nextTrackedEditHandle += 1;
-  return `mike-edit-${Date.now().toString(36)}-${nextTrackedEditHandle.toString(36)}-${createSecureUuid()}` as TrackedEditHandle;
+  return `varda-edit-${Date.now().toString(36)}-${nextTrackedEditHandle.toString(36)}-${createSecureUuid()}` as TrackedEditHandle;
 }
 
 function rememberTerminalState(
@@ -700,7 +700,7 @@ async function narrowChangesByAnchor(
  * either side, nothing is touched — unless one of the edit's own retained
  * anchors can narrow the candidates by LOCATION to exactly one per side.
  * "Exactly one inside my own passage" is strictly stronger than the old
- * document-wide rule, and it is what lets two pending Mike edits that share
+ * document-wide rule, and it is what lets two pending Varda edits that share
  * replacement text (the same correction in two places) resolve
  * independently. Each anchor gets its own batch: a stale proxy fails its
  * whole Word.run, and the next anchor must still get its chance.
@@ -1106,9 +1106,9 @@ async function resolveTrackedEditNow(
       }
     }
     if (!resolvedViaChildren) {
-      // Resolve through the edited passage: it was revision-free before Mike
+      // Resolve through the edited passage: it was revision-free before Varda
       // touched it and every mutation below re-verifies content first, which
-      // keeps the scope of this decision to Mike's own edit. Word does not
+      // keeps the scope of this decision to Varda's own edit. Word does not
       // reliably report both halves of a replacement through one anchor — an
       // anchor on the inserted text can see only the Added revision and the
       // replaced search range only the Deleted one — so the plan may resolve
@@ -1309,7 +1309,7 @@ async function resolveTrackedEditNow(
         handle,
         status: "error",
         error:
-          "The revisions in this passage changed after Mike applied the edit. Review them directly in Word.",
+          "The revisions in this passage changed after Varda applied the edit. Review them directly in Word.",
       };
     }
     if (entry.stableEditId && entry.bookmarkName) {
@@ -1393,7 +1393,7 @@ export function revealTrackedEdit(
 /**
  * Rebuild an exact in-memory review handle from a document-persistent hidden
  * bookmark. The text/type verification prevents a later user revision inside
- * the bookmarked passage from being accepted or rejected by Mike.
+ * the bookmarked passage from being accepted or rejected by Varda.
  */
 async function restoreTrackedEditNow(
   stableEditId: string,
@@ -2243,7 +2243,7 @@ export function useWordDoc() {
    * Accept the pending tracked changes occupying an edit's target passage,
    * so a follow-up applyTrackedEdits call finds the range revision-free.
    *
-   * This powers the conflicted card's "Accept & apply": Mike never layers a
+   * This powers the conflicted card's "Accept & apply": Varda never layers a
    * tracked replacement over pending revisions (accepting the card would
    * silently resolve changes it never showed), so superseding them is an
    * explicit two-step the user clicks into — accept what's there, then
@@ -2436,7 +2436,7 @@ export function useWordDoc() {
                   continue;
                 }
 
-                // Never mix Mike's lifecycle with revisions that were already
+                // Never mix Varda's lifecycle with revisions that were already
                 // present in the exact target. A single-occurrence edit skips
                 // wholesale; a replace-all only drops the occupied
                 // occurrences — its own earlier passes come back through this
@@ -2627,7 +2627,7 @@ export function useWordDoc() {
                 // run — in a shared paragraph Word reports sibling revisions
                 // too — so the verified set may be a by-text subset of what
                 // Word handed over. Anything less certain than an unambiguous
-                // subset is still Mike's edit (the target was revision-free a
+                // subset is still Varda's edit (the target was revision-free a
                 // moment ago), so it stays reviewable through the edited
                 // passage instead of being handed back.
                 let managedCollections = generatedCollections;
@@ -2864,7 +2864,7 @@ export function useWordDoc() {
                 result.status = mutationApplied ? "applied-unmanaged" : "error";
                 result.reason = "word-error";
                 result.error = mutationApplied
-                  ? "Applied in Word, but Mike couldn’t retain its review controls. Review it from Word’s Review tab."
+                  ? "Applied in Word, but Varda couldn’t retain its review controls. Review it from Word’s Review tab."
                   : describeWordFailure(
                       error,
                       "Word couldn’t apply this change.",

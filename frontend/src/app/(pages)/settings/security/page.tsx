@@ -28,7 +28,7 @@ import {
   SettingsLabel,
 } from "@/app/components/settings/SettingsText";
 import { useUserProfile } from "@/app/contexts/UserProfileContext";
-import { isMfaRequiredError } from "@/app/lib/mikeApi";
+import { isMfaRequiredError } from "@/app/lib/vardaApi";
 import { Modal } from "@/app/components/modals/Modal";
 import {
   MfaVerificationPopup,

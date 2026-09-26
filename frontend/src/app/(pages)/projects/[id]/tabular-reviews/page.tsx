@@ -3,7 +3,7 @@
 import { use, useCallback, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
-import { deleteTabularReview, updateTabularReview } from "@/app/lib/mikeApi";
+import { deleteTabularReview, updateTabularReview } from "@/app/lib/vardaApi";
 import { ProjectReviewsTable } from "@/app/components/projects/ProjectReviewsTable";
 import { TabularReviewDetailsModal } from "@/app/components/tabular/TabularReviewDetailsModal";
 import {

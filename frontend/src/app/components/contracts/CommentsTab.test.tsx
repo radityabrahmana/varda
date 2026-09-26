@@ -5,8 +5,8 @@ import { CommentsTab } from "./CommentsTab";
 import type { ManualCommentRow } from "./reviewTypes";
 
 const mocks = vi.hoisted(() => ({ postContractComment: vi.fn() }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     postContractComment: mocks.postContractComment,
 }));
 

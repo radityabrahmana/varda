@@ -98,7 +98,7 @@ describe("ProjectExplorer actions", () => {
         });
 
         expect(dataTransfer.setData).toHaveBeenCalledWith(
-            "application/mike-doc",
+            "application/varda-doc",
             "doc-1",
         );
         expect(dataTransfer.effectAllowed).toBe("copyMove");

@@ -83,7 +83,7 @@ function stableDigest(value: string): string {
  * Leading `_` makes this an invisible bookmark in Word's normal bookmark UI.
  */
 export function bookmarkNameForEdit(stableEditId: string): string {
-  return `_MikeEdit_${stableDigest(stableEditId)}`;
+  return `_VardaEdit_${stableDigest(stableEditId)}`;
 }
 
 /**

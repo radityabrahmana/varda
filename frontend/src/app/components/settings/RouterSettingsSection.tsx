@@ -14,7 +14,7 @@ import {
   getOpenRouterModels,
   getVercelModels,
   type RouterCatalogModel,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { RouterSlug } from "@/app/components/assistant/ModelToggle";
 import { SettingsCard } from "./SettingsCard";
 import { SettingsHeading } from "./SettingsHeading";

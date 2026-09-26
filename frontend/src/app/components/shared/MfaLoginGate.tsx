@@ -8,7 +8,7 @@ import { FullScreenLoader } from "@/app/components/shared/FullScreenLoader";
 import { needsMfaVerification } from "../popups/MfaVerificationPopup";
 
 type GateState = "idle" | "checking" | "required" | "verified";
-const MFA_VERIFIED_AT_KEY = "mike:mfa-verified-at";
+const MFA_VERIFIED_AT_KEY = "varda:mfa-verified-at";
 const MFA_VERIFIED_GRACE_MS = 60_000;
 
 export function MfaLoginGate({ children }: { children: ReactNode }) {

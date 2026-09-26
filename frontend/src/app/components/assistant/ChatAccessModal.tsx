@@ -9,7 +9,7 @@ import {
     grantChatAccess,
     revokeChatAccess,
     type ContentAccess,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { can, roleFrom } from "@/app/lib/permissions";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import type { Chat } from "@/app/components/shared/types";

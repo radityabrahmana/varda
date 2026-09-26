@@ -111,7 +111,7 @@ export type StreamChatResult = {
 // ---------------------------------------------------------------------------
 // The static catalog in models.ts covers the hosted providers Varda ships with.
 // Deployments that also run self-hosted or third-party OpenAI-compatible
-// endpoints declare them through MIKE_MODEL_CONFIG_JSON; see registry.ts.
+// endpoints declare them through VARDA_MODEL_CONFIG_JSON; see registry.ts.
 
 export type ModelLocation = "cloud" | "local";
 

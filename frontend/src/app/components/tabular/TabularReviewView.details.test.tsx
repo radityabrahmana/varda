@@ -6,7 +6,7 @@ import {
     listProjects,
     streamTabularGeneration,
     updateTabularReview,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import type { TabularReview } from "@/app/components/shared/types";
 import { TRView } from "./TabularReviewView";
 
@@ -29,8 +29,8 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
     useSearchParams: () => new URLSearchParams(),
 }));
-vi.mock("@/app/lib/mikeApi", () => ({
-    MikeApiError: class MikeApiError extends Error {},
+vi.mock("@/app/lib/vardaApi", () => ({
+    VardaApiError: class VardaApiError extends Error {},
     clearTabularCells: vi.fn(),
     deleteTabularReview: vi.fn(),
     getTabularReview: vi.fn(),

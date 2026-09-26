@@ -2,14 +2,14 @@
 /**
  * Configured API barrel for the Word add-in — the single place the typed client
  * is wired to the add-in's backend-managed cookie session. Mirrors
- * frontend/src/app/lib/mikeApi.ts, with auth state synchronized by
+ * frontend/src/app/lib/vardaApi.ts, with auth state synchronized by
  * ../auth/session.
  *
  * Components import API functions FROM THIS MODULE (not from the base client
  * directly) so that importing any of them runs the side-effecting
- * configureMikeApiClient() below before the first request leaves.
+ * configureVardaApiClient() below before the first request leaves.
  */
-import { configureMikeApiClient } from "./client";
+import { configureVardaApiClient } from "./client";
 import type { Chat, Document, Message, WordDocumentEdit } from "../types";
 import { refreshSession } from "../auth/session";
 import {
@@ -39,7 +39,7 @@ const fetchWithRefresh: typeof fetch = async (input, init) => {
   return res;
 };
 
-configureMikeApiClient({
+configureVardaApiClient({
   baseUrl: BASE_URL,
   getAuthHeaders,
   fetchImpl: fetchWithRefresh,

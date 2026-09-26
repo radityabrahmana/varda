@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MikeApiError, type MemoryCurrent } from "@/app/lib/mikeApi";
+import { VardaApiError, type MemoryCurrent } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { useMemoryAutosave } from "./useMemoryAutosave";
 
@@ -117,7 +117,7 @@ export function useMemoryFileController({
 
   const resolveConflict = useCallback(
     async (cause: unknown) => {
-      if (!(cause instanceof MikeApiError) || cause.status !== 409) {
+      if (!(cause instanceof VardaApiError) || cause.status !== 409) {
         return false;
       }
       if (cause.code === "memory_disabled") {

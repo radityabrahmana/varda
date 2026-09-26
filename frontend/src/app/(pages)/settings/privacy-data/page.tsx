@@ -27,7 +27,7 @@ import {
   isMfaRequiredError,
   startUserExport,
   type UserExportType,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 
 type DeleteDataAction = "chats" | "tabular-reviews" | "projects" | "memory";
 type ExportDataAction =
@@ -130,7 +130,7 @@ export default function PrivacyDataPage() {
         setPendingMfaAction("export-account");
         return;
       }
-      await runAsyncExport("account", "mike-account-export.json");
+      await runAsyncExport("account", "varda-account-export.json");
     } catch (error) {
       devLog("[privacy-data/mfa] export account failed", {
         isMfaRequired: isMfaRequiredError(error),
@@ -154,7 +154,7 @@ export default function PrivacyDataPage() {
         setPendingMfaAction("export-chats");
         return;
       }
-      await runAsyncExport("chats", "mike-chat-export.json");
+      await runAsyncExport("chats", "varda-chat-export.json");
     } catch (error) {
       devLog("[privacy-data/mfa] export chats failed", {
         isMfaRequired: isMfaRequiredError(error),
@@ -180,7 +180,7 @@ export default function PrivacyDataPage() {
       }
       await runAsyncExport(
         "tabular-reviews",
-        "mike-tabular-reviews-export.json",
+        "varda-tabular-reviews-export.json",
       );
     } catch (error) {
       devLog("[privacy-data/mfa] export tabular reviews failed", {
@@ -205,7 +205,7 @@ export default function PrivacyDataPage() {
         setPendingMfaAction("export-memory");
         return;
       }
-      await runAsyncExport("memory-zip", "mike-memory-export.zip");
+      await runAsyncExport("memory-zip", "varda-memory-export.zip");
     } catch (error) {
       devLog("[privacy-data/mfa] export memory failed", {
         isMfaRequired: isMfaRequiredError(error),

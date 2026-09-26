@@ -161,7 +161,7 @@ async function buildMemoryZipExport(
 ): Promise<ExportArtifact> {
     return {
         body: await buildMemoryArchive(db, userId, userEmail),
-        filename: "mike-memory-export.zip",
+        filename: "varda-memory-export.zip",
         contentType: "application/zip",
     };
 }

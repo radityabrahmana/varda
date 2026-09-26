@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, BookOpen, Shield, X } from "lucide-react";
-import { getMe, listPlaybookRules, updatePlaybookRule } from "@/app/lib/mikeApi";
+import { getMe, listPlaybookRules, updatePlaybookRule } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { RuleForm, type RuleFormValue } from "./RuleForm";

@@ -78,7 +78,7 @@ export function modeForModelId(model: ModeModelId): AssistantMode {
     return model.slice("varda/".length) as AssistantMode;
 }
 
-// Tier lists used when the deployment declares none (MIKE_MODEL_CONFIG_JSON
+// Tier lists used when the deployment declares none (VARDA_MODEL_CONFIG_JSON
 // `tiers`, see registry.ts). Ordered: the first model the requesting user has
 // a key for serves the turn, and later entries are the fallback chain.
 export const DEFAULT_TIER_MODELS: Record<ModelTier, readonly string[]> = {

@@ -1,4 +1,4 @@
-// Minimal Anthropic Messages API stand-in for driving the Mike stack when no
+// Minimal Anthropic Messages API stand-in for driving the Varda stack when no
 // funded API key is available. Speaks just enough of the streaming protocol
 // for @anthropic-ai/sdk's messages.stream()/finalMessage() to work:
 // message_start -> content_block_start -> content_block_delta* ->

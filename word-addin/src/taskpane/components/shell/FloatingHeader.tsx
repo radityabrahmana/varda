@@ -19,7 +19,7 @@ import {
 import {
   HeaderButtonUI,
   HeaderButtonsUI,
-} from "@mike/header-buttons-ui";
+} from "@varda/header-buttons-ui";
 import chatIcon from "@icons/features/chat.svg";
 import quickActionsIcon from "@icons/features/quick-actions.svg";
 import workflowIcon from "@icons/features/workflow.svg";
@@ -33,7 +33,7 @@ import {
   DropdownItem,
   DropdownSeparator,
   DropdownTrigger,
-} from "@mike/dropdown-ui";
+} from "@varda/dropdown-ui";
 import type { WordChatStorageMode } from "../../lib/wordChatSettings";
 
 export type AddinSection =

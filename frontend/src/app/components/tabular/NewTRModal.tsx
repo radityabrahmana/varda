@@ -10,8 +10,8 @@ import {
     listWorkflows,
     uploadProjectDocuments,
     uploadStandaloneDocuments,
-} from "@/app/lib/mikeApi";
-import type { AccessAssignmentRole } from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
+import type { AccessAssignmentRole } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { FileDirectory } from "../shared/FileDirectory";
 import { Modal } from "../modals/Modal";

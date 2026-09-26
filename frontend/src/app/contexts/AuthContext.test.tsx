@@ -125,7 +125,7 @@ describe("AuthProvider", () => {
 
         const event = new Event("storage") as StorageEvent;
         Object.defineProperties(event, {
-            key: { value: "mike-auth-state-change" },
+            key: { value: "varda-auth-state-change" },
             newValue: {
                 value: JSON.stringify({
                     state: "signed-out",

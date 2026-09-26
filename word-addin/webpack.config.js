@@ -89,14 +89,14 @@ module.exports = async (_env, options) => {
     }
 
     // Word loads the task pane over HTTPS, and its WebView blocks "mixed content"
-    // (HTTP requests from an HTTPS page). Proxy the local Mike API through this
+    // (HTTP requests from an HTTPS page). Proxy the local Varda API through this
     // HTTPS dev server so authentication and API calls stay same-origin and the
     // HttpOnly session cookie works consistently across Word hosts.
     const apiTarget = process.env.API_PROXY_TARGET || "http://localhost:3001";
     const objectStorageTarget =
       process.env.OBJECT_STORAGE_PROXY_TARGET || "http://localhost:9000";
     const objectStorageBucketName =
-      process.env.OBJECT_STORAGE_BUCKET_NAME || "mike";
+      process.env.OBJECT_STORAGE_BUCKET_NAME || "varda";
     if (!/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(objectStorageBucketName)) {
       throw new Error("OBJECT_STORAGE_BUCKET_NAME is not a valid bucket name");
     }
@@ -149,43 +149,43 @@ module.exports = async (_env, options) => {
         // The frontend's public icon set is canonical. Webpack imports those
         // same SVGs and emits content-hashed copies for the add-in bundle.
         "@icons": path.resolve(__dirname, "..", "frontend", "public", "icons"),
-        "@mike/edit-card-ui": frontendSharedUi("EditCardUI.tsx"),
-        "@mike/edit-cards-section-ui": frontendSharedUi(
+        "@varda/edit-card-ui": frontendSharedUi("EditCardUI.tsx"),
+        "@varda/edit-cards-section-ui": frontendSharedUi(
           "EditCardsSectionUI.tsx",
         ),
-        "@mike/pre-response-wrapper-ui": frontendSharedUi(
+        "@varda/pre-response-wrapper-ui": frontendSharedUi(
           "PreResponseWrapperUI.tsx",
         ),
-        "@mike/document-event-blocks-ui": frontendSharedUi(
+        "@varda/document-event-blocks-ui": frontendSharedUi(
           "DocumentEventBlocksUI.tsx",
         ),
-        "@mike/glass-card-ui": frontendSharedUi("GlassCardUI.tsx"),
-        "@mike/modal-ui": frontendSharedUi("ModalUI.tsx"),
-        "@mike/header-buttons-ui": frontendSharedUi(
+        "@varda/glass-card-ui": frontendSharedUi("GlassCardUI.tsx"),
+        "@varda/modal-ui": frontendSharedUi("ModalUI.tsx"),
+        "@varda/header-buttons-ui": frontendSharedUi(
           "HeaderButtonsUI.tsx",
         ),
-        "@mike/pill-button-ui": frontendSharedUi("PillButtonUI.tsx"),
-        "@mike/tab-pill-button-ui": frontendSharedUi(
+        "@varda/pill-button-ui": frontendSharedUi("PillButtonUI.tsx"),
+        "@varda/tab-pill-button-ui": frontendSharedUi(
           "TabPillButtonUI.tsx",
         ),
-        "@mike/toggle-switch-ui": frontendSharedUi("ToggleSwitchUI.tsx"),
-        "@mike/dropdown-ui": frontendSharedUi("DropdownUI.tsx"),
-        "@mike/citation-pill-ui": frontendSharedUi("CitationPillUI.tsx"),
-        "@mike/model-toggle-ui": frontendSharedUi("ModelToggleUI.tsx"),
-        "@mike/mike-icon-ui": frontendSharedUi("MikeIconUI.tsx"),
-        "@mike/google-icon-ui": frontendSharedUi("GoogleIconUI.tsx"),
-        "@mike/auth-styles-ui": frontendSharedUi("AuthStylesUI.ts"),
-        "@mike/auth-divider-ui": frontendSharedUi("AuthDividerUI.tsx"),
-        "@mike/workflow-slash-command-ui": frontendSharedUi(
+        "@varda/toggle-switch-ui": frontendSharedUi("ToggleSwitchUI.tsx"),
+        "@varda/dropdown-ui": frontendSharedUi("DropdownUI.tsx"),
+        "@varda/citation-pill-ui": frontendSharedUi("CitationPillUI.tsx"),
+        "@varda/model-toggle-ui": frontendSharedUi("ModelToggleUI.tsx"),
+        "@varda/brand-icon-ui": frontendSharedUi("VardaIconUI.tsx"),
+        "@varda/google-icon-ui": frontendSharedUi("GoogleIconUI.tsx"),
+        "@varda/auth-styles-ui": frontendSharedUi("AuthStylesUI.ts"),
+        "@varda/auth-divider-ui": frontendSharedUi("AuthDividerUI.tsx"),
+        "@varda/workflow-slash-command-ui": frontendSharedUi(
           "WorkflowSlashCommandUI.tsx",
         ),
         // Non-UI shared modules: the upload-session client and the UUID helper
         // it mints client ids with.
-        "@mike/upload-session-client": frontendShared(
+        "@varda/upload-session-client": frontendShared(
           "api",
           "uploadSessionClient.ts",
         ),
-        "@mike/secure-uuid": frontendShared("lib", "secureUuid.ts"),
+        "@varda/secure-uuid": frontendShared("lib", "secureUuid.ts"),
       },
     },
     module: {
@@ -233,7 +233,7 @@ module.exports = async (_env, options) => {
         // Development defaults stay on the HTTPS dev-server origin, whose
         // proxies reach the HTTP backends without mixed-content failures.
         // Production hosting must reverse-proxy this same-origin path to the
-        // Mike backend so HttpOnly auth cookies are never third-party cookies.
+        // Varda backend so HttpOnly auth cookies are never third-party cookies.
         REACT_APP_API_BASE_URL:
           process.env.REACT_APP_API_BASE_URL || "/api",
         // Deployment override only. Leaving it empty makes DEFAULT_MODEL_ID in
@@ -241,10 +241,10 @@ module.exports = async (_env, options) => {
         // model — this config file cannot import that TypeScript constant, so
         // repeating its value here would be a second copy that silently drifts.
         REACT_APP_DEFAULT_MODEL: process.env.REACT_APP_DEFAULT_MODEL || "",
-        // The Mike web app origin — the task pane links here (e.g. the
+        // The Varda web app origin — the task pane links here (e.g. the
         // account/api-keys page); it never fetches from it.
         REACT_APP_WEB_APP_URL: isDev
-          ? process.env.REACT_APP_WEB_APP_URL || "https://app.mikeoss.com"
+          ? process.env.REACT_APP_WEB_APP_URL || "https://varda.dashelectric.co"
           : undefined,
       }),
     ],

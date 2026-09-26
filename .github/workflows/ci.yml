@@ -1,6 +1,6 @@
 # CI: build and test.
 #
-# Adapted from the amal66/mike fork's .github/workflows/ci.yml (monorepo
+# Adapted from the upstream project's .github/workflows/ci.yml (monorepo
 # layout) to this repository's backend/ + frontend/ layout. Both test steps
 # run the coverage-ratchet variant and FAIL when a suite or a coverage floor
 # regresses — the `--if-present` escape hatches from the pre-harness era are

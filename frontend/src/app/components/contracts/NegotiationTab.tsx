@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Copy, Loader2, Lock, RefreshCw, Shield } from "lucide-react";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
-import { setNegotiationPointStatus } from "@/app/lib/mikeApi";
+import { setNegotiationPointStatus } from "@/app/lib/vardaApi";
 import type { NegotiationMemo, NegotiationPoint, NegotiationPointRow, NegotiationStatus } from "./reviewTypes";
 import { useReviewAccess } from "./reviewAccess";
 

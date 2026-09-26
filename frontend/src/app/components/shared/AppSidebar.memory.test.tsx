@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { listProjectSummaries } from "@/app/lib/mikeApi";
+import { listProjectSummaries } from "@/app/lib/vardaApi";
 import { AppSidebar } from "./AppSidebar";
 
 const state = vi.hoisted(() => ({
@@ -17,7 +17,7 @@ vi.mock("next/image", () => ({
   default: () => <span aria-hidden="true" />,
 }));
 
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
   listProjectSummaries: vi.fn(),
 }));
 
@@ -43,8 +43,8 @@ vi.mock("@/app/contexts/ChatHistoryContext", () => ({
   }),
 }));
 
-vi.mock("@/app/components/chat/mike-icon", () => ({
-  MikeIcon: () => <span aria-hidden="true" />,
+vi.mock("@/app/components/chat/varda-icon", () => ({
+  VardaIcon: () => <span aria-hidden="true" />,
 }));
 
 describe("AppSidebar account dropdown", () => {

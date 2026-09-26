@@ -1,11 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { downloadDocumentsZip, getDocumentUrl } from "@/app/lib/mikeApi";
+import { downloadDocumentsZip, getDocumentUrl } from "@/app/lib/vardaApi";
 import type { Document, Folder } from "@/app/components/shared/types";
 import { useExplorerDownload } from "./useExplorerDownload";
 
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     getDocumentUrl: vi.fn(),
     downloadDocumentsZip: vi.fn(),
 }));

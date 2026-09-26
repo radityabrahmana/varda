@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { KeyRound, X } from "lucide-react";
-import { getApiKeyStatus, type ApiKeyStatus } from "../../api/mikeApi";
+import { getApiKeyStatus, type ApiKeyStatus } from "../../api/vardaApi";
 
 const DISMISS_KEY = "apiKeyBannerDismissed";
 
@@ -8,7 +8,7 @@ const DISMISS_KEY = "apiKeyBannerDismissed";
 // Read the substituted value directly — a `typeof process` guard is false in
 // the browser and would silently fall through to the default.
 const WEB_APP_URL: string =
-  process.env.REACT_APP_WEB_APP_URL || "https://app.mikeoss.com";
+  process.env.REACT_APP_WEB_APP_URL || "https://varda.dashelectric.co";
 
 const API_KEYS_PAGE_URL = `${WEB_APP_URL.replace(/\/+$/, "")}/settings/byok`;
 

@@ -37,8 +37,8 @@ export type McpToolSummary = {
     lastSeenAt: string;
 };
 
-export type { McpToolEvent } from "@mike/contracts";
-import type { McpToolEvent } from "@mike/contracts";
+export type { McpToolEvent } from "@varda/contracts";
+import type { McpToolEvent } from "@varda/contracts";
 
 export type ConnectorRow = {
     id: string;
@@ -113,7 +113,7 @@ export type ToolCacheRow = {
     last_seen_at: string;
 };
 
-export const CLIENT_INFO = { name: "mike-mcp-client", version: "1.0.0" };
+export const CLIENT_INFO = { name: "varda-mcp-client", version: "1.0.0" };
 export const MAX_MCP_RESULT_CHARS = 60000;
 export const MCP_REQUEST_TIMEOUT_MS = 30000;
 export const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;

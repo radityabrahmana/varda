@@ -31,8 +31,8 @@ import {
     type UploadOutcome,
     type UploadProgress,
     type UploadProgressStatus,
-    MikeApiError,
-} from "@/app/lib/mikeApi";
+    VardaApiError,
+} from "@/app/lib/vardaApi";
 import { runUserExport } from "@/app/lib/asyncExport";
 import type {
     Document,
@@ -1353,7 +1353,7 @@ export function DocTable({
             // (nothing to carry the name); say so instead of snapping back
             // silently. Anything else gets the generic fallback.
             setCollectionActionWarning(
-                e instanceof MikeApiError && e.status === 404
+                e instanceof VardaApiError && e.status === 404
                     ? "This document has no file yet, so it can't be renamed."
                     : userFacingApiError(
                           e,
@@ -1453,7 +1453,7 @@ export function DocTable({
             (type) =>
                 type === SINGLE_DOCUMENT_DRAG_TYPE ||
                 type === MULTI_DOCUMENT_DRAG_TYPE ||
-                type === "application/mike-folder",
+                type === "application/varda-folder",
         );
     }
 
@@ -1964,7 +1964,7 @@ export function DocTable({
     async function handleDropOnFolder(targetFolderId: string | null, dt: DataTransfer) {
         if (!hasMovePayload(dt)) return;
         const docIds = readDocumentDragPayload(dt);
-        const subFolderId = dt.getData("application/mike-folder");
+        const subFolderId = dt.getData("application/varda-folder");
         if (docIds.length > 0) {
             const movingIds = docIds.filter((id) => {
                 const doc = documents.find((candidate) => candidate.id === id);
@@ -2843,7 +2843,7 @@ export function DocTable({
                                         e.preventDefault();
                                         return;
                                     }
-                                    e.dataTransfer.setData("application/mike-folder", folder.id);
+                                    e.dataTransfer.setData("application/varda-folder", folder.id);
                                     e.dataTransfer.effectAllowed = "move";
                                     e.stopPropagation();
                                 }}

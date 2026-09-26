@@ -6,7 +6,7 @@ import {
   Dropdown,
   DropdownContent,
   DropdownTrigger,
-} from "@mike/dropdown-ui";
+} from "@varda/dropdown-ui";
 import { ChatHistoryListView } from "./ChatHistoryList";
 import { usePaginatedChats } from "../../hooks/usePaginatedChats";
 import type { WordChatStorageMode } from "../../lib/wordChatSettings";

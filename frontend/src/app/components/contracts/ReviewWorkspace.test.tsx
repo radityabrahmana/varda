@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MikeApiError } from "@/app/lib/mikeApi";
+import { VardaApiError } from "@/app/lib/vardaApi";
 import { ReviewWorkspace } from "./ReviewWorkspace";
 import type { ContractReviewDetail } from "./reviewTypes";
 
@@ -49,8 +49,8 @@ vi.mock("@/app/components/shared/views/DocxView", () => ({
         </div>
     ),
 }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     getContract: mocks.getContract,
     postContractFeedback: mocks.postContractFeedback,
     patchContract: mocks.patchContract,
@@ -287,7 +287,7 @@ describe("ReviewWorkspace", () => {
     });
 
     it("shows the not-found message on a 404", async () => {
-        mocks.getContract.mockRejectedValue(new MikeApiError({ message: "nf", status: 404 }));
+        mocks.getContract.mockRejectedValue(new VardaApiError({ message: "nf", status: 404 }));
 
         render(<ReviewWorkspace reviewId="missing" />);
 

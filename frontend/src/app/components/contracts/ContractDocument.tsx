@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { DocxView } from "@/app/components/shared/views/DocxView";
 import { clearDocxQuoteHighlights, highlightDocxQuote } from "@/app/components/shared/views/highlightDocxQuote";
-import { getContractFileUrl, getContractTrackedChangeIdsUrl } from "@/app/lib/mikeApi";
+import { getContractFileUrl, getContractTrackedChangeIdsUrl } from "@/app/lib/vardaApi";
 import { ContractHtmlView } from "./ContractHtmlView";
 import type { ReviewDetailRow } from "./reviewTypes";
 

@@ -6,8 +6,8 @@ import type { FindingAnnotation } from "./findingAnnotations";
 import type { ReviewFeedbackRow } from "./reviewTypes";
 
 const mocks = vi.hoisted(() => ({ postContractFeedbackBulk: vi.fn() }));
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     postContractFeedbackBulk: mocks.postContractFeedbackBulk,
 }));
 

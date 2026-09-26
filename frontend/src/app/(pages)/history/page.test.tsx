@@ -7,12 +7,12 @@ import {
   getUserExportStatus,
   startUserExport,
   type AuditEvent,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import HistoryPage from "./page";
 
 // The CSV now comes from the durable export job, so the page drives the
 // start/poll/download wrappers instead of one blob request.
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
   getAuditHistory: vi.fn(),
   startUserExport: vi.fn(),
   getUserExportStatus: vi.fn(),

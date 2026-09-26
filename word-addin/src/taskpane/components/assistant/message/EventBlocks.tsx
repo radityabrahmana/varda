@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 import {
   DocFindBlockUI,
   DocReadBlockUI,
-} from "@mike/document-event-blocks-ui";
+} from "@varda/document-event-blocks-ui";
 import { Markdown } from "../../../../shared/chat/Markdown";
 
 const THINKING_PHRASES = [

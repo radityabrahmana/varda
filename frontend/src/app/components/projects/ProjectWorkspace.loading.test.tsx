@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { getProject } from "@/app/lib/mikeApi";
+import { getProject } from "@/app/lib/vardaApi";
 import type { Project } from "@/app/components/shared/types";
 import {
     ProjectWorkspaceProvider,
@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ push: routerPush, replace: vi.fn() }),
     useSelectedLayoutSegments: () => [],
 }));
-vi.mock("@/app/lib/mikeApi", () => ({
+vi.mock("@/app/lib/vardaApi", () => ({
     createTabularReview: vi.fn(),
     deleteProject: vi.fn(),
     getProject: vi.fn(),

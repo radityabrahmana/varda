@@ -1,11 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { listProjects } from "@/app/lib/mikeApi";
+import { listProjects } from "@/app/lib/vardaApi";
 import type { Project } from "@/app/components/shared/types";
 import { useProjectPicker } from "./useProjectPicker";
 
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     listProjects: vi.fn(),
 }));
 beforeEach(() => vi.mocked(listProjects).mockReset());

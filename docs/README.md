@@ -1,6 +1,6 @@
 # Documentation
 
-## Run and deploy Mike
+## Run and deploy Varda
 
 - [Local development](local-development.md) — Docker Compose, local services,
   registration, Ollama, and first-run setup

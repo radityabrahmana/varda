@@ -9,7 +9,7 @@ import {
     getMe,
     listContracts,
     type MeInfo,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import {
     computeReviewStats,
     differenceInDays,

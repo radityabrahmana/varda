@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAssistantChat } from "@/app/hooks/useAssistantChat";
 import { useChatHistoryContext } from "@/app/contexts/ChatHistoryContext";
 import { ChatView } from "@/app/components/assistant/ChatView";
-import { getChat } from "@/app/lib/mikeApi";
+import { getChat } from "@/app/lib/vardaApi";
 import { can, roleFrom } from "@/app/lib/permissions";
 import type { Chat } from "@/app/components/shared/types";
 

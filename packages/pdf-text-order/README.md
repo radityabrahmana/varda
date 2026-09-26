@@ -43,7 +43,7 @@ back to baseline grouping.
 
 The two files are duplicated rather than shared because the backend builds
 with plain `tsc` and no bundler (`rootDir: ./src`, `node dist/index.js`), and
-`tsc` does not rewrite path aliases. `@mike/contracts` works across both apps
+`tsc` does not rewrite path aliases. `@varda/contracts` works across both apps
 only because it is type-only and erased at compile time; a runtime import
 would compile and then fail to resolve at run time.
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertOctagon, MessageSquare, PenLine } from "lucide-react";
-import { postContractComment, postContractMissedClause, type ContractCommentInput, type ContractMissedClauseInput } from "@/app/lib/mikeApi";
+import { postContractComment, postContractMissedClause, type ContractCommentInput, type ContractMissedClauseInput } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import type { ManualCommentRow, SuggestionRow } from "./reviewTypes";

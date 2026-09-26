@@ -1,7 +1,7 @@
 import type {
     PracticeSetting,
     ProfessionalTitle,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 
 export const COUNTRY_OPTIONS = [
     "Afghanistan",
@@ -240,7 +240,7 @@ export const PRACTICE_SETTING_OPTIONS = [
     { value: "not_practising", label: "Not a practising attorney" },
 ] as const satisfies readonly { value: PracticeSetting; label: string }[];
 
-export type { PracticeSetting } from "@/app/lib/mikeApi";
+export type { PracticeSetting } from "@/app/lib/vardaApi";
 
 export const PROFESSIONAL_TITLE_OPTIONS = [
     "Partner",
@@ -253,4 +253,4 @@ export const PROFESSIONAL_TITLE_OPTIONS = [
     "Other",
 ] as const satisfies readonly ProfessionalTitle[];
 
-export type { ProfessionalTitle } from "@/app/lib/mikeApi";
+export type { ProfessionalTitle } from "@/app/lib/vardaApi";

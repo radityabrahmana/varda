@@ -7,7 +7,7 @@ import {
     type SetStateAction,
 } from "react";
 import type { Project } from "@/app/components/shared/types";
-import { listProjectIds, listProjectsPage } from "@/app/lib/mikeApi";
+import { listProjectIds, listProjectsPage } from "@/app/lib/vardaApi";
 import { appendUniqueRows, paginationError, splitOverfetchedPage } from "@/app/lib/paginatedRows";
 
 export type ProjectSortKey =

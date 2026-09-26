@@ -189,6 +189,6 @@ if (isMain) {
   const port = Number.parseInt(process.env.PORT ?? "3200", 10);
   const server = createWordAddinServer();
   server.listen(port, () => {
-    console.log(`Mike Word add-in host running on port ${port}`);
+    console.log(`Varda Word add-in host running on port ${port}`);
   });
 }

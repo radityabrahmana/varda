@@ -28,7 +28,7 @@ test.describe("unauthenticated", () => {
         await page.goto("/login");
         await expect(page).toHaveURL(/\/login/);
 
-        await page.fill("#email", "e2e@mike.local");
+        await page.fill("#email", "e2e@varda.local");
         await page.fill("#password", "definitely-wrong-password");
         await page.click('button[type="submit"]');
 
@@ -62,7 +62,7 @@ test.describe("unauthenticated", () => {
            the error banner rendered, and the /assistant redirect never fired.
            Reading the env keeps the typed password in lock-step with the
            bootstrapped one in every environment. */
-        const email = process.env.E2E_EMAIL ?? "e2e@mike.local";
+        const email = process.env.E2E_EMAIL ?? "e2e@varda.local";
         const password = process.env.E2E_PASSWORD ?? "E2eTestPass1!";
 
         await page.goto("/login");
@@ -111,7 +111,7 @@ test.describe("unauthenticated", () => {
 
 /* The logout flow calls supabase.auth.signOut(), which defaults to GLOBAL
    scope and revokes the user's session server-side. If this ran against the
-   shared `e2e@mike.local` user it would 401 every other parallel worker
+   shared `e2e@varda.local` user it would 401 every other parallel worker
    ("Invalid or expired token"). So this test starts from a clean session and
    logs in as a DEDICATED user (created in auth.setup.ts) whose session can be
    safely destroyed without affecting any other test. */
@@ -119,7 +119,7 @@ test.describe("logout (isolated user)", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
     const logoutEmail =
-        process.env.E2E_LOGOUT_EMAIL ?? "e2e-logout@mike.local";
+        process.env.E2E_LOGOUT_EMAIL ?? "e2e-logout@varda.local";
     const logoutPassword =
         process.env.E2E_LOGOUT_PASSWORD ?? "E2eLogoutPass1!";
 

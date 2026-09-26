@@ -11,7 +11,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Pencil, Trash2 } from "lucide-react";
-import { MikeIcon } from "@/app/components/chat/mike-icon";
+import { VardaIcon } from "@/app/components/chat/varda-icon";
 import {
     streamTabularChat,
     getTabularChats,
@@ -22,7 +22,7 @@ import {
     mapTRMessages,
     type TRChat,
     type TRCitationAnnotation,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import {
     isPanelDocument,
     type AssistantEvent,
@@ -187,10 +187,10 @@ function TRResponseStatus({ isActive }: { isActive: boolean }) {
 
     return (
         <div className="w-full h-9 flex items-center mb-2">
-            <MikeIcon
+            <VardaIcon
                 spin={isActive}
                 done={showDone && doneVisible}
-                mike={!(showDone && doneVisible)}
+                varda={!(showDone && doneVisible)}
                 size={22}
             />
         </div>

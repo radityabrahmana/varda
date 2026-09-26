@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, ExternalLink } from "lucide-react";
-import { getDocumentFile } from "@/app/lib/mikeApi";
+import { getDocumentFile } from "@/app/lib/vardaApi";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { pillButtonUIClassName } from "@/shared/ui/PillButtonUI.styles";
 import { PdfView } from "../shared/views/PdfView";

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, CheckCircle2, Flag, HelpCircle, MessageSquare, Pencil, Search, X } from "lucide-react";
-import { postContractFeedbackBulk } from "@/app/lib/mikeApi";
+import { postContractFeedbackBulk } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { PillButtonUI } from "@/shared/ui/PillButtonUI";
 import { RuleRefButton } from "@/app/components/playbook/PlaybookRuleDrawer";

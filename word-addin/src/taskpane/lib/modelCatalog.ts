@@ -1,4 +1,4 @@
-// Imported from the base client (not the ../api/mikeApi barrel) so this
+// Imported from the base client (not the ../api/vardaApi barrel) so this
 // module's compile graph stays free of Office globals: the drift-guard test in
 // frontend/src/wordAddin imports this file across packages.
 import type { ApiKeyStatus } from "../api/client";

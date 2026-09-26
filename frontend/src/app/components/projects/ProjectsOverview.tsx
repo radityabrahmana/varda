@@ -8,7 +8,7 @@ import {
     type ProjectFilterOptions,
     updateProject,
     deleteProject,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { deleteTabularReviewsWithConcurrency } from "@/app/lib/deleteTabularReviewsWithConcurrency";
 import { restoreOptimisticallyDeletedRows } from "@/app/lib/optimisticRows";
 import { useDebouncedValue } from "@/app/hooks/useDebouncedValue";

@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
-    MikeApiError,
+    VardaApiError,
     createProject,
     grantProjectAccess,
     listOrgMembers,
@@ -16,18 +16,18 @@ import {
     lookupUserByEmail,
   setProjectMemoryEnabled,
   uploadProjectDocuments,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { NewProjectModal } from "./NewProjectModal";
 
 const { useUserProfile } = vi.hoisted(() => ({
     useUserProfile: vi.fn(),
 }));
 
-// `importOriginal` keeps the real `MikeApiError`, which `userFacingApiError`
+// `importOriginal` keeps the real `VardaApiError`, which `userFacingApiError`
 // recognises with `instanceof` — a stand-in would make the failure case pass
 // for the wrong reason.
-vi.mock("@/app/lib/mikeApi", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("@/app/lib/mikeApi")>()),
+vi.mock("@/app/lib/vardaApi", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/app/lib/vardaApi")>()),
     createProject: vi.fn(),
     grantProjectAccess: vi.fn(),
     addDocumentToProject: vi.fn(),
@@ -444,7 +444,7 @@ describe("NewProjectModal sharing", () => {
         const user = userEvent.setup({ delay: null });
         const onCreated = renderModal();
         vi.mocked(grantProjectAccess).mockRejectedValueOnce(
-            new MikeApiError({
+            new VardaApiError({
                 status: 400,
                 message: "The project creator already has owner access",
             }),
@@ -472,7 +472,7 @@ describe("NewProjectModal sharing", () => {
     const user = userEvent.setup({ delay: null });
     const onCreated = renderModal();
     vi.mocked(grantProjectAccess).mockRejectedValueOnce(
-      new MikeApiError({
+      new VardaApiError({
         status: 400,
         message: "Sharing failed",
       }),
@@ -734,7 +734,7 @@ describe("NewProjectModal sharing", () => {
             <NewProjectModal open onClose={vi.fn()} onCreated={onCreated} />,
         );
         vi.mocked(grantProjectAccess).mockRejectedValueOnce(
-            new MikeApiError({ status: 403, message: "Not allowed" }),
+            new VardaApiError({ status: 403, message: "Not allowed" }),
         );
         vi.mocked(uploadProjectDocuments).mockResolvedValue([
             {
@@ -775,7 +775,7 @@ describe("NewProjectModal sharing", () => {
         const onCreated = vi.fn();
         render(<NewProjectModal open onClose={onClose} onCreated={onCreated} />);
         vi.mocked(grantProjectAccess).mockRejectedValue(
-            new MikeApiError({ status: 403, message: "Not allowed" }),
+            new VardaApiError({ status: 403, message: "Not allowed" }),
         );
 
         await fillAndAdd(user, "counsel@firm.test", "editor");
@@ -852,7 +852,7 @@ describe("NewProjectModal sharing", () => {
         const user = userEvent.setup({ delay: null });
         renderModal();
         vi.mocked(grantProjectAccess).mockRejectedValue(
-            new MikeApiError({ status: 403, message: "Not allowed" }),
+            new VardaApiError({ status: 403, message: "Not allowed" }),
         );
 
         await fillAndAdd(user, "counsel@firm.test", "editor");
@@ -884,7 +884,7 @@ describe("NewProjectModal sharing", () => {
         const user = userEvent.setup({ delay: null });
         renderModal();
         vi.mocked(grantProjectAccess).mockRejectedValue(
-            new MikeApiError({ status: 403, message: "Not allowed" }),
+            new VardaApiError({ status: 403, message: "Not allowed" }),
         );
 
         await fillAndAdd(user, "counsel@firm.test", "editor");
@@ -914,7 +914,7 @@ describe("NewProjectModal sharing", () => {
         const user = userEvent.setup({ delay: null });
         renderModal();
         vi.mocked(grantProjectAccess).mockRejectedValue(
-            new MikeApiError({ status: 403, message: "Not allowed" }),
+            new VardaApiError({ status: 403, message: "Not allowed" }),
         );
 
         await fillAndAdd(user, "counsel@firm.test", "editor");
@@ -948,7 +948,7 @@ describe("NewProjectModal sharing", () => {
 
     it("says so when the organization list cannot be loaded", async () => {
         vi.mocked(listOrgs).mockRejectedValue(
-            new MikeApiError({ status: 500, message: "boom" }),
+            new VardaApiError({ status: 500, message: "boom" }),
         );
         render(<NewProjectModal open onClose={vi.fn()} onCreated={vi.fn()} />);
 

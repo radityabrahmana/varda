@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Project } from "@/app/components/shared/types";
-import { listProjects } from "@/app/lib/mikeApi";
+import { listProjects } from "@/app/lib/vardaApi";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 
 export function useProjectPicker() {

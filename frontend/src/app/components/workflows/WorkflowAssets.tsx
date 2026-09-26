@@ -21,7 +21,7 @@ import {
   uploadDocumentVersion,
   uploadWorkflowAssets,
   type DocumentVersion,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import {
   SUPPORTED_DOCUMENT_ACCEPT,
   formatUnsupportedDocumentWarning,

@@ -14,7 +14,7 @@ if (!process.argv.includes("--login")) {
   process.exit(2);
 }
 
-const PROFILE = path.join(os.homedir(), ".cache", "mike-word-web-profile");
+const PROFILE = path.join(os.homedir(), ".cache", "varda-word-web-profile");
 const context = await chromium.launchPersistentContext(PROFILE, {
   headless: false,
   viewport: { width: 1600, height: 950 },

@@ -3,22 +3,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     uploadProjectDocuments,
     uploadStandaloneDocuments,
-} from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
 import { UPLOAD_LIMIT_MESSAGES } from "@/shared/api/uploadSessionClient";
 import type { Document } from "../shared/types";
 import { NewTRModal } from "./NewTRModal";
 
-vi.mock("@/app/lib/mikeApi", async () => {
+vi.mock("@/app/lib/vardaApi", async () => {
     // The upload error copy is real shared code; only the network calls are
     // stubbed, so the modal's failure messages are the ones users would see.
     const uploads = await vi.importActual<
         typeof import("@/shared/api/uploadSessionClient")
     >("@/shared/api/uploadSessionClient");
-    class MikeApiError extends Error {
+    class VardaApiError extends Error {
         status = 500;
     }
     return {
-        MikeApiError,
+        VardaApiError,
         UploadBatchError: uploads.UploadBatchError,
         failedUploadMessage: uploads.failedUploadMessage,
         getProject: vi.fn(),
@@ -330,7 +330,7 @@ describe("NewTRModal", () => {
     });
 
     it("reports a thrown upload batch failure", async () => {
-        const { UploadBatchError } = await import("@/app/lib/mikeApi");
+        const { UploadBatchError } = await import("@/app/lib/vardaApi");
         vi.mocked(uploadProjectDocuments).mockRejectedValue(
             new UploadBatchError("batch failed", [
                 {

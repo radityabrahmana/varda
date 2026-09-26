@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { configureMikeApiClient, readSSE } from "../src/taskpane/api/client";
+import { configureVardaApiClient, readSSE } from "../src/taskpane/api/client";
 import { streamAssistant } from "../src/taskpane/api/stream";
 
 function streamResponse(chunks: Uint8Array[]): Response {
@@ -111,7 +111,7 @@ test.describe("SSE parser", () => {
 
 test.describe("Word chat stream policy", () => {
   test("surfaces only valid document-read lifecycle events", async () => {
-    configureMikeApiClient({
+    configureVardaApiClient({
       baseUrl: "http://word-chat.test",
       getAuthHeaders: async () => ({}),
       fetchImpl: async () =>
@@ -164,7 +164,7 @@ test.describe("Word chat stream policy", () => {
   });
 
   test("rejects a successful response that ends without DONE", async () => {
-    configureMikeApiClient({
+    configureVardaApiClient({
       baseUrl: "http://word-chat.test",
       getAuthHeaders: async () => ({}),
       fetchImpl: async () =>

@@ -3,16 +3,16 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resetModelRegistryCache } from "../../../lib/llm/registry";
 import { missingModelApiKey } from "../tabular.shared";
 
-const originalConfig = process.env.MIKE_MODEL_CONFIG_JSON;
+const originalConfig = process.env.VARDA_MODEL_CONFIG_JSON;
 
 function configure(model: Record<string, unknown>) {
-    process.env.MIKE_MODEL_CONFIG_JSON = JSON.stringify({ models: [model] });
+    process.env.VARDA_MODEL_CONFIG_JSON = JSON.stringify({ models: [model] });
     resetModelRegistryCache();
 }
 
 afterEach(() => {
-    if (originalConfig === undefined) delete process.env.MIKE_MODEL_CONFIG_JSON;
-    else process.env.MIKE_MODEL_CONFIG_JSON = originalConfig;
+    if (originalConfig === undefined) delete process.env.VARDA_MODEL_CONFIG_JSON;
+    else process.env.VARDA_MODEL_CONFIG_JSON = originalConfig;
     resetModelRegistryCache();
 });
 

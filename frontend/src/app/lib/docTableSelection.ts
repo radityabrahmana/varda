@@ -1,5 +1,5 @@
-export const MULTI_DOCUMENT_DRAG_TYPE = "application/mike-docs";
-export const SINGLE_DOCUMENT_DRAG_TYPE = "application/mike-doc";
+export const MULTI_DOCUMENT_DRAG_TYPE = "application/varda-docs";
+export const SINGLE_DOCUMENT_DRAG_TYPE = "application/varda-doc";
 
 type FolderNode = {
     id: string;

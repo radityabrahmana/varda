@@ -5,8 +5,8 @@ import type {
     AccessAssignmentRole,
     ProjectPeople,
     UserLookupResult,
-} from "@/app/lib/mikeApi";
-import { getOrg } from "@/app/lib/mikeApi";
+} from "@/app/lib/vardaApi";
+import { getOrg } from "@/app/lib/vardaApi";
 import type { ProjectRole } from "@/app/lib/permissions";
 import { userFacingApiError } from "@/app/lib/userFacingError";
 import { Modal } from "./Modal";
