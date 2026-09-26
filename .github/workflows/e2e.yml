@@ -205,7 +205,7 @@ jobs:
             echo "R2_BUCKET_NAME=varda"
             # Keep the release-job fixture reproducible even when the source
             # repository's main branch changes independently of this PR.
-            echo "VARDA_WORKFLOWS_REF=ce62e6a2d3f47e1d3567a4f2edc61898cfe9e78a"
+            echo "VARDA_WORKFLOWS_REF=7c5d5fdc20eab0f9afbbd8562c926ffbfeb7caaa"
             echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}"
           } >> backend/.env
           # The web client talks to its own /api gateway. Only the Next server
