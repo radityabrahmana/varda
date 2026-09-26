@@ -76,5 +76,4 @@ Full session-by-session log (decisions, incidents, verification evidence):
 Raditya's Mac). Cutover runbook: `~/Desktop/varda-cutover-runbook-2026-09-22.md`.
 
 Known follow-ups as of 2026-09-23: "new clause" revisions cannot be projected as tracked changes (insertion support needed);
-Janus Lovable project still hosts the redirect and must be kept ~2 weeks, then frozen;
-remove `ALLOWED_ORIGINS` from the backend once the old Railway URL is unused.
+Janus Lovable project still hosts the redirect and must be kept ~2 weeks, then frozen.
