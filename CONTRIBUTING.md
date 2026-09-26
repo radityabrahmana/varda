@@ -62,7 +62,7 @@ How workflows reach users:
   directories into a pack shown together in the catalog. `pack.yaml` must list
   exactly the workflow directories that exist under it — the build fails on
   either a listed-but-missing or an unlisted workflow.
-- The `metadata.mike-availability` frontmatter key is deprecated and ignored:
+- The `metadata.varda-availability` frontmatter key is deprecated and ignored:
   the default/add-on split comes from `DEFAULT_WORKFLOWS`, not from the
   workflow files. Existing files may keep the key; the ingestion parser
   accepts it but does not use it for classification.
