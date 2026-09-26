@@ -176,4 +176,3 @@ packaged and synchronized with this application.
 ## License
 
 Varda is available under the [GNU Affero General Public License v3.0](LICENSE).
-It is derived from an AGPL-licensed open-source project; see [NOTICE](NOTICE).
