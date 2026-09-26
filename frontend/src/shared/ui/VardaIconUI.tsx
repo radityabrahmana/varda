@@ -103,6 +103,7 @@ export function VardaIcon({
                 height={size}
                 style={{ display: "block" }}
                 aria-hidden="true"
+                data-varda-mark=""
             >
                 <path
                     d={VARDA_MARK_PATH}

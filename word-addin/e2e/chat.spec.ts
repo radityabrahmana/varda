@@ -1024,7 +1024,7 @@ test("the composer swaps Send for a Stop control while streaming, then restores"
     .locator("[data-assistant-message-id]")
     .last()
     .getByTestId("assistant-response-status");
-  const vardaLoader = responseStatus.locator('svg[viewBox="100 100 300 300"]');
+  const vardaLoader = responseStatus.locator("svg[data-varda-mark]");
 
   // While streaming: the textarea remains available for composing the next
   // turn, while Send is replaced by a reachable Stop control.
