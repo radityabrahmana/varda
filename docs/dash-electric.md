@@ -9,7 +9,7 @@ before touching deployment, data or the Dash-specific modules.
 
 | Piece | Location |
 | --- | --- |
-| Frontend | Railway service `mike-frontend`, https://varda.dashelectric.co (custom domain, CNAME → `2bd1t698.up.railway.app`) |
+| Frontend | Railway service `varda-frontend`, https://varda.dashelectric.co (custom domain, CNAME → `2bd1t698.up.railway.app`) |
 | Backend | Railway service `janusid-dd78a9ba` (Express, LibreOffice in the image), reached through the frontend's `/api` proxy |
 | Railway project | `beautiful-solace`, environment `production` (account: dashelectric.co) |
 | Database + auth + storage | Supabase project `tmnlpfpzoxmujwilhbpw` (Varda's own; bucket `mike`, S3 protocol, region ap-southeast-1) |
@@ -25,7 +25,7 @@ Always from this clone (`~/varda`), on `main`, after the PR is merged:
 ```bash
 git checkout main && git pull
 railway up --ci -s janusid-dd78a9ba     # backend
-railway up --ci -s mike-frontend        # frontend
+railway up --ci -s varda-frontend       # frontend
 ```
 
 `railway variable set|delete -s <service> ...` for env changes (CLI ≥ 4.30 syntax).
