@@ -14,9 +14,11 @@ a Google Doc, uploads it, and re-uploads the result by hand.
 | Google Slides | `.pptx` |
 | Word, Excel, PowerPoint or PDF file kept in Drive | copied as-is (100 MB cap) |
 
-Each import is version 1 of a new document with `source = 'google_drive'`,
-and `document_google_drive_links` remembers the Drive file id, name, head
-revision and modified time. Writing an edited version back to the Google Doc
+Each import is version 1 of a new document, recorded with `source =
+'upload'` (the only vocabulary the `document_versions_source_check`
+constraint and the version-numbering function accept). The Drive provenance
+lives in `document_google_drive_links` (file id, name, head revision,
+modified time) and in the audit event's detail. Writing an edited version back to the Google Doc
 is a later step; the link row and the recorded scope (`can_write` in the
 status) are its inputs.
 

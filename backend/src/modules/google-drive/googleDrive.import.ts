@@ -20,7 +20,15 @@ import { fetchDriveFileContent, getDriveFile } from "./googleDrive.api";
 import { defaultOAuthDeps, getAccessToken, type OAuthDeps } from "./googleDrive.oauth";
 import type { DriveFile } from "./googleDrive.shared";
 
-export const DOCUMENT_SOURCE_GOOGLE_DRIVE = "google_drive";
+/**
+ * The version row's `source`. Imports are recorded as uploads: the
+ * `document_versions_source_check` constraint and the version-numbering
+ * function both know only the upload/edit/generated vocabulary, and the
+ * Drive provenance lives in `document_google_drive_links` (plus the audit
+ * event's detail), so a new value would buy nothing but two schema changes.
+ */
+export const DOCUMENT_VERSION_SOURCE = "upload";
+export const AUDIT_SOURCE_GOOGLE_DRIVE = "google_drive";
 
 export type ImportDriveFileArgs = {
   userId: string;
@@ -129,8 +137,12 @@ export async function importDriveFile(
   const documentId = (docRow as { id: string }).id;
 
   const sourcePath = storageKey(args.userId, documentId, filename);
+  let pdfStoragePath: string | null = null;
   const rollback = async (error: unknown): Promise<ServiceResult<never>> => {
     await deleteFile(sourcePath).catch(() => {});
+    if (pdfStoragePath && pdfStoragePath !== sourcePath) {
+      await deleteFile(pdfStoragePath).catch(() => {});
+    }
     await db.from("documents").delete().eq("id", documentId);
     return internalFailure(error);
   };
@@ -146,7 +158,6 @@ export async function importDriveFile(
   }
 
   const deferRendition = shouldConvertToPdf(fileType) && process.env.ASYNC_DOCUMENT_CONVERSION === "true";
-  let pdfStoragePath: string | null = null;
   if (fileType === "pdf") pdfStoragePath = sourcePath;
   else if (shouldConvertToPdf(fileType) && !deferRendition) {
     pdfStoragePath = await deps.renderPdf(buffer, fileType, documentId, args.userId);
@@ -156,7 +167,7 @@ export async function importDriveFile(
     document_id: documentId,
     storage_path: sourcePath,
     pdf_storage_path: pdfStoragePath,
-    source: DOCUMENT_SOURCE_GOOGLE_DRIVE,
+    source: DOCUMENT_VERSION_SOURCE,
     version_number: 1,
     filename,
     file_type: fileType,
@@ -210,7 +221,7 @@ export async function importDriveFile(
     surface: args.projectId ? "project" : "assistant",
     projectId: args.projectId ?? null,
     documentId,
-    detail: { source: DOCUMENT_SOURCE_GOOGLE_DRIVE, drive_file_id: file.data.id },
+    detail: { source: AUDIT_SOURCE_GOOGLE_DRIVE, drive_file_id: file.data.id },
   });
 
   return ok({
