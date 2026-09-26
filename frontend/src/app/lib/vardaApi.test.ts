@@ -1157,6 +1157,14 @@ describe("searchProjectDirectory", () => {
 });
 
 describe("getProjectDirectoryLevel", () => {
+    it("omits limit and offset from the directory search when unset", async () => {
+        fetchMock.mockResolvedValue(jsonResponse([]));
+        await searchProjectDirectory({ search: "nda" });
+        expect(lastFetchCall().url).toBe(
+            "/api/projects?view=directory-search&search=nda",
+        );
+    });
+
     it("serializes a folder level, pagination, and abort signal", async () => {
         fetchMock.mockResolvedValue(
             jsonResponse({

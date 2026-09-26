@@ -193,4 +193,83 @@ describe("connectGoogleDriveWithPopup", () => {
         await vi.advanceTimersByTimeAsync(130);
         await timedOutRejects;
     });
+
+    it("ignores unrelated messages, tolerates a poll in flight, and uses the default failure text", async () => {
+        let resolveStatus: (status: GoogleDriveStatus) => void = () => {};
+        const getStatus = vi.fn(
+            () =>
+                new Promise<GoogleDriveStatus>((resolve) => {
+                    resolveStatus = resolve;
+                }),
+        );
+        const target = fakeTarget();
+        const promise = connectGoogleDriveWithPopup({
+            openPopup: fakePopup,
+            start: async () => started,
+            getStatus,
+            navigate: vi.fn(),
+            target,
+            pollIntervalMs: 100,
+        });
+        const rejects = expect(promise).rejects.toMatchObject({
+            kind: "failed",
+            message: "Google Drive could not be connected.",
+        });
+        await vi.advanceTimersByTimeAsync(100);
+        expect(getStatus).toHaveBeenCalledTimes(1);
+
+        // Wrong message type from the right origin: nothing happens.
+        target.emit({ origin: "https://varda.example", data: { type: "other" } });
+        // Two success messages while that poll is still pending: neither
+        // starts a second request.
+        target.emit({ origin: "https://varda.example", data: { type: "google_drive_oauth_result", success: true } });
+        target.emit({ origin: "https://varda.example", data: { type: "google_drive_oauth_result", success: true } });
+        await vi.advanceTimersByTimeAsync(0);
+        expect(getStatus).toHaveBeenCalledTimes(1);
+
+        // A failure without detail settles with the generic text…
+        target.emit({ origin: "https://varda.example", data: { type: "google_drive_oauth_result", success: false } });
+        await rejects;
+        // …and the poll that was in flight cannot resolve it afterwards.
+        resolveStatus(connected);
+        await vi.advanceTimersByTimeAsync(200);
+        expect(getStatus).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects at once when the signal is already aborted", async () => {
+        const controller = new AbortController();
+        controller.abort();
+        const getStatus = vi.fn();
+        await expect(
+            connectGoogleDriveWithPopup({
+                openPopup: fakePopup,
+                start: async () => started,
+                getStatus,
+                navigate: vi.fn(),
+                target: fakeTarget(),
+                signal: controller.signal,
+            }),
+        ).rejects.toMatchObject({ kind: "cancelled" });
+        expect(getStatus).not.toHaveBeenCalled();
+    });
+
+    it("listens on the window by default", async () => {
+        const getStatus = vi.fn<() => Promise<GoogleDriveStatus>>().mockResolvedValue(connected);
+        const promise = connectGoogleDriveWithPopup({
+            openPopup: fakePopup,
+            start: async () => started,
+            getStatus,
+            navigate: vi.fn(),
+            pollIntervalMs: 10_000,
+        });
+        await vi.advanceTimersByTimeAsync(0);
+        window.dispatchEvent(
+            new MessageEvent("message", {
+                origin: "https://varda.example",
+                data: { type: "google_drive_oauth_result", success: true },
+            }),
+        );
+        await vi.advanceTimersByTimeAsync(0);
+        await expect(promise).resolves.toEqual(connected);
+    });
 });
