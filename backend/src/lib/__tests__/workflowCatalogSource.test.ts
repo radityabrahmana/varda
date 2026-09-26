@@ -15,7 +15,9 @@ function skill(options: {
   key: string;
   title: string;
   type: "assistant" | "tabular";
+  prefix?: "varda" | "mike";
 }) {
+  const prefix = options.prefix ?? "varda";
   return `---
 name: "${options.key}"
 description: "Test workflow"
@@ -24,9 +26,9 @@ metadata:
   version: "1.0.0"
   author: "Open Legal Products"
   language: "English"
-  mike-display-name: "${options.title}"
-  mike-type: "${options.type}"
-  mike-availability: "system"
+  ${prefix}-display-name: "${options.title}"
+  ${prefix}-type: "${options.type}"
+  ${prefix}-availability: "system"
   practice: "General Transactions"
   jurisdictions: "General"
 ---
@@ -34,7 +36,9 @@ Run the test workflow.
 `;
 }
 
-async function archive(options: { duplicate?: boolean } = {}) {
+async function archive(
+  options: { duplicate?: boolean; prefix?: "varda" | "mike" } = {},
+) {
   const zip = new JSZip();
   const root = "varda-workflows-test/";
   for (const [key, title] of [
@@ -44,12 +48,17 @@ async function archive(options: { duplicate?: boolean } = {}) {
   ] as const) {
     zip.file(
       `${root}assistant-workflows/${key}/SKILL.md`,
-      skill({ key, title, type: "assistant" }),
+      skill({ key, title, type: "assistant", prefix: options.prefix }),
     );
   }
   zip.file(
     `${root}assistant-workflows/proofread/SKILL.md`,
-    skill({ key: "proofread", title: "Proofread", type: "assistant" }),
+    skill({
+      key: "proofread",
+      title: "Proofread",
+      type: "assistant",
+      prefix: options.prefix,
+    }),
   );
   zip.file(
     `${root}assistant-workflows/proofread/assets/template.docx`,
@@ -62,6 +71,7 @@ async function archive(options: { duplicate?: boolean } = {}) {
       key: requiredTabular,
       title: "Commercial Agreement Review",
       type: "tabular",
+      prefix: options.prefix,
     }),
   );
   zip.file(
@@ -78,6 +88,7 @@ async function archive(options: { duplicate?: boolean } = {}) {
       key: options.duplicate ? "proofread" : "test-table",
       title: "Test Table",
       type: "tabular",
+      prefix: options.prefix,
     }),
   );
   zip.file(
@@ -112,6 +123,30 @@ function githubFetch(zipBytes: Buffer) {
 }
 
 describe("GitHub workflow catalog preparation", () => {
+  it("accepts packs that still use the pre-rename mike- metadata keys", async () => {
+    const temporaryRoot = await mkdtemp(
+      path.join(tmpdir(), "catalog-source-test-"),
+    );
+    try {
+      const prepared = await prepareWorkflowCatalog({
+        temporaryRoot,
+        fetchImpl: githubFetch(await archive({ prefix: "mike" })),
+      });
+      const document = validateWorkflowCatalogDocument(
+        JSON.parse(await readFile(prepared.catalogPath, "utf8")) as unknown,
+      );
+      expect(document.workflows).toHaveLength(6);
+      expect(
+        document.workflows.find(
+          (workflow) => workflow.workflow_key === "proofread",
+        ),
+      ).toMatchObject({ title: "Proofread", type: "assistant" });
+      await removePreparedWorkflowCatalog(prepared);
+    } finally {
+      await rm(temporaryRoot, { recursive: true, force: true });
+    }
+  });
+
   it("creates a validated temporary catalog and extracts assets", async () => {
     const temporaryRoot = await mkdtemp(
       path.join(tmpdir(), "catalog-source-test-"),

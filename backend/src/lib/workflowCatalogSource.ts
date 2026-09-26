@@ -49,6 +49,23 @@ const DEFAULT_WORKFLOW_BY_KEY = new Map<
 
 type UnknownRecord = Record<string, unknown>;
 
+
+// Catalog-specific SKILL.md metadata uses the `varda-` prefix. Workflow packs
+// written before the rename use `mike-`, which is still accepted.
+function catalogMetadataField(
+  metadata: Record<string, unknown>,
+  field: "type" | "availability" | "display-name",
+): { key: string; value: unknown } {
+  const current = `varda-${field}`;
+  if (metadata[current] !== undefined) {
+    return { key: current, value: metadata[current] };
+  }
+  const legacy = `mike-${field}`;
+  if (metadata[legacy] !== undefined) {
+    return { key: legacy, value: metadata[legacy] };
+  }
+  return { key: current, value: undefined };
+}
 export type WorkflowCatalogAssetSource = {
   filename: string;
   file_type: string;
@@ -484,28 +501,35 @@ async function parseArchive(
     }
     requiredString(frontmatter.license, `${skillPath}.license`);
     const metadata = asRecord(frontmatter.metadata, `${skillPath}.metadata`);
+    const typeField = catalogMetadataField(metadata, "type");
     const metadataType = requiredString(
-      metadata["mike-type"],
-      `${skillPath}.metadata.mike-type`,
+      typeField.value,
+      `${skillPath}.metadata.${typeField.key}`,
     );
     if (metadataType !== type) {
-      throw new Error(`${skillPath}.metadata.mike-type must be '${type}'`);
+      throw new Error(
+        `${skillPath}.metadata.${typeField.key} must be '${type}'`,
+      );
     }
+    const availabilityField = catalogMetadataField(metadata, "availability");
     const availability = optionalString(
-      metadata["mike-availability"],
-      `${skillPath}.metadata.mike-availability`,
+      availabilityField.value,
+      `${skillPath}.metadata.${availabilityField.key}`,
     );
     if (
       availability &&
       availability !== "system" &&
       availability !== "add-on"
     ) {
-      throw new Error(`${skillPath}.metadata.mike-availability is invalid`);
+      throw new Error(
+        `${skillPath}.metadata.${availabilityField.key} is invalid`,
+      );
     }
 
+    const titleField = catalogMetadataField(metadata, "display-name");
     const title = requiredString(
-      metadata["mike-display-name"],
-      `${skillPath}.metadata.mike-display-name`,
+      titleField.value,
+      `${skillPath}.metadata.${titleField.key}`,
     );
     let prompt = body.trimStart();
     if (!prompt) throw new Error(`${skillPath} has no workflow instructions`);

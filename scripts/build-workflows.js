@@ -466,24 +466,31 @@ function readWorkflow(category, workflowDir, pack) {
   assertString(metadata.author, `${label}.metadata.author`);
   assertString(metadata.language, `${label}.language`);
   assertString(metadata.version, `${label}.version`);
-  assertString(
-    metadata["mike-display-name"],
-    `${label}.metadata.mike-display-name`,
-  );
-  if (metadata["mike-type"] !== category) {
-    fail(`${label}.metadata.mike-type must be "${category}"`);
+  // Catalog-specific keys use the `varda-` prefix; packs written before the
+  // rename use `mike-`, which is still accepted.
+  const field = (name) =>
+    metadata[`varda-${name}`] !== undefined
+      ? { key: `varda-${name}`, value: metadata[`varda-${name}`] }
+      : metadata[`mike-${name}`] !== undefined
+        ? { key: `mike-${name}`, value: metadata[`mike-${name}`] }
+        : { key: `varda-${name}`, value: undefined };
+  const displayName = field("display-name");
+  const type = field("type");
+  assertString(displayName.value, `${label}.metadata.${displayName.key}`);
+  if (type.value !== category) {
+    fail(`${label}.metadata.${type.key} must be "${category}"`);
   }
-  // metadata.mike-availability is deprecated: backend ingestion derives the
+  // metadata.varda-availability is deprecated: backend ingestion derives the
   // default/add-on split from its deployment policy, so the flag is accepted
   // for backwards compatibility but never emitted. Warn (don't fail) on
   // unexpected values so existing content keeps building.
-  const availability = metadata["mike-availability"];
+  const availability = field("availability");
   if (
-    availability !== undefined &&
-    !["system", "add-on"].includes(availability)
+    availability.value !== undefined &&
+    !["system", "add-on"].includes(availability.value)
   ) {
     console.warn(
-      `Warning: ${label}.metadata.mike-availability has unexpected value ${JSON.stringify(availability)}; the key is deprecated and ignored`,
+      `Warning: ${label}.metadata.${availability.key} has unexpected value ${JSON.stringify(availability.value)}; the key is deprecated and ignored`,
     );
   }
   assertString(metadata.practice, `${label}.metadata.practice`);
@@ -491,9 +498,9 @@ function readWorkflow(category, workflowDir, pack) {
 
   const normalizedMetadata = {
     name: frontmatter.name,
-    title: metadata["mike-display-name"],
+    title: displayName.value,
     description: frontmatter.description,
-    type: metadata["mike-type"],
+    type: type.value,
     contributors: [
       {
         name: metadata.author.trim(),

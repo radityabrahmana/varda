@@ -23,7 +23,7 @@ describe("workflowNameFromSkillMd", () => {
       workflowNameFromSkillMd(`---
 name: contract-intake
 metadata:
-  mike-display-name: "Contract Intake"
+  varda-display-name: "Contract Intake"
 ---
 # Contract Intake`),
     ).toBe("contract-intake");
@@ -34,7 +34,7 @@ metadata:
       workflowNameFromSkillMd(`---
 metadata:
   name: contract-intake
-  mike-display-name: "Contract Intake"
+  varda-display-name: "Contract Intake"
 ---`),
     ).toBeNull();
   });
